@@ -1,21 +1,23 @@
 import argparse
 import logging
 import os
-import sys
 import subprocess
+import sys
 import time
 from pathlib import Path
 
+import reads_alignment
 import reads_preprocess
 import reference_prepare
-import reads_alignment
+import utils
 import variant_calling
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--r1', help="Read-R1.", default='CoV2_R1.fastq.gz')
 parser.add_argument('--r2', help="Read-R2.", default='CoV2_R2.fastq.gz')
 parser.add_argument('--prefix', help="For output prefix.", default='newtask')
-parser.add_argument('--ref', help="Reference FASTA file path.", default='NC_045512.fasta')
+parser.add_argument('--ref', help="Reference FASTA file path.",
+                    default='NC_045512.fasta')
 args = parser.parse_args()
 
 task_prefix = args.prefix
@@ -46,7 +48,7 @@ def check_ref_file():
 
 def main():
     task_with_ref = False
-    logger.info('Start pipeline.')
+    logger.info('Checking input file.')
     if ref_path != None:
         if check_ref_file():
             task_with_ref = True
@@ -55,14 +57,45 @@ def main():
             "%Y%m%d%H%M", time.localtime()))
         logger.info('Creating new task %s.' % task_name)
         Path.mkdir(base_path.joinpath(task_name))
+        logger.info('Starting pipeline.')
+        utils.write_log_file(
+            base_path.joinpath(task_name),
+            'Starting pipeline.'
+        )
 
         # main pipeline
-        reads_preprocess.run(task_name, base_path, Path(r1_path), Path(r2_path))
-        reference_prepare.run(task_name, base_path, Path(ref_path), task_with_ref)
-        reads_alignment.run(task_name, base_path)
-        variant_calling.run(task_name, base_path)
+        reads_preprocess.run(
+            task_name,
+            base_path,
+            Path(r1_path),
+            Path(r2_path)
+        )
+        reference_prepare.run(
+            task_name,
+            base_path,
+            Path(ref_path),
+            task_with_ref
+        )
+        reads_alignment.run(
+            task_name,
+            base_path
+        )
+        variant_calling.run(
+            task_name,
+            base_path
+        )
+
+        logger.info('Pipeline finished.')
+        utils.write_log_file(
+            base_path.joinpath(task_name),
+            'Pipeline finished.'
+        )
     else:
-        logger.error('Exiting pipeline.')
+        logger.error('Reads not found. Exiting pipeline.')
+        utils.write_log_file(
+            base_path.joinpath(task_name),
+            'Reads not found. Exiting pipeline.'
+        )
         sys.exit()
 
 
