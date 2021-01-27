@@ -20,7 +20,7 @@ def ref_index(task_name, base_path, aligner):
     elif aligner == 'bwa':
         index_cmd = ['bwa', 'index', '-p', task_name+'_ref', task_name+'_ref.fasta']
     logger.info('CMD: '+' '.join(index_cmd))
-    utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(index_cmd))
+    utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(index_cmd))
     ref_index_run = subprocess.run(index_cmd, cwd=aligner_cwd, capture_output=True)
     print(ref_index_run.stdout.decode(encoding='utf-8'))
     print(ref_index_run.stderr.decode(encoding='utf-8'))
@@ -38,7 +38,7 @@ def align_bowtie2(task_name, base_path):
     other_cmd = ['--very-sensitive-local', '--no-unal']
     aln_cmd = ['bowtie2', '-x', ref_index_path] + reads_cmd + output_cmd + thread_cmd + other_cmd
     logger.info('CMD: '+' '.join(aln_cmd))
-    utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(aln_cmd))
+    utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(aln_cmd))
     bt2_run = subprocess.run(aln_cmd, cwd=aligner_cwd, capture_output=True)
     print(bt2_run.stdout.decode(encoding='utf-8'))
     print(bt2_run.stderr.decode(encoding='utf-8'))
@@ -55,7 +55,7 @@ def align_bwa(task_name, base_path):
     output_cmd = ['-o', task_name+'.sam']
     aln_cmd = ['bwa', 'mem'] + thread_cmd + [ref_index_path] + reads_cmd + output_cmd
     logger.info('CMD: '+' '.join(aln_cmd))
-    utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(aln_cmd))
+    utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(aln_cmd))
     bt2_run = subprocess.run(aln_cmd, cwd=aligner_cwd, capture_output=True)
     print(bt2_run.stdout.decode(encoding='utf-8'))
     print(bt2_run.stderr.decode(encoding='utf-8'))
@@ -67,14 +67,14 @@ def bam_sort_n_index(task_name, base_path, aligner):
     # sorting
     sorting_cmd = ['samtools', 'sort', task_name+'.sam', '-o', task_name+'.sorted.bam']
     logger.info('CMD: '+' '.join(sorting_cmd))
-    utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(sorting_cmd))
+    utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(sorting_cmd))
     sorting_run = subprocess.run(sorting_cmd, cwd=aligner_cwd, capture_output=True)
     print(sorting_run.stdout.decode(encoding='utf-8'))
     print(sorting_run.stderr.decode(encoding='utf-8'))
     # indexing
     indexing_cmd = ['samtools', 'index', task_name+'.sorted.bam']
     logger.info('CMD: '+' '.join(indexing_cmd))
-    utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(indexing_cmd))
+    utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(indexing_cmd))
     index_run = subprocess.run(indexing_cmd, cwd=aligner_cwd, capture_output=True)
     print(index_run.stdout.decode(encoding='utf-8'))
     print(index_run.stderr.decode(encoding='utf-8'))

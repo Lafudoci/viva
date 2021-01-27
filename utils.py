@@ -33,6 +33,12 @@ def build_fasta_file(file_path, fasta_dict):
                 f.write(line+'\n')
 
 
+def load_json_file(file_path):
+    with open(file_path, 'r') as f:
+        j = json.load(f)
+    return j
+
+
 def build_json_file(file_path, python_dict):
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(python_dict, f)
@@ -64,10 +70,18 @@ def load_vcf_file(file_path):
         return vcf_dict
 
 
-def write_log(log_path, text):
+def write_log_file(log_path, text):
     log_file_path = log_path.joinpath('log.txt')
     with open(log_file_path, 'a') as f:
         f.write('%d\t%s\n'%(int(time.time()), text))
+
+
+def load_log_file(log_path):
+    log_file_path = log_path.joinpath('log.txt')
+    with open(log_file_path, 'r') as f:
+        log_list = f.readlines()
+    return log_list
+
 
 if __name__ == "__main__":
     load_vcf_file('newtask_202101260045_varscan.vcf')

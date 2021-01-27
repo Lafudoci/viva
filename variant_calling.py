@@ -22,7 +22,7 @@ def variant_calling_lofreq(task_name, base_path, aligner_list):
         # index ref
         faidx_cmd = ['lofreq', 'faidx', str(ref_path)]
         logger.info('CMD: '+' '.join(faidx_cmd))
-        utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(faidx_cmd))
+        utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(faidx_cmd))
         faidx_run = subprocess.run(faidx_cmd, cwd=aln_data_cwd, capture_output=True)
         print(faidx_run.stdout.decode(encoding='utf-8'))
         print(faidx_run.stderr.decode(encoding='utf-8'))
@@ -31,7 +31,7 @@ def variant_calling_lofreq(task_name, base_path, aligner_list):
         output_cmd = ['-o', '%s_%s_lofreq.vcf'%(task_name, aligner)]
         vc_cmd = ['lofreq'] + thread_cmd + ref_cmd + output_cmd + other_cmd + aln_input_cmd
         logger.info('CMD: '+' '.join(vc_cmd))
-        utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(vc_cmd))
+        utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(vc_cmd))
         vc_run = subprocess.run(vc_cmd, cwd=aln_data_cwd, capture_output=True)
         print(vc_run.stdout.decode(encoding='utf-8'))
         print(vc_run.stderr.decode(encoding='utf-8'))
@@ -54,11 +54,11 @@ def variant_calling_varscan2(task_name, base_path, aligner_list):
         # Run samtools mpileup and pipe to varscan2
         samtools_cmd = mpileup_cmd + ref_cmd + aln_input_cmd
         logger.info('CMD: '+' '.join(samtools_cmd))
-        utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(samtools_cmd))
+        utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(samtools_cmd))
         samtools_run = subprocess.run(samtools_cmd, cwd=aln_data_cwd, capture_output=True)
         varscan2_cmd = mpileup2cns_cmd + other_cmd + output_cmd
         logger.info('CMD: '+' '.join(varscan2_cmd))
-        utils.write_log(base_path.joinpath(task_name), 'CMD: '+' '.join(varscan2_cmd))
+        utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(varscan2_cmd))
         vc_run = subprocess.run(varscan2_cmd, cwd=aln_data_cwd, input=samtools_run.stdout, capture_output=True)
         utils.build_text_file(output_path, vc_run.stdout.decode(encoding='utf-8'))
         print(vc_run.stderr.decode(encoding='utf-8'))
