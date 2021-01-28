@@ -17,6 +17,9 @@ def import_reads(task_name, base_path, external_reads_R1, external_reads_R2):
             task_name + '_R1.fastq.gz'))
         shutil.copy(external_reads_R2, original_reads_path.joinpath(
             task_name + '_R2.fastq.gz'))
+        reads_meta = {'r1': str(external_reads_R1), 'r2':str(external_reads_R2)}
+        reads_meta_path = base_path.joinpath(task_name, 'reads', 'reads_meta.json')
+        utils.build_json_file(reads_meta_path, reads_meta)
     else:
         logger.error('Unsupported reads file type.')
 

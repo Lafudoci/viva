@@ -35,7 +35,7 @@ def align_bowtie2(task_name, base_path):
     reads_cmd = ['-1', filterd_R1, '-2', filterd_R2]
     thread_cmd = ['-p', '6']
     output_cmd = ['-S', task_name+'.sam']
-    other_cmd = ['--very-sensitive-local', '--no-unal']
+    other_cmd = ['--very-sensitive-local']
     aln_cmd = ['bowtie2', '-x', ref_index_path] + reads_cmd + output_cmd + thread_cmd + other_cmd
     logger.info('CMD: '+' '.join(aln_cmd))
     utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(aln_cmd))
@@ -80,6 +80,23 @@ def bam_sort_n_index(task_name, base_path, aligner):
     print(index_run.stderr.decode(encoding='utf-8'))
 
 
+def align_flagstat(task_name, base_path, aligners):
+    stats_dict = {}
+    for aligner in aligners:
+        logger.info('Analysis BAM file from %s' % aligner)
+        aligner_cwd = base_path.joinpath(task_name, 'alignment', aligner)
+        flagstat_cmd = ['samtools', 'flagstat', task_name+'.sorted.bam']
+        logger.info('CMD: '+' '.join(flagstat_cmd))
+        utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(flagstat_cmd))
+        flagstat_run = subprocess.run(flagstat_cmd, cwd=aligner_cwd, capture_output=True)
+        stats_text = flagstat_run.stdout.decode(encoding='utf-8')
+        stats_list = stats_text.split('\n')
+        utils.build_text_file(base_path.joinpath(aligner_cwd, 'flagstat.txt'), stats_text)
+        mapping_rate = stats_list[4].split(' ')[4][1:]
+        stats_dict['mapping_rate']= {aligner : mapping_rate}
+    utils.build_json_file(base_path.joinpath('alignment'), stats_dict)
+
+
 def align_disp(task_name, base_path, aligner):
     if aligner == 'bowtie2':
         align_bowtie2(task_name, base_path)
@@ -92,3 +109,7 @@ def run(task_name, base_path):
         ref_index(task_name, base_path, aligner)
         align_disp(task_name, base_path, aligner)
         bam_sort_n_index(task_name, base_path, aligner)
+    align_flagstat(task_name, base_path, aligners)
+
+if __name__ == "__main__":
+    run('test', Path.cwd())

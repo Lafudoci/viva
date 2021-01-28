@@ -11,6 +11,7 @@ import reads_preprocess
 import reference_prepare
 import utils
 import variant_calling
+import report_generator
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--r1', help="Read-R1.", default='CoV2_R1.fastq.gz')
@@ -81,6 +82,10 @@ def main():
             base_path
         )
         variant_calling.run(
+            task_name,
+            base_path
+        )
+        report_generator.run(
             task_name,
             base_path
         )

@@ -8,6 +8,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 def is_valid_fasta(file_path):
     pass
 
@@ -51,7 +52,7 @@ def build_text_file(file_path, text):
 
 
 def load_vcf_file(file_path):
-    vcf_dict = {'comments':[], 'column_names':[], 'vc':[]}
+    vcf_dict = {'comments': [], 'column_names': [], 'vc': []}
     with open(file_path, 'r') as f:
         for line in f.readlines():
             if line.startswith('##'):
@@ -73,7 +74,7 @@ def load_vcf_file(file_path):
 def write_log_file(log_path, text):
     log_file_path = log_path.joinpath('log.txt')
     with open(log_file_path, 'a') as f:
-        f.write('%d\t%s\n'%(int(time.time()), text))
+        f.write('%d\t%s\n' % (int(time.time()), text))
 
 
 def load_log_file(log_path):
@@ -81,7 +82,3 @@ def load_log_file(log_path):
     with open(log_file_path, 'r') as f:
         log_list = f.readlines()
     return log_list
-
-
-if __name__ == "__main__":
-    load_vcf_file('newtask_202101260045_varscan.vcf')
