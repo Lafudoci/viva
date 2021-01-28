@@ -12,6 +12,7 @@ import reference_prepare
 import utils
 import variant_calling
 import report_generator
+import summary_generator
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--r1', help="Read-R1.", default='CoV2_R1.fastq.gz')
@@ -85,11 +86,14 @@ def main():
             task_name,
             base_path
         )
+        summary_generator.run(
+            task_name,
+            base_path
+        )
         report_generator.run(
             task_name,
             base_path
         )
-
         logger.info('Pipeline finished.')
         utils.write_log_file(
             base_path.joinpath(task_name),

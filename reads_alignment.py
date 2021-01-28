@@ -81,7 +81,7 @@ def bam_sort_n_index(task_name, base_path, aligner):
 
 
 def align_flagstat(task_name, base_path, aligners):
-    stats_dict = {}
+    stats_dict = {'mapped_rate':{}}
     for aligner in aligners:
         logger.info('Analysis BAM file from %s' % aligner)
         aligner_cwd = base_path.joinpath(task_name, 'alignment', aligner)
@@ -92,9 +92,9 @@ def align_flagstat(task_name, base_path, aligners):
         stats_text = flagstat_run.stdout.decode(encoding='utf-8')
         stats_list = stats_text.split('\n')
         utils.build_text_file(base_path.joinpath(aligner_cwd, 'flagstat.txt'), stats_text)
-        mapping_rate = stats_list[4].split(' ')[4][1:]
-        stats_dict['mapping_rate']= {aligner : mapping_rate}
-    utils.build_json_file(base_path.joinpath('alignment'), stats_dict)
+        mapped_rate = stats_list[4].split(' ')[4][1:]
+        stats_dict['mapped_rate'][aligner]= mapped_rate
+    utils.build_json_file(base_path.joinpath(task_name, 'alignment', 'flagstat.json'), stats_dict)
 
 
 def align_disp(task_name, base_path, aligner):
