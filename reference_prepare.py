@@ -24,11 +24,16 @@ def external_ref_import(task_name, base_path, external_ref_path):
         # import ref
         imported_ref_fasta_dict = {}
         imported_ref_fasta_path = base_path.joinpath(
-            task_name, 'reference', task_name+'_ref.fasta')
-        imported_ref_fasta_dict[task_name +
-                                '_ref'] = str(list(ref_fasta_dict.values())[0])
-        utils.build_fasta_file(imported_ref_fasta_path,
-                               imported_ref_fasta_dict)
+            task_name,
+            'reference',
+            task_name+'_ref.fasta'
+        )
+        first_fasta_seq = str(list(ref_fasta_dict.values())[0])
+        imported_ref_fasta_dict[task_name + '_ref'] = first_fasta_seq
+        utils.build_fasta_file(
+            imported_ref_fasta_path,
+            imported_ref_fasta_dict
+        )
         # build meta file
         imported_ref_meta_path = base_path.joinpath(
             task_name, 'reference', task_name+'_ref.json')

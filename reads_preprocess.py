@@ -52,7 +52,10 @@ def run_fastp(task_name, base_path):
         '-w', '4'       # thread
     ]
     logger.info('CMD: '+' '.join(fastp_cmd + reports_cmd + parameter_cmd))
-    utils.write_log_file(base_path.joinpath(task_name), 'CMD: '+' '.join(fastp_cmd + reports_cmd + parameter_cmd))
+    utils.write_log_file(
+        base_path.joinpath(task_name),
+        'CMD: '+' '.join(fastp_cmd + reports_cmd + parameter_cmd)
+    )
     fastp_run = subprocess.run(
         fastp_cmd + reports_cmd + parameter_cmd,
         capture_output=True
