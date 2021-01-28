@@ -92,8 +92,9 @@ def log_parser(task_name, base_path):
     log_path = base_path.joinpath(task_name)
     log_list = utils.load_log_file(log_path)
     cmd_list = []
-    for cmd in log_list:
-        cmd_list.append(cmd.split('\t')[1][5:])
+    for log in log_list:
+        if log.split('\t')[1].startswith('CMD:'):
+            cmd_list.append(log.split('\t')[1][5:])
     log_abs = {
         'start_timestamp': log_list[0].split('\t')[0],
         'finish_timestamp': log_list[-1].split('\t')[0],

@@ -15,7 +15,7 @@ def build_md_report(task_name, base_path):
     headline = '# Virus Variant Calling Report'
 
     meta_t = '## Meta'
-    meta_c = '\n'.join([
+    meta_c = '\n\n'.join([
         'Task start time : %s'% s['start_date'],
         'Task finish time : %s'% s['finish_date']
     ])
@@ -24,17 +24,17 @@ def build_md_report(task_name, base_path):
     reads_c = '\n'.join([
         '| Reads | File name |',
         '| ----- | --------- |',
-        '| R1 | %s |'%(s['reads_meta']['r1']),
-        '| R2 | %s |'%(s['reads_meta']['r2']),
+        '| R1 | %s |'%(s['reads_meta']['file_name']['r1']),
+        '| R2 | %s |'%(s['reads_meta']['file_name']['r2']),
         '\n',
         '| Reads | MD5 hash |',
         '| ----- | --------- |',
-        '| R1 | %s |'%(s['reads_meta']['r1']),
-        '| R2 | %s |'%(s['reads_meta']['r2'])
+        '| R1 | %s |'%(s['reads_meta']['md5']['r1']),
+        '| R2 | %s |'%(s['reads_meta']['md5']['r2'])
     ])
 
     ref_t = '## Input Reference'
-    ref_c = '\n'.join([
+    ref_c = '\n\n'.join([
         'Reference by user : %s'%(s['ref_from_user']),
         'FASTA Header : %s'%(s['ref_fasta_header']),
         'FASTA file name : %s'%(s['ref_file_name']),
@@ -92,7 +92,7 @@ def build_md_report(task_name, base_path):
             vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
     genome_t = '## Draft Genome'
     cmd_t = '## Commands'
-    cmd_c = "```\n%s\n```\n"%('\n'.join(s['cmd_list']))
+    cmd_c = "\n%s\n"%('\n\n'.join(s['cmd_list']))
     ver_t = '## Versions'
     ver_c = '| Tool | Version |\n| ---- | ------- |\n'
     for tool, version in s['version'].items():
