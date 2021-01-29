@@ -14,9 +14,10 @@ def report_summary(task_name, base_path):
     logger.info('Generating summary.')
     s = {}
     log_abs = log_parser(task_name, base_path)
-    s['start_date'] = datetime.fromtimestamp(
+    s['task_name'] = task_name
+    s['start_date'] = datetime.utcfromtimestamp(
         int(log_abs['start_timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
-    s['finish_date'] = datetime.fromtimestamp(
+    s['finish_date'] = datetime.utcfromtimestamp(
         int(log_abs['finish_timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
     s['cmd_list'] = log_abs['cmd_list']
     s['reads_meta'] = reads_meta_parser(task_name, base_path)
