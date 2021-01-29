@@ -1,7 +1,7 @@
 import json
 import logging
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import utils
@@ -15,10 +15,10 @@ def report_summary(task_name, base_path):
     s = {}
     log_abs = log_parser(task_name, base_path)
     s['task_name'] = task_name
-    s['start_date'] = datetime.utcfromtimestamp(
-        int(log_abs['start_timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
-    s['finish_date'] = datetime.utcfromtimestamp(
-        int(log_abs['finish_timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
+    start_t = datetime.utcfromtimestamp(int(log_abs['start_timestamp']))+ timedelta(hours=8)
+    s['start_date'] = start_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
+    finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)
+    s['finish_date'] = finish_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     s['cmd_list'] = log_abs['cmd_list']
     s['reads_meta'] = reads_meta_parser(task_name, base_path)
     s['fastp_abs'] = fastp_parser(task_name, base_path)
@@ -140,5 +140,5 @@ def run(task_name, base_path):
 
 if __name__ == "__main__":
     # fastp_parser('test', Path.cwd())
-    # run('test', Path.cwd())
-    tool_version_caller()
+    run('TFDA-CMV-210125_202101290325', Path.cwd())
+    # tool_version_caller()
