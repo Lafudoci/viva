@@ -14,7 +14,7 @@ def report_summary(task_name, base_path):
     logger.info('Generating summary.')
     s = {}
     log_abs = log_parser(task_name, base_path)
-    s['task_name'] = task_name
+    s['task_name'] = task_name.split('_')[:-1]
     start_t = datetime.utcfromtimestamp(int(log_abs['start_timestamp']))+ timedelta(hours=8)
     s['start_date'] = start_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)
