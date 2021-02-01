@@ -101,10 +101,6 @@ def main():
         )
     else:
         logger.error('Reads not found. Exiting pipeline.')
-        utils.write_log_file(
-            base_path.joinpath(task_name),
-            'Reads not found. Exiting pipeline.'
-        )
         sys.exit()
 
 
