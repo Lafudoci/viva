@@ -17,6 +17,7 @@ def build_md_report(task_name, base_path):
     meta_t = '## Meta'
     meta_c = '\n\n'.join([
         'Task name : %s'% s['task_name'],
+        'Task ID : %s'% s['task_id'],
         'Task start time : %s'% s['start_date'],
         'Task finish time : %s'% s['finish_date']
     ])
