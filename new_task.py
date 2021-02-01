@@ -22,26 +22,32 @@ parser.add_argument('--ref', help="Reference FASTA file path.",
                     default='NC_045512.fasta')
 args = parser.parse_args()
 
-task_prefix = args.prefix
-base_path = Path.cwd()
-r1_path = args.r1
-r2_path = args.r2
-ref_path = args.ref
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def check_reads_file():
-    if Path(r1_path).is_file() and Path(r2_path).is_file():
+class Task:
+    def __init__(self):
+        self.name = ''
+        self.id = ''
+        self.path = ''
+        self.trimming = 0
+        self.with_ref = False
+        self.ex_r1 = ''
+        self.ex_r2 = ''
+        self.ref_path = ''
+
+
+def check_reads_file(task):
+    if Path(task.ex_r1).is_file() and Path(task.ex_r2).is_file():
         return 1
     else:
         logger.error('Reads file not found.')
         return -1
 
 
-def check_ref_file():
-    if Path(ref_path).is_file():
+def check_ref_file(task):
+    if Path(task.ref).is_file():
         return 1
     else:
         logger.info('Reference sequence file not found.')
@@ -49,54 +55,38 @@ def check_ref_file():
 
 
 def main():
-    task_with_ref = False
+    task = Task()
+    task.path = Path.cwd()
+    task.name = args.prefix
+    task.ref = args.ref
+    task.ex_r1 = args.r1
+    task.ex_r2 = args.r2
+    task.alns = ['bowtie2', 'bwa']
     logger.info('Checking input file.')
-    if ref_path != None:
-        if check_ref_file():
-            task_with_ref = True
-    if check_reads_file() != -1:
-        task_name = "%s_%s" % (task_prefix, time.strftime(
+    if task.ref != None:
+        if check_ref_file(task):
+            task.with_ref = True
+    if check_reads_file(task) != -1:
+        task.name = "%s_%s" % (task.name, time.strftime(
             "%Y%m%d%H%M", time.localtime()))
-        logger.info('Creating new task %s.' % task_name)
-        Path.mkdir(base_path.joinpath(task_name))
+        logger.info('Creating new task %s.' % task.name)
+        Path.mkdir(task.path.joinpath(task.name))
         logger.info('Starting pipeline.')
         utils.write_log_file(
-            base_path.joinpath(task_name),
+            task.path.joinpath(task.name),
             'Starting pipeline.'
         )
 
         # main pipeline
-        reads_preprocess.run(
-            task_name,
-            base_path,
-            Path(r1_path),
-            Path(r2_path)
-        )
-        reference_prepare.run(
-            task_name,
-            base_path,
-            Path(ref_path),
-            task_with_ref
-        )
-        reads_alignment.run(
-            task_name,
-            base_path
-        )
-        variant_calling.run(
-            task_name,
-            base_path
-        )
-        summary_generator.run(
-            task_name,
-            base_path
-        )
-        report_generator.run(
-            task_name,
-            base_path
-        )
+        reads_preprocess.run(task)
+        reference_prepare.run(task)
+        reads_alignment.run(task)
+        variant_calling.run(task)
+        summary_generator.run(task)
+        report_generator.run(task)
         logger.info('Pipeline finished.')
         utils.write_log_file(
-            base_path.joinpath(task_name),
+            task.path.joinpath(task.id),
             'Pipeline finished.'
         )
     else:

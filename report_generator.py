@@ -9,15 +9,15 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def build_md_report(task_name, base_path):
-    summary_path = base_path.joinpath(task_name, task_name + '_summary.json')
+def build_md_report(task):
+    summary_path = task.path.joinpath(task.id, task.id + '_summary.json')
     s = utils.load_json_file(summary_path)
     headline = '# Virus Variant Calling Report'
 
     meta_t = '## Meta'
     meta_c = '\n\n'.join([
-        'Task name : %s'% s['task_name'],
-        'Task ID : %s'% s['task_id'],
+        'Task name : %s'% s['task.id'],
+        'Task ID : %s'% s['task.id'],
         'Task start time : %s'% s['start_date'],
         'Task finish time : %s'% s['finish_date']
     ])
@@ -129,10 +129,10 @@ def build_md_report(task_name, base_path):
     ])
 
     print(md_str)
-    utils.build_text_file(base_path.joinpath(task_name, task_name + '_report.md'), md_str)
+    utils.build_text_file(task.path.joinpath(task.id, task.id + '_report.md'), md_str)
 
-def run(task_name, base_path):
-    build_md_report(task_name, base_path)
+def run(task):
+    build_md_report(task)
 
 
 

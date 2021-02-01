@@ -10,58 +10,58 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def report_summary(task_name, base_path):
+def report_summary(task):
     logger.info('Generating summary.')
     s = {}
-    log_abs = log_parser(task_name, base_path)
-    s['task_name'] = task_name.split('_')[:-1][0]
-    s['task_id'] = task_name
+    log_abs = log_parser(task)
+    s['task.id'] = task.id.split('_')[:-1][0]
+    s['task.id'] = task.id
     start_t = datetime.utcfromtimestamp(int(log_abs['start_timestamp']))+ timedelta(hours=8)
     s['start_date'] = start_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)
     s['finish_date'] = finish_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     s['cmd_list'] = log_abs['cmd_list']
-    s['reads_meta'] = reads_meta_parser(task_name, base_path)
-    s['fastp_abs'] = fastp_parser(task_name, base_path)
-    ref_meta = ref_meta_parser(task_name, base_path)
+    s['reads_meta'] = reads_meta_parser(task)
+    s['fastp_abs'] = fastp_parser(task)
+    ref_meta = ref_meta_parser(task)
     s['ref_file_name'] = ref_meta['file_name']
     s['ref_fasta_header'] = ref_meta['fasta_header']
     s['ref_from_user'] = ref_meta['user_provide']
-    s['aln'] = aln_meta_parser(task_name, base_path)
-    s['vc'] = vc_parser(task_name, base_path)
+    s['aln'] = aln_meta_parser(task)
+    s['vc'] = vc_parser(task)
     s['version'] = tool_version_caller()
     utils.build_json_file(
-        base_path.joinpath(task_name, task_name + '_summary.json'),
+        task.path.joinpath(task.id, task.id + '_summary.json'),
         s
     )
 
 
-def reads_meta_parser(task_name, base_path):
-    meta_json_path = base_path.joinpath(
-        task_name, 'reads', 'reads_meta.json'
+def reads_meta_parser(task):
+    meta_json_path = task.path.joinpath(
+        task.id, 'reads', 'reads_meta.json'
     )
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
 
 
-def ref_meta_parser(task_name, base_path):
-    meta_json_path = base_path.joinpath(
-        task_name, 'reference', task_name + '_ref.json'
+def ref_meta_parser(task):
+    meta_json_path = task.path.joinpath(
+        task.id, 'reference', task.id + '_ref.json'
     )
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
 
 
-def aln_meta_parser(task_name, base_path):
-    meta_json_path = base_path.joinpath(
-        task_name, 'alignment', 'flagstat.json'
+def aln_meta_parser(task):
+    meta_json_path = task.path.joinpath(
+        task.id, 'alignment', 'flagstat.json'
     )
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
 
 
-def fastp_parser(task_name, base_path):
-    fastp_json_path = base_path.joinpath(task_name, 'reads', 'fastp.json')
+def fastp_parser(task):
+    fastp_json_path = task.path.joinpath(task.id, 'reads', 'fastp.json')
     fastp_dict = utils.load_json_file(fastp_json_path)
     before_total_reads = fastp_dict['summary']['before_filtering']['total_reads']
     before_total_bases = fastp_dict['summary']['before_filtering']['total_bases']
@@ -90,8 +90,8 @@ def fastp_parser(task_name, base_path):
     return fastp_abs
 
 
-def log_parser(task_name, base_path):
-    log_path = base_path.joinpath(task_name)
+def log_parser(task):
+    log_path = task.path.joinpath(task.id)
     log_list = utils.load_log_file(log_path)
     cmd_list = []
     for log in log_list:
@@ -105,9 +105,9 @@ def log_parser(task_name, base_path):
     return log_abs
 
 
-def vc_parser(task_name, base_path):
-    vc_json_path = base_path.joinpath(
-        task_name, task_name + '_vc_summary.json')
+def vc_parser(task):
+    vc_json_path = task.path.joinpath(
+        task.id, task.id + '_vc_summary.json')
     vc_dict = utils.load_json_file(vc_json_path)
     return vc_dict
 
@@ -138,8 +138,8 @@ def tool_version_caller():
     return version_dict
     
 
-def run(task_name, base_path):
-    report_summary(task_name, base_path)
+def run(task):
+    report_summary(task)
 
 
 if __name__ == "__main__":

@@ -9,22 +9,22 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def variant_calling_lofreq(task_name, base_path, aligner_list):
+def variant_calling_lofreq(task):
     logger.info('Starting variant calling by LoFreq.')
     thread_cmd = ['call-parallel', '--pp-threads', '6']
     other_cmd = ['--call-indels', '-N', '-B', '-q', '20', '-Q', '20', '-m', '20']
 
-    for aligner in aligner_list:
+    for aligner in task.alns:
         logger.info('Running VC for %s output.' % aligner)
-        aln_data_cwd = base_path.joinpath(task_name, 'alignment', aligner)
-        aln_input_name = task_name + '.sorted.bam'
-        aln_indelqual_name = task_name + '.indelqual.sorted.bam'
-        ref_name = task_name + '_ref.fasta'
+        aln_data_cwd = task.path.joinpath(task.id, 'alignment', aligner)
+        aln_input_name = task.id + '.sorted.bam'
+        aln_indelqual_name = task.id + '.indelqual.sorted.bam'
+        ref_name = task.id + '_ref.fasta'
         # index ref
         faidx_cmd = ['lofreq', 'faidx', ref_name]
         logger.info('CMD: '+' '.join(faidx_cmd))
         utils.write_log_file(
-            base_path.joinpath(task_name),
+            task.path.joinpath(task.id),
             'CMD: '+' '.join(faidx_cmd)
         )
         faidx_run = subprocess.run(
@@ -45,13 +45,13 @@ def variant_calling_lofreq(task_name, base_path, aligner_list):
         print(indelqual_index_run.stderr.decode(encoding='utf-8'))
         # vc
         ref_cmd = ['-f', ref_name]
-        output_cmd = ['-o', '%s_%s_lofreq.vcf' % (task_name, aligner)]
+        output_cmd = ['-o', '%s_%s_lofreq.vcf' % (task.id, aligner)]
         vc_cmd = ['lofreq'] + thread_cmd + \
             ref_cmd + output_cmd + \
             other_cmd + [aln_indelqual_name]
         logger.info('CMD: '+' '.join(vc_cmd))
         utils.write_log_file(
-            base_path.joinpath(task_name),
+            task.path.joinpath(task.id),
             'CMD: '+' '.join(vc_cmd)
         )
         vc_run = subprocess.run(vc_cmd, cwd=aln_data_cwd, capture_output=True)
@@ -59,7 +59,7 @@ def variant_calling_lofreq(task_name, base_path, aligner_list):
         print(vc_run.stderr.decode(encoding='utf-8'))
 
 
-def variant_calling_varscan2(task_name, base_path, aligner_list):
+def variant_calling_varscan2(task):
     logger.info('Starting variant calling by VarScan2.')
     mpileup_cmd = ['samtools', 'mpileup', '-B']
     mpileup2cns_cmd = [
@@ -70,22 +70,22 @@ def variant_calling_varscan2(task_name, base_path, aligner_list):
     output_cmd = ['--output-vcf', '1']
     other_cmd = ['--min-avg-qual', '20', '--P-value', '0.01']
 
-    for aligner in aligner_list:
+    for aligner in task.alns:
         logger.info('Running VC for %s output.' % aligner)
-        aln_data_cwd = base_path.joinpath(task_name, 'alignment', aligner)
-        aln_input_cmd = [str(aln_data_cwd.joinpath(task_name + '.sorted.bam'))]
-        ref_path = aln_data_cwd.joinpath(task_name+'_ref.fasta')
+        aln_data_cwd = task.path.joinpath(task.id, 'alignment', aligner)
+        aln_input_cmd = [str(aln_data_cwd.joinpath(task.id + '.sorted.bam'))]
+        ref_path = aln_data_cwd.joinpath(task.id+'_ref.fasta')
         ref_cmd = ['-f', str(ref_path)]
         output_path = str(
             aln_data_cwd.joinpath(
-                '%s_%s_varscan.vcf' % (task_name, aligner)
+                '%s_%s_varscan.vcf' % (task.id, aligner)
             )
         )
         # Run samtools mpileup and pipe to varscan2
         samtools_cmd = mpileup_cmd + ref_cmd + aln_input_cmd
         logger.info('CMD: '+' '.join(samtools_cmd))
         utils.write_log_file(
-            base_path.joinpath(task_name),
+            task.path.joinpath(task.id),
             'CMD: '+' '.join(samtools_cmd)
         )
         samtools_run = subprocess.run(
@@ -96,7 +96,7 @@ def variant_calling_varscan2(task_name, base_path, aligner_list):
         varscan2_cmd = mpileup2cns_cmd + other_cmd + output_cmd
         logger.info('CMD: '+' '.join(varscan2_cmd))
         utils.write_log_file(
-            base_path.joinpath(task_name),
+            task.path.joinpath(task.id),
             'CMD: '+' '.join(varscan2_cmd)
         )
         vc_run = subprocess.run(
@@ -110,17 +110,17 @@ def variant_calling_varscan2(task_name, base_path, aligner_list):
         print(vc_run.stderr.decode(encoding='utf-8'))
 
 
-def build_vc_summary_json(task_name, base_path, aligner_list):
-    vc_summary_path = base_path.joinpath(
-        task_name, task_name+'_vc_summary.json'
+def build_vc_summary_json(task):
+    vc_summary_path = task.path.joinpath(
+        task.id, task.id+'_vc_summary.json'
     )
     varscan_vc_dict = {}
     lofreq_vc_dict = {}
-    for aligner in aligner_list:
+    for aligner in task.alns:
         # parse varscan vcf file
-        varscan_vcf_file_path = base_path.joinpath(
-            task_name, 'alignment', aligner, '%s_%s_varscan.vcf' % (
-                task_name, aligner)
+        varscan_vcf_file_path = task.path.joinpath(
+            task.id, 'alignment', aligner, '%s_%s_varscan.vcf' % (
+                task.id, aligner)
         )
         original_varscan_vc_dict = utils.load_vcf_file(varscan_vcf_file_path)
         for pos_result in original_varscan_vc_dict['vc']:
@@ -142,9 +142,9 @@ def build_vc_summary_json(task_name, base_path, aligner_list):
                     'FILTER': vc_filter, 'FREQ': freq, 'QUAL': qual, 'DP': sdp
                 }
         # parse lofreq vcf file
-        lofreq_vcf_file_path = base_path.joinpath(
-            task_name, 'alignment', aligner, '%s_%s_lofreq.vcf' % (
-                task_name, aligner)
+        lofreq_vcf_file_path = task.path.joinpath(
+            task.id, 'alignment', aligner, '%s_%s_lofreq.vcf' % (
+                task.id, aligner)
         )
         original_lofreq_vc_dict = utils.load_vcf_file(lofreq_vcf_file_path)
         for pos_result in original_lofreq_vc_dict['vc']:
@@ -171,12 +171,7 @@ def build_vc_summary_json(task_name, base_path, aligner_list):
     utils.build_json_file(vc_summary_path, all_vc_dict)
 
 
-def run(task_name, base_path):
-    aligner_list = ['bowtie2', 'bwa']
-    variant_calling_lofreq(task_name, base_path, aligner_list)
-    variant_calling_varscan2(task_name, base_path, aligner_list)
-    build_vc_summary_json(task_name, base_path, aligner_list)
-
-
-if __name__ == '__main__':
-    build_vc_summary_json('test', Path.cwd(), ['bowtie2', 'bwa'])
+def run(task):
+    variant_calling_lofreq(task)
+    variant_calling_varscan2(task)
+    build_vc_summary_json(task)
