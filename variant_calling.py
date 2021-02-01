@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 def variant_calling_lofreq(task_name, base_path, aligner_list):
     logger.info('Starting variant calling by LoFreq.')
     thread_cmd = ['call-parallel', '--pp-threads', '6']
-    other_cmd = ['-q', '20', '-Q', '20', '-m', '20']
+    other_cmd = ['--call-indels', '-N', '-B', '-q', '20', '-Q', '20', '-m', '20']
 
     for aligner in aligner_list:
         logger.info('Running VC for %s output.' % aligner)
