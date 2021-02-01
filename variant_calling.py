@@ -17,10 +17,11 @@ def variant_calling_lofreq(task_name, base_path, aligner_list):
     for aligner in aligner_list:
         logger.info('Running VC for %s output.' % aligner)
         aln_data_cwd = base_path.joinpath(task_name, 'alignment', aligner)
-        aln_input_cmd = [str(aln_data_cwd.joinpath(task_name + '.sorted.bam'))]
-        ref_path = aln_data_cwd.joinpath(task_name+'_ref.fasta')
+        aln_input_name = task_name + '.sorted.bam'
+        aln_indelqual_name = task_name + '.indelqual.sorted.bam'
+        ref_name = task_name + '_ref.fasta'
         # index ref
-        faidx_cmd = ['lofreq', 'faidx', str(ref_path)]
+        faidx_cmd = ['lofreq', 'faidx', ref_name]
         logger.info('CMD: '+' '.join(faidx_cmd))
         utils.write_log_file(
             base_path.joinpath(task_name),
@@ -30,12 +31,24 @@ def variant_calling_lofreq(task_name, base_path, aligner_list):
             faidx_cmd, cwd=aln_data_cwd, capture_output=True)
         print(faidx_run.stdout.decode(encoding='utf-8'))
         print(faidx_run.stderr.decode(encoding='utf-8'))
+        # indelqual
+        indelqual_cmd = ['lofreq', 'indelqual', '--dindel', '--ref', ref_name, '--out', aln_indelqual_name, aln_input_name]
+        indelqual_run = subprocess.run(
+            indelqual_cmd, cwd=aln_data_cwd, capture_output=True)
+        print(indelqual_run.stdout.decode(encoding='utf-8'))
+        print(indelqual_run.stderr.decode(encoding='utf-8'))
+        # index indelqual-ed BAM
+        indelqual_index_cmd = ['samtools', 'index', aln_indelqual_name]
+        indelqual_index_run = subprocess.run(
+            indelqual_index_cmd, cwd=aln_data_cwd, capture_output=True)
+        print(indelqual_index_run.stdout.decode(encoding='utf-8'))
+        print(indelqual_index_run.stderr.decode(encoding='utf-8'))
         # vc
-        ref_cmd = ['-f', str(ref_path)]
+        ref_cmd = ['-f', ref_name]
         output_cmd = ['-o', '%s_%s_lofreq.vcf' % (task_name, aligner)]
         vc_cmd = ['lofreq'] + thread_cmd + \
             ref_cmd + output_cmd + \
-            other_cmd + aln_input_cmd
+            other_cmd + [aln_indelqual_name]
         logger.info('CMD: '+' '.join(vc_cmd))
         utils.write_log_file(
             base_path.joinpath(task_name),
