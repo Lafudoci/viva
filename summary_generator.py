@@ -120,6 +120,7 @@ def tool_version_caller():
     bwa_cmd = ['bwa']
     lofreq_cmd = ['lofreq', 'version']
     varscan2_cmd = ['java', '-jar', '/home/leftc/bioapp/varscan2/VarScan.v2.4.4.jar']
+    last_commit_cmd = ['git', 'describe', '--always']
     version_dict['fastp'] = subprocess.run(
         fastp_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[1].strip()
     version_dict['samtools'] = subprocess.run(
@@ -132,6 +133,8 @@ def tool_version_caller():
         lofreq_cmd, capture_output=True).stdout.decode(encoding='utf-8').split(' ')[1].split('\n')[0]
     version_dict['varscan2'] = subprocess.run(
         varscan2_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[1].split('\n')[0][1:]
+    version_dict['last_commit'] = subprocess.run(
+        last_commit_cmd, capture_output=True).stdout.decode(encoding='utf-8').strip()
     return version_dict
     
 
@@ -141,5 +144,5 @@ def run(task_name, base_path):
 
 if __name__ == "__main__":
     # fastp_parser('test', Path.cwd())
-    run('TFDA-CMV-210125_202101290325', Path.cwd())
-    # tool_version_caller()
+    # run('TFDA-CMV-210125_202101290325', Path.cwd())
+    print(tool_version_caller())
