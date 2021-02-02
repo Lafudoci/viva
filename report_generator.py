@@ -16,8 +16,8 @@ def build_md_report(task):
 
     meta_t = '## Meta'
     meta_c = '\n\n'.join([
-        'Task name : %s'% s['task.id'],
-        'Task ID : %s'% s['task.id'],
+        'Task name : %s'% s['task_name'],
+        'Task ID : %s'% s['task_id'],
         'Task start time : %s'% s['start_date'],
         'Task finish time : %s'% s['finish_date']
     ])
@@ -137,4 +137,9 @@ def run(task):
 
 
 if __name__ == "__main__":
-    build_md_report('TFDA-CMV-2020dec_202101280652', Path.cwd())
+    from new_task import Task
+    task = Task()
+    task.path = Path.cwd()
+    task.name = 'TFDA-SARSCOV2-210112'
+    task.id = 'TFDA-SARSCOV2-210112_202102010507'
+    run(task)

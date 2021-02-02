@@ -14,8 +14,8 @@ def report_summary(task):
     logger.info('Generating summary.')
     s = {}
     log_abs = log_parser(task)
-    s['task.id'] = task.id.split('_')[:-1][0]
-    s['task.id'] = task.id
+    s['task_name'] = task.id.split('_')[:-1][0]
+    s['task_id'] = task.id
     start_t = datetime.utcfromtimestamp(int(log_abs['start_timestamp']))+ timedelta(hours=8)
     s['start_date'] = start_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)
@@ -143,6 +143,10 @@ def run(task):
 
 
 if __name__ == "__main__":
-    # fastp_parser('test', Path.cwd())
-    # run('TFDA-CMV-210125_202101290325', Path.cwd())
-    print(tool_version_caller())
+    from new_task import Task
+    task = Task()
+    task.path = Path.cwd()
+    task.name = 'TFDA-SARSCOV2-210112'
+    task.id = 'TFDA-SARSCOV2-210112_202102010507'
+    run(task)
+    # print(tool_version_caller())

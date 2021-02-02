@@ -58,6 +58,7 @@ def main():
     task = Task()
     task.path = Path.cwd()
     task.name = args.prefix
+    task.id = ''
     task.ref = args.ref
     task.ex_r1 = args.r1
     task.ex_r2 = args.r2
@@ -67,13 +68,13 @@ def main():
         if check_ref_file(task):
             task.with_ref = True
     if check_reads_file(task) != -1:
-        task.name = "%s_%s" % (task.name, time.strftime(
+        task.id = "%s_%s" % (task.name, time.strftime(
             "%Y%m%d%H%M", time.localtime()))
-        logger.info('Creating new task %s.' % task.name)
-        Path.mkdir(task.path.joinpath(task.name))
+        logger.info('Creating new task %s.' % task.id)
+        Path.mkdir(task.path.joinpath(task.id))
         logger.info('Starting pipeline.')
         utils.write_log_file(
-            task.path.joinpath(task.name),
+            task.path.joinpath(task.id),
             'Starting pipeline.'
         )
 
