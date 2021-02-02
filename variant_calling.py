@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 def variant_calling_lofreq(task):
     logger.info('Starting variant calling by LoFreq.')
-    thread_cmd = ['call-parallel', '--pp-threads', '6']
+    thread_cmd = ['call-parallel', '--pp-threads', str(task.threads)]
     other_cmd = ['--call-indels', '-N', '-B', '-q', '20', '-Q', '20', '-m', '20']
 
     for aligner in task.alns:

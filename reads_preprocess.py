@@ -56,11 +56,11 @@ def run_fastp(task):
         '-h', str(report_html)
     ]
     parameter_cmd = [
-        '-f', '1',
-        '-t', '1',
-        '-F', '1',
-        '-T', '1',
-        '-w', '4'       # thread
+        '-f', str(task.global_trimming),
+        '-t', str(task.global_trimming),
+        '-F', str(task.global_trimming),
+        '-T', str(task.global_trimming),
+        '-w', str(task.threads)
     ]
     logger.info('CMD: '+' '.join(fastp_cmd + reports_cmd + parameter_cmd))
     utils.write_log_file(

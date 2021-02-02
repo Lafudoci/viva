@@ -33,7 +33,7 @@ def align_bowtie2(task):
     filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
     filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
     reads_cmd = ['-1', filterd_R1, '-2', filterd_R2]
-    thread_cmd = ['-p', '6']
+    thread_cmd = ['-p', str(task.threads)]
     output_cmd = ['-S', task.id+'.sam']
     other_cmd = ['--very-sensitive-local']
     aln_cmd = ['bowtie2', '-x', ref_index_path] + reads_cmd + output_cmd + thread_cmd + other_cmd
@@ -51,7 +51,7 @@ def align_bwa(task):
     filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
     filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
     reads_cmd = [filterd_R1, filterd_R2]
-    thread_cmd = ['-t', '6']
+    thread_cmd = ['-t', str(task.threads)]
     output_cmd = ['-o', task.id+'.sam']
     aln_cmd = ['bwa', 'mem'] + thread_cmd + [ref_index_path] + reads_cmd + output_cmd
     logger.info('CMD: '+' '.join(aln_cmd))
