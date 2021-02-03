@@ -7,11 +7,38 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def run_de_novo():
+def run_de_novo(task):
+    logger.info('Runing De Novo assembly.')
+    assembly_cwd = task.path.joinpath(task.id, 'assembly')
+    Path.mkdir(assembly_cwd, parents=True, exist_ok=True)
+    if task.dehost == True:
+        remove_host(task)
+        r1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
+        r2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
+    else:
+        r1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
+        r2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
+    
+    assemble_cmd = [
+        'spades.py',
+        '-t', task.threads,
+        '-m', task.spades_mem,
+        '--' + task.spades_mode,
+        '-1', r1,
+        '-2', r2,
+        '-o', '%s_spades_%s'%(task.id, task.mode)
+    ]
+    logger.info('CMD: '+' '.join(assemble_cmd))
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(assemble_cmd))
+    cmd_run = subprocess.run(assemble_cmd, cwd=assembly_cwd, capture_output=True)
+    print(cmd_run.stdout.decode(encoding='utf-8'))
+    print(cmd_run.stderr.decode(encoding='utf-8'))
+
+def remove_host(task):
     pass
 
 
-def find_ncbi_refseq():
+def extract_refseq(task):
     pass
 
 
@@ -55,5 +82,5 @@ def run(task):
     if task.with_ref:
         external_ref_import(task)
     else:
-        run_de_novo()
-        find_ncbi_refseq()
+        run_de_novo(task)
+        extract_refseq(task)

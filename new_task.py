@@ -20,8 +20,12 @@ parser.add_argument('--r2', help="Read-R2.", default='CoV2_R2.fastq.gz')
 parser.add_argument('--prefix', help="For output prefix.", default='newtask')
 parser.add_argument('--ref', help="Reference FASTA file path.",
                     default='NC_045512.fasta')
-parser.add_argument('--threads', help="CPU threads.", default=1)
+parser.add_argument('--threads', help="CPU threads.", default=6)
+parser.add_argument('--alns', help="Reads mapper list", default='bowtie2, bwa')
 parser.add_argument('--trimming', help="Global trimming bases for reads.", default=0)
+parser.add_argument('--remove_host', default=False)
+parser.add_argument('--spades_mem', default=22)
+parser.add_argument('--spades_mode', default='meta')
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
@@ -31,15 +35,6 @@ logging.basicConfig(level=logging.INFO)
 class Task:
     def __init__(self):
         self.name = ''
-        self.id = ''
-        self.path = ''
-        self.with_ref = False
-        self.ex_r1 = ''
-        self.ex_r2 = ''
-        self.ref_path = ''
-        self.threads = 1
-        self.alns = []
-        self.global_trimming = 0
 
 
 def check_reads_file(task):
@@ -67,8 +62,12 @@ def main():
     task.ex_r1 = args.r1
     task.ex_r2 = args.r2
     task.threads = args.threads
-    task.alns = ['bowtie2', 'bwa']
+    task.alns = args.alns.split(',')
     task.global_trimming = args.trimming
+    task.dehost = args.remove_host
+    task.spades_mem = args.spades_mem
+    task.spades_mode = args.spades_mode
+
     logger.info('Checking input file.')
     if task.ref != None:
         if check_ref_file(task):
