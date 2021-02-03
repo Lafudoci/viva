@@ -47,10 +47,10 @@ def check_reads_file(task):
 
 def check_ref_file(task):
     if Path(task.ref).is_file():
-        return 1
+        return True
     else:
         logger.info('Reference sequence file not found.')
-        return -1
+        return False
 
 
 def main():
@@ -59,6 +59,7 @@ def main():
     task.name = args.prefix
     task.id = ''
     task.ref = args.ref
+    task.with_ref = False
     task.ex_r1 = args.r1
     task.ex_r2 = args.r2
     task.threads = args.threads
