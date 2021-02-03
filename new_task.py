@@ -62,11 +62,11 @@ def main():
     task.with_ref = False
     task.ex_r1 = args.r1
     task.ex_r2 = args.r2
-    task.threads = args.threads
+    task.threads = str(args.threads)
     task.alns = args.alns.split(',')
-    task.global_trimming = args.trimming
+    task.global_trimming = str(args.trimming)
     task.dehost = args.remove_host
-    task.spades_mem = args.spades_mem
+    task.spades_mem = str(args.spades_mem)
     task.spades_mode = args.spades_mode
 
     logger.info('Checking input file.')
