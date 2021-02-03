@@ -26,7 +26,7 @@ def run_de_novo(task):
         '--' + task.spades_mode,
         '-1', r1,
         '-2', r2,
-        '-o', '%s_spades_%s'%(task.id, task.mode)
+        '-o', '%s_spades_%s'%(task.id, task.spades_mode)
     ]
     logger.info('CMD: '+' '.join(assemble_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(assemble_cmd))
