@@ -21,7 +21,7 @@ parser.add_argument('--prefix', help="For output prefix.", default='newtask')
 parser.add_argument('--ref', help="Reference FASTA file path.",
                     default='AC_000008.1.fasta')
 parser.add_argument('--threads', help="CPU threads.", default=6)
-parser.add_argument('--alns', help="Reads mapper list", default='bowtie2, bwa')
+parser.add_argument('--alns', help="Reads mapper list", default='bowtie2,bwa')
 parser.add_argument('--trimming', help="Global trimming bases for reads.", default=0)
 parser.add_argument('--remove_host', default=False)
 parser.add_argument('--spades_mem', default=22)
