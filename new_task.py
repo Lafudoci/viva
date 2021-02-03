@@ -15,11 +15,11 @@ import report_generator
 import summary_generator
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--r1', help="Read-R1.", default='CoV2_R1.fastq.gz')
-parser.add_argument('--r2', help="Read-R2.", default='CoV2_R2.fastq.gz')
+parser.add_argument('--r1', help="Read-R1.", default='AdV_R1.fastq.gz')
+parser.add_argument('--r2', help="Read-R2.", default='AdV_R2.fastq.gz')
 parser.add_argument('--prefix', help="For output prefix.", default='newtask')
 parser.add_argument('--ref', help="Reference FASTA file path.",
-                    default='NC_045512.fasta')
+                    default='AC_000008.1.fasta')
 parser.add_argument('--threads', help="CPU threads.", default=6)
 parser.add_argument('--alns', help="Reads mapper list", default='bowtie2, bwa')
 parser.add_argument('--trimming', help="Global trimming bases for reads.", default=0)
