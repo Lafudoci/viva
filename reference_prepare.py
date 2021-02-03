@@ -13,11 +13,11 @@ def run_de_novo(task):
     Path.mkdir(assembly_cwd, parents=True, exist_ok=True)
     if task.dehost == True:
         remove_host(task)
-        r1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
-        r2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
-    else:
         r1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
         r2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
+    else:
+        r1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
+        r2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
     
     assemble_cmd = [
         'spades.py',
