@@ -69,7 +69,7 @@ def extract_virus_refseq(task):
     fmt6_dict = utils.load_blast_fmt6_max1_bitscore(fmt6_path)
     best_hit_dict = utils.find_top_score_hits(fmt6_dict)
     utils.build_json_file(task.path.joinpath(task.id, 'assembly', 'best_hit.json'), best_hit_dict)
-    refseq_virus_fasta_path = Path('$BLASTDB', 'refseq_virus.fasta')
+    refseq_virus_fasta_path = Path(Path.home(), 'bioapp', 'blastdb', 'refseq_virus.fasta')
     fasta_dict = utils.extract_seq_from_fasta(refseq_virus_fasta_path, best_hit_dict['sseqid'])
     task.ref = task.path.joinpath(task.id, 'assembly', '%s.fasta'%best_hit_dict['sseqid'])
     utils.build_fasta_file(task.ref, fasta_dict)
