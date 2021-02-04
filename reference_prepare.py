@@ -102,7 +102,7 @@ def ref_import(task):
         meta_dict = {
             'file_name': file_name,
             'fasta_header': fasta_header,
-            'user_provide': True
+            'user_provide': task.with_ref
         }
         utils.build_json_file(imported_ref_meta_path, meta_dict)
     else:
