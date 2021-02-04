@@ -38,16 +38,47 @@ def remove_host(task):
     pass
 
 
-def extract_refseq(task):
-    pass
+def blast_assembled(task):
+    logger.info('Finding refseq.')
+    assembled_cwd = task.path.joinpath(task.id, 'assembly', '%s_spades_%s'%(task.id, task.spades_mode))
+    blast_cmd = [
+        'blastn',
+        '-db',
+        'refseq_virus.fasta',
+        '-query',
+        'contigs.fasta',
+        '-out',
+        '%s_spades_%s.tsv'%(task.id, task.spades_mode),
+        '-outfmt',
+        '6',
+        '-num_threads',
+        task.threads,
+        '-max_target_seqs',
+        '1'
+    ]
+    logger.info('CMD: '+' '.join(blast_cmd))
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(blast_cmd))
+    cmd_run = subprocess.run(blast_cmd, cwd=assembled_cwd, capture_output=True)
+    print(cmd_run.stdout.decode(encoding='utf-8'))
+    print(cmd_run.stderr.decode(encoding='utf-8'))
 
 
-def external_ref_import(task):
-    external_ref_path = Path(task.ref)
+def extract_virus_refseq(task):
+    fmt6_path = task.path.joinpath(task.id, 'assembly', '%s_spades_%s.tsv'%(task.id, task.spades_mode))
+    fmt6_dict = utils.load_blast_fmt6_max1_bitscore(fmt6_path)
+    best_hit_dict = utils.find_top_score_hits(fmt6_dict)
+    utils.build_json_file(task.path.joinpath(task.id, 'assembly'), best_hit_dict)
+    refseq_virus_fasta_path = Path('$BLASTDB', 'refseq_virus.fasta')
+    fasta_dict = utils.extract_seq_from_fasta(refseq_virus_fasta_path, best_hit_dict['sseqid'])
+    task.ref = task.path.joinpath(task.id, 'assembly', '%s.fasta'%best_hit_dict['sseqid'])
+    utils.build_fasta_file(task.ref, fasta_dict)
+
+
+def ref_import(task):
     logger.info('Importing reference sequence')
     imported_ref_path = task.path.joinpath(task.id, 'reference')
     Path.mkdir(imported_ref_path, parents=True, exist_ok=True)
-    ref_fasta_dict = utils.load_fasta_file(external_ref_path)
+    ref_fasta_dict = utils.load_fasta_file(task.ref)
     if len(ref_fasta_dict) == 1:
         # import ref
         imported_ref_fasta_dict = {}
@@ -65,7 +96,7 @@ def external_ref_import(task):
         # build meta file
         imported_ref_meta_path = task.path.joinpath(
             task.id, 'reference', task.id+'_ref.json')
-        file_name = str(external_ref_path)
+        file_name = str(task.ref)
         fasta_header = str(list(ref_fasta_dict)[0])
         meta_dict = {
             'file_name': file_name,
@@ -80,7 +111,9 @@ def external_ref_import(task):
 
 def run(task):
     if task.with_ref:
-        external_ref_import(task)
+        ref_import(task)
     else:
         run_de_novo(task)
-        extract_refseq(task)
+        blast_assembled(task)
+        extract_virus_refseq(task)
+        ref_import(task)

@@ -3,6 +3,7 @@ import logging
 import os
 import textwrap
 import time
+from decimal import Decimal
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -82,3 +83,81 @@ def load_log_file(log_path):
     with open(log_file_path, 'r') as f:
         log_list = f.readlines()
     return log_list
+
+
+def load_blast_fmt6_max1_bitscore(file_path):
+    fmt6_dict = {}
+    with open(file_path, 'r') as f:
+        for line in f.readlines():
+            hit = line.strip().split('\t')
+            if hit[0] in fmt6_dict:
+                if Decimal(hit[11]) <= Decimal(fmt6_dict[hit[0]]['bitscore']):
+                    continue
+            fmt6_dict[hit[0]] = {
+                'sseqid': hit[1],
+                'pident': hit[2],
+                'length': hit[3],
+                'mismatch': hit[4],
+                'gapopen': hit[5],
+                'qstart': hit[6],
+                'qend': hit[7],
+                'sstart': hit[8],
+                'send': hit[9],
+                'evalue': hit[10],
+                'bitscore': hit[11]
+            }
+    return fmt6_dict
+
+
+def build_fmt6_file(file_path, fmt6_dict):
+    with open(file_path, 'w') as f:
+        for sseqid, rest in fmt6_dict.items():
+            hit_line = '%s'%sseqid
+            for col in rest.values():
+                hit_line += '\t'+col
+            f.write(hit_line+'\n')
+
+
+def find_top_score_hits(fmt6_dict):
+    top_hit = {}
+    for hit in fmt6_dict.values():
+        if Decimal(hit['bitscore']) > Decimal(top_hit.get('bitscore', 0)):
+            top_hit = hit.copy()
+    return top_hit
+
+
+def extract_seq_from_fasta(file_path, target_acc):
+    seq_dict = {}
+    extracting = False
+    target_header = ''
+    with open(file_path, 'r') as f:
+        for line in f.readlines():
+            if target_acc in line:
+                extracting = True
+                target_header = line.strip()[1:]
+                seq_dict[target_header] = ''
+                continue
+            if extracting:
+                if line.startswith('>'):
+                    return seq_dict
+                else:
+                    seq_dict[target_header] += line.strip()
+
+
+def load_blast_fmt_sciname_max1_bitscore(file_path):
+    fmt6_dict = {}
+    with open(file_path, 'r') as f:
+        for line in f.readlines():
+            hit = line.strip().split('\t')
+            if hit[0] in fmt6_dict:
+                if Decimal(hit[4]) <= Decimal(fmt6_dict[hit[0]]['bitscore']):
+                    continue
+            fmt6_dict[hit[0]] = {
+                'sseqid': hit[1],
+                'pident': hit[2],
+                'length': hit[3],
+                'bitscore': hit[4],
+                'sci': hit[5],
+                'common': hit[6]
+            }
+    return fmt6_dict
