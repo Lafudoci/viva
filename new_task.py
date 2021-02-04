@@ -15,8 +15,8 @@ import report_generator
 import summary_generator
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--r1', help="Read-R1.", required=True)
-parser.add_argument('--r2', help="Read-R2.", required=True)
+parser.add_argument('--r1', help="Read-R1.")
+parser.add_argument('--r2', help="Read-R2.")
 parser.add_argument('--prefix', help="For output prefix.", default='newtask')
 parser.add_argument('--ref', help="Reference FASTA file path.")
 parser.add_argument('--threads', help="CPU threads.", default=6)
