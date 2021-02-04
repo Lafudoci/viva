@@ -64,7 +64,8 @@ def blast_assembled(task):
 
 
 def extract_virus_refseq(task):
-    fmt6_path = task.path.joinpath(task.id, 'assembly', '%s_spades_%s.tsv'%(task.id, task.spades_mode))
+    spades_prefix = '%s_spades_%s'%(task.id, task.spades_mode)
+    fmt6_path = task.path.joinpath(task.id, 'assembly', spades_prefix, spades_prefix+'tsv')
     fmt6_dict = utils.load_blast_fmt6_max1_bitscore(fmt6_path)
     best_hit_dict = utils.find_top_score_hits(fmt6_dict)
     utils.build_json_file(task.path.joinpath(task.id, 'assembly'), best_hit_dict)
