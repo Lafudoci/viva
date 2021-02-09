@@ -197,7 +197,7 @@ def build_draft_genome_seq(task):
         fasta_base_list.append(base)
 
     for pos, vc in dominant_vc.items():
-        if len(vc['ALT']) > 2:
+        if len(vc['ALT']) > 1:
             # skip conflict results
             draft_genome_summary['conflicts'].append(pos)
         else:
@@ -213,7 +213,6 @@ def build_draft_genome_seq(task):
             # record apllied snv
             ref_mer = vc['REF']
             alt_mer = list(vc['ALT'].keys())[0]
-            print(ref_mer, alt_mer)
             if len(ref_mer) == len(alt_mer):
                 draft_genome_summary['snv_list'].append('%s%s%s'%(ref_mer, pos, alt_mer))
     
