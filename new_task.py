@@ -68,6 +68,7 @@ def main():
     task.dehost = args.remove_host
     task.spades_mem = str(args.spades_mem)
     task.spades_mode = args.spades_mode
+    task.vc_threshold = '0.7'
 
     if args.test != None:
         task.name = 'test_run'

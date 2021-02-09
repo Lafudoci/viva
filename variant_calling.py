@@ -171,7 +171,63 @@ def build_vc_summary_json(task):
     utils.build_json_file(vc_summary_path, all_vc_dict)
 
 
+def build_draft_genome_seq(task):
+    draft_genome_summary = {'conflicts':[], 'snv_list':[], 'error':[], 'file_path':''}
+    vc_summary_path = task.path.joinpath(
+        task.id, task.id+'_vc_summary.json'
+    )
+    vc_dict = utils.load_json_file(vc_summary_path)
+    dominant_vc = {}
+    for caller, vc_table in vc_dict.items():
+        for pos, snvs in vc_table.items():
+            ref = snvs['REF']
+            for snv, alns in snvs['SNV'].items():
+                for aligner in alns:
+                    if Decimal(alns[aligner]['FREQ'][:-1])/100 > Decimal(task.vc_threshold):
+                        if dominant_vc.get(pos) == None:
+                            dominant_vc[pos] = {'REF':ref, snv: {'SCORE':0}}
+                        dominant_vc[pos][snv]['SCORE'] += 1
+    
+    fasta_base_list = []
+    ref_fasta_dict = utils.load_fasta_file(task.ref)
+    for base in ref_fasta_dict[task.id+'_ref']:
+        fasta_base_list.append(base)
+
+    for pos, vc in dominant_vc.items():
+        if len(vc) > 2:
+            draft_genome_summary['conflicts'].append(pos)
+        else:
+            i = 0
+            for base in vc['REF'][1:]:
+                if fasta_base_list[int(pos)+i] != base:
+                    draft_genome_summary['error'].append(pos)
+                    break
+                fasta_base_list[int(pos)+i] = ''
+                i += 1
+            fasta_base_list[int(pos)-1] = list(vc)[1]
+    
+    draft_fasta_dict = { '%s_draft'%task.id :''.join(fasta_base_list) }
+
+    draft_cwd = task.path.joinpath(task.id, 'draft_genome')
+    draft_fasta_path = draft_cwd.joinpath('%s_draft.fasta'%task.id)
+    draft_genome_summary['file_path'] = str(draft_fasta_path)
+    Path.mkdir(draft_cwd, parents=True, exist_ok=True)
+    utils.build_fasta_file(draft_fasta_path, draft_fasta_dict)
+    utils.build_json_file(draft_cwd.joinpath('%s_draft_summary.json'%task.id), draft_genome_summary)
+
+
 def run(task):
     variant_calling_lofreq(task)
     variant_calling_varscan2(task)
     build_vc_summary_json(task)
+    build_draft_genome_seq(task)
+
+if __name__ == '__main__':
+    import summary_generator
+    from new_task import Task
+    task = Task()
+    task.path = Path.cwd()
+    task.id = 'TFDA-SARSCOV2-210112_202102010507'
+    task.ref = task.path.joinpath(task.id, 'reference', 'TFDA-SARSCOV2-210112_202102010507_ref.fasta')
+    task.vc_threshold = '0.7'
+    build_draft_genome_seq(task)

@@ -29,11 +29,24 @@ def report_summary(task):
     s['ref_from_user'] = ref_meta['user_provide']
     s['aln'] = aln_meta_parser(task)
     s['vc'] = vc_parser(task)
+    draft_meta = draft_meta_parser(task)
+    s['draft_conflict'] = draft_meta.get('conflicts', 'None')
+    s['draft_snv_list'] = draft_meta.get('snv_list', 'None')
+    s['draft_error'] = draft_meta.get('error', 'None')
+    s['draft_file_path'] = draft_meta.get('file_path', 'None')
     s['version'] = tool_version_caller()
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),
         s
     )
+
+
+def draft_meta_parser(task):
+    meta_json_path = task.path.joinpath(
+        task.id, 'draft_genome', task.id + '_draft_summary.json'
+    )
+    meta_dict = utils.load_json_file(meta_json_path)
+    return meta_dict
 
 
 def reads_meta_parser(task):

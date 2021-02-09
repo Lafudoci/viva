@@ -93,6 +93,11 @@ def build_md_report(task):
             bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
             vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
     genome_t = '## Draft Genome'
+    genome_snv = 'Apllied SNV : %s' % s['draft_snv_list']
+    genome_pth = 'FASTA was saved to : %s' % s['draft_file_path']
+    genome_cf = 'Conflict calling : %s' % s['draft_conflict']
+    genome_mm = 'Mismatch calling : %s' % s['draft_error']
+    genome_c = '\n'.join([genome_pth, genome_snv, genome_cf, genome_mm])
     cmd_t = '## Commands'
     cmd_c = "\n%s\n"%('\n\n'.join(s['cmd_list']))
     ver_t = '## Versions'
@@ -122,6 +127,7 @@ def build_md_report(task):
         vc_v_t,
         vc_v_c,
         genome_t,
+        genome_c,
         cmd_t,
         cmd_c,
         ver_t,
