@@ -1,5 +1,5 @@
 /.vscode
-/test
+/test*
 /md
 /__pycache__
 /TFDA*

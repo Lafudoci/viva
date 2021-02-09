@@ -185,7 +185,8 @@ def build_draft_genome_seq(task):
                 for aligner in alns:
                     if Decimal(alns[aligner]['FREQ'][:-1])/100 > Decimal(task.vc_threshold):
                         if dominant_vc.get(pos) == None:
-                            dominant_vc[pos] = {'REF':ref, snv: {'SCORE':0}}
+                            dominant_vc[pos] = {'REF':ref}
+                        dominant_vc[pos][snv] = {'SCORE':0}
                         dominant_vc[pos][snv]['SCORE'] += 1
     
     fasta_base_list = []
@@ -227,7 +228,7 @@ if __name__ == '__main__':
     from new_task import Task
     task = Task()
     task.path = Path.cwd()
-    task.id = 'TFDA-SARSCOV2-210112_202102010507'
-    task.ref = task.path.joinpath(task.id, 'reference', 'TFDA-SARSCOV2-210112_202102010507_ref.fasta')
+    task.id = 'test_run_202102090159'
+    task.ref = task.path.joinpath(task.id, 'reference', 'test_run_202102090159_ref.fasta')
     task.vc_threshold = '0.7'
     build_draft_genome_seq(task)
