@@ -30,10 +30,10 @@ def report_summary(task):
     s['aln'] = aln_meta_parser(task)
     s['vc'] = vc_parser(task)
     draft_meta = draft_meta_parser(task)
-    s['draft_conflict'] = draft_meta.get('conflicts', 'None')
-    s['draft_snv_list'] = draft_meta.get('snv_list', 'None')
-    s['draft_error'] = draft_meta.get('error', 'None')
-    s['draft_file_path'] = draft_meta.get('file_path', 'None')
+    s['draft_conflict'] = draft_meta.get('conflicts')
+    s['draft_snv_list'] = draft_meta.get('snv_list')
+    s['draft_error'] = draft_meta.get('error')
+    s['draft_file_path'] = draft_meta.get('file_path')
     s['version'] = tool_version_caller()
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),

@@ -185,19 +185,23 @@ def build_draft_genome_seq(task):
                 for aligner in alns:
                     if Decimal(alns[aligner]['FREQ'][:-1])/100 > Decimal(task.vc_threshold):
                         if dominant_vc.get(pos) == None:
-                            dominant_vc[pos] = {'REF':ref}
-                        dominant_vc[pos][snv] = {'SCORE':0}
-                        dominant_vc[pos][snv]['SCORE'] += 1
+                            dominant_vc[pos] = {'REF':ref, 'ALT':{}}
+                        if dominant_vc[pos]['ALT'].get(snv) == None:
+                            dominant_vc[pos]['ALT'].update({snv: {'SCORE':0}})
+                        dominant_vc[pos]['ALT'][snv]['SCORE'] += 1
     
     fasta_base_list = []
-    ref_fasta_dict = utils.load_fasta_file(task.ref)
+    imported_ref = task.path.joinpath(task.id, 'reference', task.id + '_ref.fasta')
+    ref_fasta_dict = utils.load_fasta_file(imported_ref)
     for base in ref_fasta_dict[task.id+'_ref']:
         fasta_base_list.append(base)
 
     for pos, vc in dominant_vc.items():
-        if len(vc) > 2:
+        if len(vc['ALT']) > 2:
+            # skip conflict results
             draft_genome_summary['conflicts'].append(pos)
         else:
+            # apply snv onto reference sequence
             i = 0
             for base in vc['REF'][1:]:
                 if fasta_base_list[int(pos)+i] != base:
@@ -205,7 +209,13 @@ def build_draft_genome_seq(task):
                     break
                 fasta_base_list[int(pos)+i] = ''
                 i += 1
-            fasta_base_list[int(pos)-1] = list(vc)[1]
+            fasta_base_list[int(pos)-1] = list(vc)[0]
+            # record apllied snv
+            ref_mer = vc['REF']
+            alt_mer = list(vc['ALT'].keys())[0]
+            print(ref_mer, alt_mer)
+            if len(ref_mer) == len(alt_mer):
+                draft_genome_summary['snv_list'].append('%s%s%s'%(ref_mer, pos, alt_mer))
     
     draft_fasta_dict = { '%s_draft'%task.id :''.join(fasta_base_list) }
 
@@ -228,7 +238,6 @@ if __name__ == '__main__':
     from new_task import Task
     task = Task()
     task.path = Path.cwd()
-    task.id = 'test_run_202102090159'
-    task.ref = task.path.joinpath(task.id, 'reference', 'test_run_202102090159_ref.fasta')
+    task.id = 'test_run_202102090359'
     task.vc_threshold = '0.7'
     build_draft_genome_seq(task)
