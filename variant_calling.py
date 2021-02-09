@@ -201,18 +201,18 @@ def build_draft_genome_seq(task):
             # skip conflict results
             draft_genome_summary['conflicts'].append(pos)
         else:
+            ref_mer = vc['REF']
+            alt_mer = list(vc['ALT'].keys())[0]
             # apply snv onto reference sequence
             i = 0
-            for base in vc['REF'][1:]:
+            for base in ref_mer[1:]:
                 if fasta_base_list[int(pos)+i] != base:
                     draft_genome_summary['error'].append(pos)
                     break
                 fasta_base_list[int(pos)+i] = ''
                 i += 1
-            fasta_base_list[int(pos)-1] = list(vc)[0]
+            fasta_base_list[int(pos)-1] = alt_mer
             # record apllied snv
-            ref_mer = vc['REF']
-            alt_mer = list(vc['ALT'].keys())[0]
             if len(ref_mer) == len(alt_mer):
                 draft_genome_summary['snv_list'].append('%s%s%s'%(ref_mer, pos, alt_mer))
     
