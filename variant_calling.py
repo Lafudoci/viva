@@ -213,8 +213,7 @@ def build_draft_genome_seq(task):
                 i += 1
             fasta_base_list[int(pos)-1] = alt_mer
             # record apllied snv
-            if len(ref_mer) == len(alt_mer):
-                draft_genome_summary['snv_list'].append('%s%s%s'%(ref_mer, pos, alt_mer))
+            draft_genome_summary['snv_list'].append('%s%s%s'%(ref_mer, pos, alt_mer))
     
     draft_fasta_dict = { '%s_draft'%task.id :''.join(fasta_base_list) }
 
