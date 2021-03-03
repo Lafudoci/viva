@@ -55,7 +55,7 @@ def check_ref_file(task):
 
 def main():
     task = Task()
-    task.path = Path.cwd()
+    task.path = Path.cwd().joinpath('tasks')
     task.name = args.prefix
     task.id = ''
     task.ref = args.ref
@@ -72,10 +72,10 @@ def main():
 
     if args.test != None:
         task.name = 'test_run'
-        task.ex_r1 = task.path.joinpath('test_data','AdV_R1.fastq.gz')
-        task.ex_r2 = task.path.joinpath('test_data','AdV_R2.fastq.gz')
+        task.ex_r1 = Path.cwd().joinpath('test_data','AdV_R1.fastq.gz')
+        task.ex_r2 = Path.cwd().joinpath('test_data','AdV_R2.fastq.gz')
         if args.test == 'ref':
-            task.ref = task.path.joinpath('test_data', 'AC_000008.1.fasta')
+            task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
         elif args.test == 'denovo':
             task.ref = ''
 
@@ -87,7 +87,7 @@ def main():
         task.id = "%s_%s" % (task.name, time.strftime(
             "%Y%m%d%H%M", time.localtime()))
         logger.info('Creating new task %s.' % task.id)
-        Path.mkdir(task.path.joinpath(task.id))
+        Path.mkdir(task.path.joinpath(task.id), parents=True)
         logger.info('Starting pipeline.')
         utils.write_log_file(
             task.path.joinpath(task.id),
