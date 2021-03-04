@@ -22,7 +22,7 @@ parser.add_argument('--ref', help="Reference FASTA file path.")
 parser.add_argument('--threads', help="CPU threads.", default=6)
 parser.add_argument('--alns', help="Reads mapper list", default='bowtie2,bwa')
 parser.add_argument('--trimming', help="Global trimming bases for reads.", default=0)
-parser.add_argument('--remove_host', action='store_true', default=False)
+parser.add_argument('--remove_host', help="Remove specific host genome.", default=None, choices=['human', 'dog'])
 parser.add_argument('--test', default=None)
 parser.add_argument('--spades_mem', default=22)
 parser.add_argument('--spades_mode', default='meta')
@@ -77,6 +77,7 @@ def main():
         if args.test == 'ref':
             task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
         elif args.test == 'denovo':
+            task.dehost = 'human'
             task.ref = ''
 
     logger.info('Checking input file.')

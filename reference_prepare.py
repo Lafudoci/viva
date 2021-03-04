@@ -11,8 +11,7 @@ def run_de_novo(task):
     logger.info('Runing De Novo assembly.')
     assembly_cwd = task.path.joinpath(task.id, 'assembly')
     Path.mkdir(assembly_cwd, parents=True, exist_ok=True)
-    if task.dehost == True:
-        remove_host(task)
+    if task.dehost != None:
         r1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
         r2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
     else:
@@ -33,9 +32,6 @@ def run_de_novo(task):
     cmd_run = subprocess.run(assemble_cmd, cwd=assembly_cwd, capture_output=True)
     print(cmd_run.stdout.decode(encoding='utf-8'))
     print(cmd_run.stderr.decode(encoding='utf-8'))
-
-def remove_host(task):
-    pass
 
 
 def blast_assembled(task):

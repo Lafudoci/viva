@@ -92,7 +92,42 @@ def reads_hash_md5(task):
     return (R1_hash, R2_hash)
 
 
+def remove_host(task):
+    logger.info('Removing host genome.')
+    host_remove_cwd = task.path.joinpath(task.id, 'reads')
+    Path.mkdir(host_remove_cwd, parents=True, exist_ok=True)
+
+    if task.dehost == 'human':
+        genome_path = Path('home', 'leftc', 'genome', 'dog', 'dog10k', 'dog10k')
+    elif task.dehost == 'dog':
+        genome_path = Path('home', 'leftc', 'genome', 'grch38', 'grch38')
+    # elif task.dehost == 'vero':
+    #     genome_path = Path('home', 'leftc', 'genome', 'vero', 'vero')
+
+    align_cmd = [
+        'bowtie2',
+        '-p', str(task.threads),
+        '-x', str(genome_path),
+        '-1', str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz')),
+        '-2', str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz')),
+        '--very-sensitive-local',
+        '--un-conc-gz %s>%s' % ('host_removed', 'host_mapped.sam')
+    ]
+    logger.info('CMD: '+' '.join(align_cmd))
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(align_cmd))
+    cmd_run = subprocess.run(align_cmd, cwd=host_remove_cwd, capture_output=True)
+    print(cmd_run.stdout.decode(encoding='utf-8'))
+    print(cmd_run.stderr.decode(encoding='utf-8'))
+
+    rename1_cmd = ['mv', 'host_removed.1', '%s'%(task.id + 'reads' + task.id + '_host_removed_R1.fastq.gz')]
+    cmd_run = subprocess.run(rename1_cmd, cwd=host_remove_cwd, capture_output=True)
+    rename2_cmd = ['mv', 'host_removed.1', '%s'%(task.id + 'reads' + task.id + '_host_removed_R2.fastq.gz')]
+    cmd_run = subprocess.run(rename2_cmd, cwd=host_remove_cwd, capture_output=True)
+
+
 def run(task):
     logger.info('Importing reads.')
     import_reads(task)
     run_fastp(task)
+    if task.dehost != None:
+        remove_host(task)
