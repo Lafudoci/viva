@@ -111,7 +111,7 @@ def remove_host(task):
         '-1', str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz')),
         '-2', str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz')),
         '--very-sensitive-local',
-        '--un-conc-gz %s>%s' % ('host_removed', 'host_mapped.sam')
+        '--un-conc-gz %s > %s' % ('host_removed', 'host_mapped.sam')
     ]
     logger.info('CMD: '+' '.join(align_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(align_cmd))
