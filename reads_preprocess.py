@@ -97,12 +97,12 @@ def remove_host(task):
     host_remove_cwd = task.path.joinpath(task.id, 'reads')
     Path.mkdir(host_remove_cwd, parents=True, exist_ok=True)
 
-    if task.dehost == 'human':
-        genome_path = Path('home', 'leftc', 'genome', 'dog', 'dog10k', 'dog10k')
-    elif task.dehost == 'dog':
-        genome_path = Path('home', 'leftc', 'genome', 'grch38', 'grch38')
+    if task.dehost == 'dog':
+        genome_path = Path(Path.home(), 'genome', 'dog', 'dog10k', 'dog10k')
+    elif task.dehost == 'human':
+        genome_path = Path(Path.home(), 'genome', 'grch38', 'grch38')
     # elif task.dehost == 'vero':
-    #     genome_path = Path('home', 'leftc', 'genome', 'vero', 'vero')
+    #     genome_path = Path(Path.home(), 'genome', 'vero', 'vero')
 
     align_cmd = [
         'bowtie2',
