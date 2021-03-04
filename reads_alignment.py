@@ -30,8 +30,12 @@ def align_bowtie2(task):
     logger.info('Running Bowtie2 alignment.')
     aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bowtie2')
     ref_index_path = str(aligner_cwd.joinpath(task.id+'_ref'))
-    filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
-    filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
+    if task.dehost != None:
+        filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
+        filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
+    else:
+        filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
+        filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
     reads_cmd = ['-1', filterd_R1, '-2', filterd_R2]
     thread_cmd = ['-p', str(task.threads)]
     output_cmd = ['-S', task.id+'.sam']
@@ -48,8 +52,12 @@ def align_bwa(task):
     logger.info('Running BWA alignment.')
     aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bwa')
     ref_index_path = str(aligner_cwd.joinpath(task.id+'_ref'))
-    filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
-    filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
+    if task.dehost != None:
+        filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
+        filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
+    else:
+        filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
+        filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
     reads_cmd = [filterd_R1, filterd_R2]
     thread_cmd = ['-t', str(task.threads)]
     output_cmd = ['-o', task.id+'.sam']
