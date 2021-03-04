@@ -117,8 +117,8 @@ def remove_host(task):
     logger.info('CMD: '+' '.join(align_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(align_cmd))
     cmd_run = subprocess.run(align_cmd, cwd=host_remove_cwd, capture_output=True)
-    print(cmd_run.stdout.decode(encoding='utf-8'))
-    # print(cmd_run.stderr.decode(encoding='utf-8'))
+    # print(cmd_run.stdout.decode(encoding='utf-8'))
+    print(cmd_run.stderr.decode(encoding='utf-8'))
 
 
 def run(task):
