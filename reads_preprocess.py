@@ -103,8 +103,8 @@ def remove_host(task):
         genome_path = Path(Path.home(), 'genome', 'grch38', 'grch38')
     # elif task.dehost == 'vero':
     #     genome_path = Path(Path.home(), 'genome', 'vero', 'vero')
-    unconc_reads_out = task.id + 'reads' + task.id + '_host_removed_R%%.fastq.gz'
-    mapped_reads_out = 'host_mapped.sam'
+    unconc_reads_out = task.id + '_host_removed_R%.fastq.gz'
+    # mapped_reads_out = 'host_mapped.sam'
     align_cmd = [
         'bowtie2',
         '-p', str(task.threads),
@@ -112,13 +112,13 @@ def remove_host(task):
         '-1', str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz')),
         '-2', str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz')),
         '--very-sensitive-local',
-        '--un-conc-gz %s' % (unconc_reads_out)
+        '--un-conc-gz', '%s' % str(unconc_reads_out)
     ]
     logger.info('CMD: '+' '.join(align_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(align_cmd))
     cmd_run = subprocess.run(align_cmd, cwd=host_remove_cwd, capture_output=True)
     print(cmd_run.stdout.decode(encoding='utf-8'))
-    print(cmd_run.stderr.decode(encoding='utf-8'))
+    # print(cmd_run.stderr.decode(encoding='utf-8'))
 
 
 def run(task):
