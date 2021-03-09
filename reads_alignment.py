@@ -39,7 +39,10 @@ def align_bowtie2(task):
     reads_cmd = ['-1', filterd_R1, '-2', filterd_R2]
     thread_cmd = ['-p', str(task.threads)]
     output_cmd = ['-S', task.id+'.sam']
-    other_cmd = ['--very-sensitive-local']
+    other_cmd = ['--very-sensitive-local',
+        '--un-conc-gz',
+        '%s' % (task.id + '_unmapped_R%.fastq.gz')
+    ]
     aln_cmd = ['bowtie2', '-x', ref_index_path] + reads_cmd + output_cmd + thread_cmd + other_cmd
     logger.info('CMD: '+' '.join(aln_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(aln_cmd))
