@@ -55,6 +55,10 @@ def build_md_report(task):
     ])
     fastp_d_t = '### Duplication'
     fastp_d_c = 'Duplication rate : %.02f%%' % float(s['fastp_abs']['duplication_rate']*100)
+    
+    dehost_t = '## Host Genome Removal'
+    dehost_i_g = 'Remove genome: %s'%(s['remove_genome']['genome'])
+    dehost_i_p = 'Percentage of removed reads: %s'%(s['remove_genome']['remove_percentage'])
 
     aln_t = '## Alignment'
     aln_c = '\n'.join([
@@ -119,6 +123,9 @@ def build_md_report(task):
         fastp_f_c,
         fastp_d_t,
         fastp_d_c,
+        dehost_t,
+        dehost_i_g,
+        dehost_i_p,
         aln_t,
         aln_c,
         vc_t,

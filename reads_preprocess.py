@@ -120,6 +120,19 @@ def remove_host(task):
     # print(cmd_run.stdout.decode(encoding='utf-8'))
     print(cmd_run.stderr.decode(encoding='utf-8'))
 
+    # build meta
+    dehost_meta = {'genome': '', 'remove_percentage': ''}
+    logger.info('Analysis BAM file from host mapped reads')
+    flagstat_cmd = ['samtools', 'flagstat', '-@', task.threads, task.id+'.sorted.bam']
+    logger.info('CMD: '+' '.join(flagstat_cmd))
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
+    flagstat_run = subprocess.run(flagstat_cmd, cwd=host_remove_cwd, capture_output=True)
+    stats_text = flagstat_run.stdout.decode(encoding='utf-8')
+    stats_list = stats_text.split('\n')
+    utils.build_text_file(task.path.joinpath(host_remove_cwd, 'flagstat.txt'), stats_text)
+    mapped_rate = stats_list[4].split(' ')[4][1:]
+    dehost_meta['remove_percentage'] = mapped_rate
+    utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
 
 def run(task):
     logger.info('Importing reads.')

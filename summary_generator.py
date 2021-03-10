@@ -23,6 +23,8 @@ def report_summary(task):
     s['cmd_list'] = log_abs['cmd_list']
     s['reads_meta'] = reads_meta_parser(task)
     s['fastp_abs'] = fastp_parser(task)
+    dehost_meta = dehost_meta_parser(task)
+    s['remove_genome'] = {'genome': dehost_meta['genome'], 'remove_percentage': dehost_meta['remove_percentage']}
     ref_meta = ref_meta_parser(task)
     s['ref_file_name'] = ref_meta['file_name']
     s['ref_fasta_header'] = ref_meta['fasta_header']
@@ -40,6 +42,12 @@ def report_summary(task):
         s
     )
 
+def dehost_meta_parser(task):
+    meta_json_path = task.path.joinpath(
+        task.id, 'reads', task.id + 'dehost_meta.json'
+    )
+    meta_dict = utils.load_json_file(meta_json_path)
+    return meta_dict
 
 def draft_meta_parser(task):
     meta_json_path = task.path.joinpath(
