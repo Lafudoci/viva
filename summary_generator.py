@@ -44,7 +44,7 @@ def report_summary(task):
 
 def dehost_meta_parser(task):
     meta_json_path = task.path.joinpath(
-        task.id, 'reads', task.id + 'dehost_meta.json'
+        task.id, 'reads', 'dehost_meta.json'
     )
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
