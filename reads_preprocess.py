@@ -104,13 +104,14 @@ def remove_host(task):
     # elif task.dehost == 'vero':
     #     genome_path = Path(Path.home(), 'genome', 'vero', 'vero')
     unconc_reads_out = task.id + '_host_removed_R%.fastq.gz'
-    # mapped_reads_out = 'host_mapped.sam'
+    mapped_reads_out = 'host_mapped.sam'
     align_cmd = [
         'bowtie2',
         '-p', str(task.threads),
         '-x', str(genome_path),
         '-1', str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz')),
         '-2', str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz')),
+        '-S', str(mapped_reads_out),
         '--very-sensitive-local',
         '--un-conc-gz', '%s' % str(unconc_reads_out)
     ]
@@ -123,7 +124,15 @@ def remove_host(task):
     # build meta
     dehost_meta = {'genome': '', 'remove_percentage': ''}
     logger.info('Analysis BAM file from host mapped reads')
-    flagstat_cmd = ['samtools', 'flagstat', '-@', task.threads, task.id+'.sorted.bam']
+    # sorting
+    sorting_cmd = ['samtools', 'sort', '-@', 'host_mapped.sam', '-o', 'host_mapped.sorted.bam']
+    logger.info('CMD: '+' '.join(sorting_cmd))
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(sorting_cmd))
+    sorting_run = subprocess.run(sorting_cmd, cwd=host_remove_cwd, capture_output=True)
+    print(sorting_run.stdout.decode(encoding='utf-8'))
+    print(sorting_run.stderr.decode(encoding='utf-8'))
+    # flagstat
+    flagstat_cmd = ['samtools', 'flagstat', '-@', task.threads, 'host_mapped.sorted.bam']
     logger.info('CMD: '+' '.join(flagstat_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
     flagstat_run = subprocess.run(flagstat_cmd, cwd=host_remove_cwd, capture_output=True)
