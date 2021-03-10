@@ -125,7 +125,7 @@ def remove_host(task):
     dehost_meta = {'genome': '', 'remove_percentage': ''}
     logger.info('Analysis BAM file from host mapped reads')
     # sorting
-    sorting_cmd = ['samtools', 'sort', '-@', 'host_mapped.sam', '-o', 'host_mapped.sorted.bam']
+    sorting_cmd = ['samtools', 'sort', '-@', task.threads, 'host_mapped.sam', '-o', 'host_mapped.sorted.bam']
     logger.info('CMD: '+' '.join(sorting_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(sorting_cmd))
     sorting_run = subprocess.run(sorting_cmd, cwd=host_remove_cwd, capture_output=True)
