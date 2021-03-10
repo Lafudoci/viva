@@ -94,12 +94,15 @@ def reads_hash_md5(task):
 
 def remove_host(task):
     logger.info('Removing host genome.')
+    dehost_meta = {'genome': '', 'remove_percentage': ''}
     host_remove_cwd = task.path.joinpath(task.id, 'reads')
     Path.mkdir(host_remove_cwd, parents=True, exist_ok=True)
 
     if task.dehost == 'dog':
+        dehost_meta['genome'] = 'Dog (Dog10K)'
         genome_path = Path(Path.home(), 'genome', 'dog', 'dog10k', 'dog10k')
     elif task.dehost == 'human':
+        dehost_meta['genome'] = 'Human (GRCH38)'
         genome_path = Path(Path.home(), 'genome', 'grch38', 'grch38')
     # elif task.dehost == 'vero':
     #     genome_path = Path(Path.home(), 'genome', 'vero', 'vero')
@@ -122,7 +125,6 @@ def remove_host(task):
     print(cmd_run.stderr.decode(encoding='utf-8'))
 
     # build meta
-    dehost_meta = {'genome': '', 'remove_percentage': ''}
     logger.info('Analysis BAM file from host mapped reads')
     # sorting
     sorting_cmd = ['samtools', 'sort', '-@', task.threads, 'host_mapped.sam', '-o', 'host_mapped.sorted.bam']
