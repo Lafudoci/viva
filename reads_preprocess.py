@@ -99,13 +99,15 @@ def remove_host(task):
     Path.mkdir(host_remove_cwd, parents=True, exist_ok=True)
 
     if task.dehost == 'dog':
-        dehost_meta['genome'] = 'Dog (Dog10K)'
+        dehost_meta['genome'] = 'Dog (Dog10K_Boxer_Tasha, GCF_000002285.5)'
         genome_path = Path(Path.home(), 'genome', 'dog', 'dog10k', 'dog10k')
     elif task.dehost == 'human':
-        dehost_meta['genome'] = 'Human (GRCH38)'
+        dehost_meta['genome'] = 'Human (GRCh38.p13, GCF_000001405.39)'
         genome_path = Path(Path.home(), 'genome', 'grch38', 'grch38')
-    # elif task.dehost == 'vero':
-    #     genome_path = Path(Path.home(), 'genome', 'vero', 'vero')
+    elif task.dehost == 'vero':
+        dehost_meta['genome'] = 'Vero (Vero_WHO_p1.0, GCF_015252025.1)'
+        genome_path = Path(Path.home(), 'genome', 'vero', 'vero')
+
     unconc_reads_out = task.id + '_host_removed_R%.fastq.gz'
     mapped_reads_out = 'host_mapped.sam'
     align_cmd = [
