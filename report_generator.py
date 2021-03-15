@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 def build_md_report(task):
     summary_path = task.path.joinpath(task.id, task.id + '_summary.json')
     s = utils.load_json_file(summary_path)
-    headline = '# Virus Variant Calling Report'
+    headline = '# Virus Integrity and Variant Analyzer Report'
 
     meta_t = '## Meta'
     meta_c = '\n\n'.join([
