@@ -25,7 +25,7 @@ parser.add_argument('--trimming', help="Global trimming bases for reads.", defau
 parser.add_argument('--remove_host', help="Remove specific host genome.", default=None, choices=['human', 'dog'])
 parser.add_argument('--test', default=None)
 parser.add_argument('--spades_mem', default=22)
-parser.add_argument('--spades_mode', default='meta')
+parser.add_argument('--spades_mode', default='metaviral')
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
