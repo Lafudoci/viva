@@ -107,6 +107,9 @@ def remove_host(task):
     elif task.dehost == 'vero':
         dehost_meta['genome'] = 'Vero (Vero_WHO_p1.0, GCF_015252025.1)'
         genome_path = Path(Path.home(), 'genome', 'vero', 'vero')
+    elif task.dehost == 'chicken':
+        dehost_meta['genome'] = 'Chicken (GRCg6a, GCF_000002315.6)'
+        genome_path = Path(Path.home(), 'genome', 'grcg6a', 'grcg6a')
 
     unconc_reads_out = task.id + '_host_removed_R%.fastq.gz'
     mapped_reads_out = 'host_mapped.sam'
