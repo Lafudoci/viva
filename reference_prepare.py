@@ -1,7 +1,9 @@
 import logging
 import subprocess
-import utils
+import sys
 from pathlib import Path
+
+import utils
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -63,13 +65,16 @@ def extract_virus_refseq(task):
     spades_prefix = '%s_spades_%s'%(task.id, task.spades_mode)
     fmt6_path = task.path.joinpath(task.id, 'assembly', spades_prefix, spades_prefix+'.tsv')
     fmt6_dict = utils.load_blast_fmt6_max1_bitscore(fmt6_path)
-    best_hit_dict = utils.find_top_score_hits(fmt6_dict)
-    utils.build_json_file(task.path.joinpath(task.id, 'assembly', 'best_hit.json'), best_hit_dict)
-    refseq_virus_fasta_path = Path(Path.home(), 'bioapp', 'blastdb', 'refseq_virus.fasta')
-    fasta_dict = utils.extract_seq_from_fasta(refseq_virus_fasta_path, best_hit_dict['sseqid'])
-    task.ref = task.path.joinpath(task.id, 'assembly', '%s.fasta'%best_hit_dict['sseqid'])
-    utils.build_fasta_file(task.ref, fasta_dict)
-
+    if len(fmt6_dict) > 0:
+        best_hit_dict = utils.find_top_score_hits(fmt6_dict)
+        utils.build_json_file(task.path.joinpath(task.id, 'assembly', 'best_hit.json'), best_hit_dict)
+        refseq_virus_fasta_path = Path(Path.home(), 'bioapp', 'blastdb', 'refseq_virus.fasta')
+        fasta_dict = utils.extract_seq_from_fasta(refseq_virus_fasta_path, best_hit_dict['sseqid'])
+        task.ref = task.path.joinpath(task.id, 'assembly', '%s.fasta'%best_hit_dict['sseqid'])
+        utils.build_fasta_file(task.ref, fasta_dict)
+    else:
+        logger.critical('De novo result did not provide viable virus reference.')
+        sys.exit(-1)
 
 def ref_import(task):
     logger.info('Importing reference sequence')
