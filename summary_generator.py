@@ -156,7 +156,7 @@ def tool_version_caller():
     version_dict['varscan2'] = subprocess.run(
         varscan2_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[1].split('\n')[0][1:]
     version_dict['spades'] = subprocess.run(
-        spades_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[3]
+        spades_cmd, capture_output=True).stdout.decode(encoding='utf-8').split(' ')[3].strip()
     version_dict['last_commit'] = subprocess.run(
         last_commit_cmd, capture_output=True).stdout.decode(encoding='utf-8').strip()
     return version_dict
