@@ -69,33 +69,39 @@ def build_md_report(task):
     ])
     vc_t = '## Variant Calling'
     vc_l_t = '### LoFreq'
-    vc_l_c = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
-    for pos in s['vc']['lofreq']:
-        ref = s['vc']['lofreq'][pos]['REF']
-        for alt, aln_result in s['vc']['lofreq'][pos]['SNV'].items():
-            bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
-            bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
-            bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
-            bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
-            bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
-            bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
-            bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
-            bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
-            vc_l_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+    if len(s['vc']['lofreq']) > 0:
+        vc_l_c = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
+        for pos in s['vc']['lofreq']:
+            ref = s['vc']['lofreq'][pos]['REF']
+            for alt, aln_result in s['vc']['lofreq'][pos]['SNV'].items():
+                bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
+                bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
+                bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
+                bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
+                bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
+                bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
+                bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
+                bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
+                vc_l_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+    else:
+        vc_l_c = 'Lofreq did not report any SNV or indel.\n'
     vc_v_t = '### Varscan2'
-    vc_v_c = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
-    for pos in s['vc']['varscan']:
-        ref = s['vc']['varscan'][pos]['REF']
-        for alt, aln_result in s['vc']['varscan'][pos]['SNV'].items():
-            bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
-            bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
-            bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
-            bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
-            bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
-            bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
-            bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
-            bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
-            vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+    if len(s['vc']['varscan']) > 0:
+        vc_v_c = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
+        for pos in s['vc']['varscan']:
+            ref = s['vc']['varscan'][pos]['REF']
+            for alt, aln_result in s['vc']['varscan'][pos]['SNV'].items():
+                bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
+                bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
+                bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
+                bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
+                bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
+                bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
+                bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
+                bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
+                vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+    else:
+        vc_l_c = 'Varscan did not report any SNV or indel.\n'
     genome_t = '## Draft Genome'
     genome_pth = 'FASTA was saved to : %s' % s['draft_file_path']
     genome_snv = ('Apllied SNV : %s' % s['draft_snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
