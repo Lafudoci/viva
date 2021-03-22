@@ -23,8 +23,11 @@ def report_summary(task):
     s['cmd_list'] = log_abs['cmd_list']
     s['reads_meta'] = reads_meta_parser(task)
     s['fastp_abs'] = fastp_parser(task)
-    dehost_meta = dehost_meta_parser(task)
-    s['remove_genome'] = {'genome': dehost_meta['genome'], 'remove_percentage': dehost_meta['remove_percentage']}
+    if task.remove_host != None:
+        dehost_meta = dehost_meta_parser(task)
+        s['remove_genome'] = {'genome': dehost_meta['genome'], 'remove_percentage': dehost_meta['remove_percentage']}
+    else:
+        s['remove_genome'] = {'genome': 'N/A', 'remove_percentage': 'N/A'}
     ref_meta = ref_meta_parser(task)
     s['ref_file_name'] = ref_meta['file_name']
     s['ref_fasta_header'] = ref_meta['fasta_header']
