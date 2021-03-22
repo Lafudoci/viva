@@ -141,6 +141,7 @@ def tool_version_caller():
     bwa_cmd = ['bwa']
     lofreq_cmd = ['lofreq', 'version']
     varscan2_cmd = ['java', '-jar', '/home/leftc/bioapp/varscan2/VarScan.v2.4.4.jar']
+    spades_cmd = ['spades.py', '--version']
     last_commit_cmd = ['git', 'describe', '--always']
     version_dict['fastp'] = subprocess.run(
         fastp_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[1].strip()
@@ -154,6 +155,8 @@ def tool_version_caller():
         lofreq_cmd, capture_output=True).stdout.decode(encoding='utf-8').split(' ')[1].split('\n')[0]
     version_dict['varscan2'] = subprocess.run(
         varscan2_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[1].split('\n')[0][1:]
+    version_dict['spades'] = subprocess.run(
+        spades_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[3]
     version_dict['last_commit'] = subprocess.run(
         last_commit_cmd, capture_output=True).stdout.decode(encoding='utf-8').strip()
     return version_dict
