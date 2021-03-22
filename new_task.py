@@ -57,7 +57,7 @@ def check_tools():
     try:
         version_dict = summary_generator.tool_version_caller()
         for tool, vs in version_dict.items():
-            logger.info(str(tool), str(vs))
+            logger.info('%s:%s'%(str(tool),str(vs)))
     except Exception as e:
         logger.critical('Tools check failed. %s'%e)
         sys.exit(-1)
