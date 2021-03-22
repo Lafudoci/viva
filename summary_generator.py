@@ -23,7 +23,7 @@ def report_summary(task):
     s['cmd_list'] = log_abs['cmd_list']
     s['reads_meta'] = reads_meta_parser(task)
     s['fastp_abs'] = fastp_parser(task)
-    if task.remove_host != None:
+    if task.dehost != None:
         dehost_meta = dehost_meta_parser(task)
         s['remove_genome'] = {'genome': dehost_meta['genome'], 'remove_percentage': dehost_meta['remove_percentage']}
     else:
