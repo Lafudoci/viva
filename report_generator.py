@@ -101,7 +101,7 @@ def build_md_report(task):
                 bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
                 vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
     else:
-        vc_l_c = 'Varscan did not report any SNV or indel.\n'
+        vc_v_c = 'Varscan did not report any SNV or indel.\n'
     genome_t = '## Draft Genome'
     genome_pth = 'FASTA was saved to : %s' % s['draft_file_path']
     genome_snv = ('Apllied SNV : %s' % s['draft_snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
