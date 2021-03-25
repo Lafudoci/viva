@@ -32,6 +32,14 @@ def report_summary(task):
     s['ref_file_name'] = ref_meta['file_name']
     s['ref_fasta_header'] = ref_meta['fasta_header']
     s['ref_from_user'] = ref_meta['user_provide']
+    s['ref_spades_mode'] = ref_meta['spades_mode']
+    if task.with_ref == False:
+        best_hit = best_hit_meta_parser(task)
+        s['ref_source_contig_name'] = best_hit['qseqid']
+        s['ref_source_contig_pident'] = best_hit['pident']
+    else:
+        s['ref_source_contig_name'] = 'N/A'
+        s['ref_source_contig_pident'] = 'N/A'
     s['aln'] = aln_meta_parser(task)
     s['vc'] = vc_parser(task)
     draft_meta = draft_meta_parser(task)
@@ -67,6 +75,12 @@ def reads_meta_parser(task):
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
 
+def best_hit_meta_parser(task):
+    meta_json_path = task.path.joinpath(
+        task.id, 'assembly', 'best_hit.json'
+    )
+    meta_dict = utils.load_json_file(meta_json_path)
+    return meta_dict
 
 def ref_meta_parser(task):
     meta_json_path = task.path.joinpath(

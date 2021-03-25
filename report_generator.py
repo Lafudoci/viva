@@ -38,6 +38,9 @@ def build_md_report(task):
     ref_t = '## Input Reference'
     ref_c = '\n\n'.join([
         'Reference by user : %s'%(s['ref_from_user']),
+        'Spades mode: %s'%(s['ref_spades_mode']),
+        'Contig name: %s'%(s['ref_source_contig_name']),
+        'Contig identity: %s'%(s['ref_source_contig_pident']),
         'FASTA Header : %s'%(s['ref_fasta_header']),
         'FASTA file name : %s'%(s['ref_file_name']),
     ])
@@ -58,7 +61,7 @@ def build_md_report(task):
     
     dehost_t = '## Host Genome Removal'
     dehost_i_g = 'Remove genome: %s'%(s['remove_genome']['genome'])
-    dehost_i_p = 'Percentage of removed reads: %s'%(s['remove_genome']['remove_percentage'])
+    dehost_i_p = '\nPercentage of removed reads: %s'%(s['remove_genome']['remove_percentage'])
 
     aln_t = '## Alignment'
     aln_c = '\n'.join([

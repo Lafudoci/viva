@@ -94,6 +94,7 @@ def load_blast_fmt6_max1_bitscore(file_path):
                 if Decimal(hit[11]) <= Decimal(fmt6_dict[hit[0]]['bitscore']):
                     continue
             fmt6_dict[hit[0]] = {
+                'qseqid': hit[0],
                 'sseqid': hit[1],
                 'pident': hit[2],
                 'length': hit[3],
