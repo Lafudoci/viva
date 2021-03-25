@@ -178,7 +178,7 @@ def build_draft_genome_seq(task):
     )
     vc_dict = utils.load_json_file(vc_summary_path)
     dominant_vc = {}
-    for caller, vc_table in vc_dict.items():
+    for vc_table in vc_dict.values():
         for pos, snvs in vc_table.items():
             ref = snvs['REF']
             for snv, alns in snvs['SNV'].items():
