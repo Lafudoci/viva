@@ -43,7 +43,7 @@ def build_md_report(task):
         'Contig identity: %s %%'%(s['ref_source_contig_pident']),
         'FASTA Header : %s'%(s['ref_fasta_header']),
         'FASTA file name : %s'%(s['ref_file_name']),
-        'Sequence length: %s'%(s['ref_seq_len'])
+        'Sequence length: %s bp'%(s['ref_seq_len'])
     ])
     
     fastp_t = '## Reads Filter Statistics'
