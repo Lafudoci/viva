@@ -1,8 +1,10 @@
 import logging
-import subprocess
-import utils
+import os
 import shutil
+import subprocess
 from pathlib import Path
+
+import utils
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -89,6 +91,8 @@ def bam_sort_n_index(task, aligner):
     index_run = subprocess.run(indexing_cmd, cwd=aligner_cwd, capture_output=True)
     print(index_run.stdout.decode(encoding='utf-8'))
     print(index_run.stderr.decode(encoding='utf-8'))
+    # remove sam file to release disk space
+    os.remove(aligner_cwd.joinpath(task.id+'.sam'))
 
 
 def align_flagstat(task, aligners):

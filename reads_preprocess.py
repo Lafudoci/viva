@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -152,6 +153,9 @@ def remove_host(task):
     mapped_rate = stats_list[4].split(' ')[4][1:]
     dehost_meta['remove_percentage'] = mapped_rate
     utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
+    # remove sam file to release disk space
+    os.remove(task.path.joinpath(host_remove_cwd, mapped_reads_out))
+
 
 def run(task):
     logger.info('Importing reads.')
