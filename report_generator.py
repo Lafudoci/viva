@@ -76,8 +76,8 @@ def build_md_report(task):
     aln_c_c = '\n'.join([
         '| Aligner | Start base | End base | Covered base | Mean depth |',
         '| ------- | ---------- | -------- | ------------ | ---------- |',
-        '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
-        '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
+        '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2']['startpos'], s['cov']['bowtie2']['endpos'], s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
+        '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa']['startpos'], s['cov']['bwa']['endpos'], s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
     vc_t = '## Variant Calling'
     vc_l_t = '### LoFreq'
     if len(s['vc']['lofreq']) > 0:
