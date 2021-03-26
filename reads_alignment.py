@@ -112,6 +112,23 @@ def align_flagstat(task, aligners):
     utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'flagstat.json'), stats_dict)
 
 
+def align_coverage_stat(task, aligners):
+    for aligner in aligners:
+        cov_dict = {aligner: {}}
+        logger.info('Analysis coverage stats from %s BAM files.' % aligner)
+        aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
+        flagstat_cmd = ['samtools', 'coverage', task.id+'.sorted.bam']
+        logger.info('CMD: '+' '.join(flagstat_cmd))
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
+        flagstat_run = subprocess.run(flagstat_cmd, cwd=aligner_cwd, capture_output=True)
+        stats_text = flagstat_run.stdout.decode(encoding='utf-8')
+        titles = stats_text.split('\n')[0].split('\t')
+        stats = stats_text.split('\n')[1].split('\t')
+        for i in range(len(titles)):
+            cov_dict[aligner][titles[i]] = stats[i]
+        utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'coverage_stat.json'), cov_dict)
+
+
 def align_disp(task, aligner):
     if aligner == 'bowtie2':
         align_bowtie2(task)

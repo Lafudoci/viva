@@ -64,12 +64,19 @@ def build_md_report(task):
     dehost_i_p = '\nPercentage of removed reads: %s'%(s['remove_genome']['remove_percentage'])
 
     aln_t = '## Alignment'
-    aln_c = '\n'.join([
+    aln_m_t = '### Mapping rate'
+    aln_m_c = '\n'.join([
         '| Aligner | Overall mapped rate |',
         '| ------- | ------------------- |',
         '| Bowtie2 | %s |'%(s['aln']['mapped_rate']['bowtie2']),
         '| BWA MEM | %s |'%(s['aln']['mapped_rate']['bwa'])
     ])
+    aln_c_t = '### Coverage'
+    aln_c_c = '\n'.join([
+        '| Aligner | Covered base | Mean depth |',
+        '| ------- | ------------ | ---------- |',
+        '| Bowtie2 | %s %% | %s x |'%(s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
+        '| BWA MEM | %s %% | %s x |'%(s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
     vc_t = '## Variant Calling'
     vc_l_t = '### LoFreq'
     if len(s['vc']['lofreq']) > 0:
@@ -136,7 +143,10 @@ def build_md_report(task):
         dehost_i_g,
         dehost_i_p,
         aln_t,
-        aln_c,
+        aln_m_t,
+        aln_m_c,
+        aln_c_t,
+        aln_c_c,
         vc_t,
         vc_l_t,
         vc_l_c,

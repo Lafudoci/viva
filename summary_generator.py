@@ -41,6 +41,7 @@ def report_summary(task):
         s['ref_source_contig_name'] = 'N/A'
         s['ref_source_contig_pident'] = 'N/A'
     s['aln'] = aln_meta_parser(task)
+    s['cov'] = cov_stats_parser(task)
     s['vc'] = vc_parser(task)
     draft_meta = draft_meta_parser(task)
     s['draft_conflict'] = draft_meta.get('conflicts')
@@ -52,6 +53,7 @@ def report_summary(task):
         task.path.joinpath(task.id, task.id + '_summary.json'),
         s
     )
+
 
 def dehost_meta_parser(task):
     meta_json_path = task.path.joinpath(
@@ -75,12 +77,14 @@ def reads_meta_parser(task):
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
 
+
 def best_hit_meta_parser(task):
     meta_json_path = task.path.joinpath(
         task.id, 'assembly', 'best_hit.json'
     )
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
+
 
 def ref_meta_parser(task):
     meta_json_path = task.path.joinpath(
@@ -93,6 +97,14 @@ def ref_meta_parser(task):
 def aln_meta_parser(task):
     meta_json_path = task.path.joinpath(
         task.id, 'alignment', 'flagstat.json'
+    )
+    meta_dict = utils.load_json_file(meta_json_path)
+    return meta_dict
+
+
+def cov_stats_parser(task):
+    meta_json_path = task.path.joinpath(
+        task.id, 'alignment', 'coverage_stat.json'
     )
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
