@@ -126,7 +126,7 @@ def align_coverage_stat(task, aligners):
         stats = stats_text.split('\n')[1].split('\t')
         for i in range(len(titles)):
             cov_dict[aligner][titles[i]] = stats[i]
-        utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'coverage_stat.json'), cov_dict)
+    utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'coverage_stat.json'), cov_dict)
 
 
 def align_disp(task, aligner):
@@ -142,3 +142,4 @@ def run(task):
         align_disp(task, aligner)
         bam_sort_n_index(task, aligner)
     align_flagstat(task, aligners)
+    align_coverage_stat(task, aligners)
