@@ -155,7 +155,8 @@ def remove_host(task):
     utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
     # remove sam file to release disk space
     os.remove(task.path.joinpath(host_remove_cwd, mapped_reads_out))
-
+    # remove host bam file to release disk space
+    os.remove(task.path.joinpath(host_remove_cwd, 'host_mapped.sorted.bam'))
 
 def run(task):
     logger.info('Importing reads.')
