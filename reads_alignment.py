@@ -113,8 +113,9 @@ def align_flagstat(task, aligners):
 
 
 def align_coverage_stat(task, aligners):
+    cov_dict = {}
     for aligner in aligners:
-        cov_dict = {aligner: {}}
+        cov_dict[aligner] = {}
         logger.info('Analysis coverage stats from %s BAM files.' % aligner)
         aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
         flagstat_cmd = ['samtools', 'coverage', task.id+'.sorted.bam']
