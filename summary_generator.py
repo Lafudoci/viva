@@ -33,6 +33,7 @@ def report_summary(task):
     s['ref_fasta_header'] = ref_meta['fasta_header']
     s['ref_from_user'] = ref_meta['user_provide']
     s['ref_spades_mode'] = ref_meta['spades_mode']
+    s['ref_seq_len'] = ref_meta['seq_length']
     if task.with_ref == False:
         best_hit = best_hit_meta_parser(task)
         s['ref_source_contig_name'] = best_hit['qseqid']

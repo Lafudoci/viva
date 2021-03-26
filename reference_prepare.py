@@ -104,7 +104,8 @@ def ref_import(task):
             'file_name': file_name,
             'fasta_header': fasta_header,
             'user_provide': task.with_ref,
-            'spades_mode': task.spades_mode
+            'spades_mode': task.spades_mode,
+            'seq_length': str(len(first_fasta_seq))
         }
         utils.build_json_file(imported_ref_meta_path, meta_dict)
     else:

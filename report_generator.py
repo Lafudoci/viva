@@ -43,6 +43,7 @@ def build_md_report(task):
         'Contig identity: %s %%'%(s['ref_source_contig_pident']),
         'FASTA Header : %s'%(s['ref_fasta_header']),
         'FASTA file name : %s'%(s['ref_file_name']),
+        'Sequence length: %s'%(s['ref_seq_len'])
     ])
     
     fastp_t = '## Reads Filter Statistics'
@@ -73,10 +74,10 @@ def build_md_report(task):
     ])
     aln_c_t = '### Coverage'
     aln_c_c = '\n'.join([
-        '| Aligner | Covered base | Mean depth |',
-        '| ------- | ------------ | ---------- |',
-        '| Bowtie2 | %s %% | %s x |'%(s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
-        '| BWA MEM | %s %% | %s x |'%(s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
+        '| Aligner | Start base | End base | Covered base | Mean depth |',
+        '| ------- | ---------- | -------- | ------------ | ---------- |',
+        '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
+        '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
     vc_t = '## Variant Calling'
     vc_l_t = '### LoFreq'
     if len(s['vc']['lofreq']) > 0:
