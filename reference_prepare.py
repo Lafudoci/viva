@@ -82,38 +82,51 @@ def ref_import(task):
     Path.mkdir(imported_ref_path, parents=True, exist_ok=True)
     ref_fasta_dict = utils.load_fasta_file(task.ref)
     if len(ref_fasta_dict) == 1:
-        # import ref
-        imported_ref_fasta_dict = {}
-        imported_ref_fasta_path = task.path.joinpath(
-            task.id,
-            'reference',
-            task.id+'_ref.fasta'
-        )
-        first_fasta_seq = str(list(ref_fasta_dict.values())[0])
-        imported_ref_fasta_dict[task.id + '_ref'] = first_fasta_seq
-        utils.build_fasta_file(
-            imported_ref_fasta_path,
-            imported_ref_fasta_dict
-        )
-        # build meta file
-        imported_ref_meta_path = task.path.joinpath(
-            task.id, 'reference', task.id+'_ref.json')
-        file_name = str(task.ref)
-        fasta_header = str(list(ref_fasta_dict)[0])
-        meta_dict = {
-            'file_name': file_name,
-            'fasta_header': fasta_header,
-            'user_provide': task.with_ref,
-            'seq_length': str(len(first_fasta_seq))
-        }
-        if task.with_ref == False:
-            meta_dict['spades_mode'] = task.spades_mode
-        else:
-            meta_dict['spades_mode'] = 'N/A'
-        utils.build_json_file(imported_ref_meta_path, meta_dict)
+        pass
     else:
-        logger.error('Reference sequence file must be single squence.')
-    pass
+        logger.warning('Reference file contains muiltple squences.')
+    # import ref
+    
+    
+    i = 1
+    meta_dict = {
+        'ref_from_user':'',
+        'seq_meta':{},
+        'spades_mode':'',
+        'origin_file_path': str(task.ref)}
+    imported_ref_fasta_dict = {}
+    # set spades meta
+    if task.with_ref == False:
+        meta_dict['spades_mode'] = task.spades_mode
+        meta_dict['ref_from_user'] = 'No'
+    else:
+        meta_dict['spades_mode'] = 'N/A'
+        meta_dict['ref_from_user'] = 'Yes'
+    
+    for header, seq in ref_fasta_dict.items():
+        # collect seqs fasta
+        imported_ref_fasta_path = task.path.joinpath(
+        task.id,
+        'reference',
+        'ref_%d.fasta'%i
+        )
+        imported_ref_fasta_dict[header] = seq
+        # collect seqs meta
+        meta_dict['seq_meta'][i] = {
+            'fasta_header': header,
+            'seq_length': str(len(seq))
+        }
+    # build ref fasta
+    utils.build_fasta_file(
+        imported_ref_fasta_path,
+        imported_ref_fasta_dict
+    )
+    # build meta dict
+    imported_ref_meta_path = task.path.joinpath(
+        task.id,
+        'reference',
+        task.id+'_ref.json')
+    utils.build_json_file(imported_ref_meta_path, meta_dict)
 
 
 def run(task):

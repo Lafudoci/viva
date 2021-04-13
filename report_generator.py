@@ -36,15 +36,21 @@ def build_md_report(task):
     ])
 
     ref_t = '## Input Reference'
-    ref_c = '\n\n'.join([
-        'Reference by user : %s'%(s['ref_from_user']),
-        'Spades mode: %s'%(s['ref_spades_mode']),
+    ref_c_m = '\n\n'.join([
+        'Reference by user : %s'%(s['ref_meta_dict']['ref_from_user']),
+        'FASTA file name : %s'%(s['ref_meta_dict']['ref_file_name']),
+        'Spades mode: %s'%(s['ref_meta_dict']['spades_mode']),
         'Contig name: %s'%(s['ref_source_contig_name']),
         'Contig identity: %s %%'%(s['ref_source_contig_pident']),
-        'FASTA Header : %s'%(s['ref_fasta_header']),
-        'FASTA file name : %s'%(s['ref_file_name']),
-        'Sequence length: %s bp'%(s['ref_seq_len'])
+        
     ])
+    ref_c_t = '\n'.join([
+        '|   | Header | Seq len. |',
+        '| - | ------ | -------- |'
+        ])
+    for order, meta in s['ref_meta_dict']['seq_meta'].items():
+        ref_c_t += '\n| %d | %s | %s |'%(order, meta['fasta_header'], meta['seq_length'])
+        
     
     fastp_t = '## Reads Filter Statistics'
     fastp_f_t = '### Filter'
@@ -134,7 +140,8 @@ def build_md_report(task):
         reads_t,
         reads_c,
         ref_t,
-        ref_c,
+        ref_c_m,
+        ref_c_t,
         fastp_t,
         fastp_f_t,
         fastp_f_c,
