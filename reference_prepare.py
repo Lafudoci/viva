@@ -118,11 +118,11 @@ def ref_import(task):
             'seq_length': str(len(seq))
         }
         i += 1
-    # build ref fasta
-    utils.build_fasta_file(
-        imported_ref_fasta_path,
-        imported_ref_fasta_dict
-    )
+        # build ref fasta
+        utils.build_fasta_file(
+            imported_ref_fasta_path,
+            imported_ref_fasta_dict
+        )
     # build meta dict
     imported_ref_meta_path = task.path.joinpath(
         task.id,
