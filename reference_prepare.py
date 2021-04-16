@@ -81,19 +81,19 @@ def ref_import(task):
     imported_ref_path = task.path.joinpath(task.id, 'reference')
     Path.mkdir(imported_ref_path, parents=True, exist_ok=True)
     ref_fasta_dict = utils.load_fasta_file(task.ref)
-    if len(ref_fasta_dict) == 1:
+    task.ref_num = len(ref_fasta_dict)
+    if task.ref_num == 1:
         pass
     else:
         logger.warning('Reference file contains muiltple squences.')
-    # import ref
-    
-    
-    i = 1
+    # import ref    
     meta_dict = {
         'ref_from_user':'',
         'seq_meta':{},
         'spades_mode':'',
-        'origin_file_path': str(task.ref)}
+        'origin_file_path': str(task.ref),
+        'ref_num': str(task.ref_num)
+        }
     imported_ref_fasta_dict = {}
     # set spades meta
     if task.with_ref == False:
@@ -103,12 +103,13 @@ def ref_import(task):
         meta_dict['spades_mode'] = 'N/A'
         meta_dict['ref_from_user'] = 'Yes'
     
+    i = 1
     for header, seq in ref_fasta_dict.items():
         # collect seqs fasta
         imported_ref_fasta_path = task.path.joinpath(
         task.id,
         'reference',
-        'ref_%d.fasta'%i
+        '%s_ref_%d.fasta'%(task.id, i)
         )
         imported_ref_fasta_dict[header] = seq
         # collect seqs meta
@@ -116,6 +117,7 @@ def ref_import(task):
             'fasta_header': header,
             'seq_length': str(len(seq))
         }
+        i += 1
     # build ref fasta
     utils.build_fasta_file(
         imported_ref_fasta_path,
