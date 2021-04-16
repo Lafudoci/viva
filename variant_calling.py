@@ -186,8 +186,8 @@ def build_draft_genome_seq(task):
         draft_genome_summary[ref_order] = {'conflicts':[], 'snv_list':[], 'error':[], 'file_path':''}
         for vc_table in vc_dict.values():
             for pos, snvs in vc_table.items():
-                ref = snvs['REF']
-                for snv, alns in snvs['SNV'].items():
+                ref = snvs[ref_order]['REF']
+                for snv, alns in snvs[ref_order]['SNV'].items():
                     for aligner in alns:
                         if Decimal(alns[aligner]['FREQ'][:-1])/100 > Decimal(task.vc_threshold):
                             if dominant_vc[ref_order].get(pos) == None:
