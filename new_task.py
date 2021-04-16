@@ -80,6 +80,7 @@ def main():
     task.spades_mem = str(args.spades_mem)
     task.spades_mode = args.spades_mode
     task.vc_threshold = '0.7'
+    task.ref_num = 0
 
     if args.test != None:
         task.name = 'test_run'
