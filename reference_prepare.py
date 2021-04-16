@@ -94,7 +94,6 @@ def ref_import(task):
         'origin_file_path': str(task.ref),
         'ref_num': str(task.ref_num)
         }
-    imported_ref_fasta_dict = {}
     # set spades meta
     if task.with_ref == False:
         meta_dict['spades_mode'] = task.spades_mode
@@ -105,6 +104,7 @@ def ref_import(task):
     
     i = 1
     for header, seq in ref_fasta_dict.items():
+        imported_ref_fasta_dict = {}
         # collect seqs fasta
         imported_ref_fasta_path = task.path.joinpath(
         task.id,
