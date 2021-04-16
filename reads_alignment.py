@@ -126,7 +126,7 @@ def align_coverage_stat(task, aligners):
         aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
         for ref_order in range(1, task.ref_num+1):
             cov_dict[aligner][ref_order] = {}
-            flagstat_cmd = ['samtools', 'coverage', '%s_ref_%d.sorted.sam'%(task.id, ref_order)]
+            flagstat_cmd = ['samtools', 'coverage', '%s_ref_%d.sorted.bam'%(task.id, ref_order)]
             logger.info('CMD: '+' '.join(flagstat_cmd))
             utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
             flagstat_run = subprocess.run(flagstat_cmd, cwd=aligner_cwd, capture_output=True)
