@@ -93,14 +93,15 @@ def build_md_report(task):
             '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header']),
             '| Aligner | Start base | End base | Covered base | Mean depth |',
             '| ------- | ---------- | -------- | ------------ | ---------- |',
-            '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2'][str(ref_order)]['startpos'], s['cov']['bowtie2']['endpos'], s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
-            '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa'][str(ref_order)]['startpos'], s['cov']['bwa']['endpos'], s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
+            '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2'][str(ref_order)]['startpos'], s['cov']['bowtie2'][str(ref_order)]['endpos'], s['cov']['bowtie2'][str(ref_order)]['coverage'], s['cov']['bowtie2'][str(ref_order)]['meandepth']),
+            '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa'][str(ref_order)]['startpos'], s['cov']['bwa'][str(ref_order)]['endpos'], s['cov']['bwa'][str(ref_order)]['coverage'], s['cov']['bwa'][str(ref_order)]['meandepth'])])
     vc_t = '## Variant Calling'
+    vc_c = ''
     for ref_order in range(1, task.ref_num+1):
-        vc_l_t = '### LoFreq'
-        vc_l_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
+        vc_l_r = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
+        vc_l_c = '### LoFreq'
         if len(s['vc']['lofreq'][str(ref_order)]) > 0:
-            vc_l_c += '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
+            vc_l_t = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
             for pos in s['vc']['lofreq'][str(ref_order)]:
                 ref = s['vc']['lofreq'][str(ref_order)][pos]['REF']
                 for alt, aln_result in s['vc']['lofreq'][str(ref_order)][pos]['SNV'].items():
@@ -112,13 +113,13 @@ def build_md_report(task):
                     bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
                     bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
                     bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
-                    vc_l_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+                    vc_l_t += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
         else:
-            vc_l_c = 'Lofreq did not report any SNV or indel.\n'
-        vc_v_t = '### Varscan2'
-        vc_l_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
+            vc_l_t += 'Lofreq did not report any SNV or indel.\n'
+        vc_v_r = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
+        vc_v_c = '### Varscan2'
         if len(s['vc']['varscan'][str(ref_order)]) > 0:
-            vc_v_c += '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
+            vc_v_t = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
             for pos in s['vc']['varscan'][str(ref_order)]:
                 ref = s['vc']['varscan'][str(ref_order)][pos]['REF']
                 for alt, aln_result in s['vc']['varscan'][str(ref_order)][pos]['SNV'].items():
@@ -130,9 +131,10 @@ def build_md_report(task):
                     bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
                     bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
                     bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
-                    vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+                    vc_v_t += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
         else:
-            vc_v_c = 'Varscan did not report any SNV or indel.\n'
+            vc_v_t += 'Varscan did not report any SNV or indel.\n'
+        vc_c = '\n'.join([vc_l_r, vc_l_c, vc_l_t, vc_v_r, vc_v_c, vc_v_t])
     genome_t = '## Draft Genome'
     for ref_order in range(1, task.ref_num+1):
         genome_ref = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
@@ -172,10 +174,7 @@ def build_md_report(task):
         aln_c_t,
         aln_c_c,
         vc_t,
-        vc_l_t,
-        vc_l_c,
-        vc_v_t,
-        vc_v_c,
+        vc_c,
         genome_t,
         genome_c,
         cmd_t,
