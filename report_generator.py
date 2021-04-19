@@ -79,59 +79,68 @@ def build_md_report(task):
 
     aln_t = '## Alignment'
     aln_m_t = '### Mapping rate'
-    aln_m_c = '\n'.join([
-        '| Aligner | Overall mapped rate |',
-        '| ------- | ------------------- |',
-        '| Bowtie2 | %s |'%(s['aln']['mapped_rate']['bowtie2']),
-        '| BWA MEM | %s |'%(s['aln']['mapped_rate']['bwa'])
-    ])
+    for ref_order in range(1, task.ref_num+1):
+        aln_m_c = '\n'.join([
+            '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header']),
+            '| Aligner | Overall mapped rate |',
+            '| ------- | ------------------- |',
+            '| Bowtie2 | %s |'%(s['aln']['mapped_rate']['bowtie2'][str(ref_order)]),
+            '| BWA MEM | %s |'%(s['aln']['mapped_rate']['bwa'][str(ref_order)])
+        ])
     aln_c_t = '### Coverage'
-    aln_c_c = '\n'.join([
-        '| Aligner | Start base | End base | Covered base | Mean depth |',
-        '| ------- | ---------- | -------- | ------------ | ---------- |',
-        '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2']['startpos'], s['cov']['bowtie2']['endpos'], s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
-        '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa']['startpos'], s['cov']['bwa']['endpos'], s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
+    for ref_order in range(1, task.ref_num+1):
+        aln_c_c = '\n'.join([
+            '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header']),
+            '| Aligner | Start base | End base | Covered base | Mean depth |',
+            '| ------- | ---------- | -------- | ------------ | ---------- |',
+            '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2'][str(ref_order)]['startpos'], s['cov']['bowtie2']['endpos'], s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
+            '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa'][[str(ref_order)]['startpos'], s['cov']['bwa']['endpos'], s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
     vc_t = '## Variant Calling'
-    vc_l_t = '### LoFreq'
-    if len(s['vc']['lofreq']) > 0:
-        vc_l_c = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
-        for pos in s['vc']['lofreq']:
-            ref = s['vc']['lofreq'][pos]['REF']
-            for alt, aln_result in s['vc']['lofreq'][pos]['SNV'].items():
-                bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
-                bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
-                bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
-                bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
-                bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
-                bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
-                bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
-                bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
-                vc_l_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
-    else:
-        vc_l_c = 'Lofreq did not report any SNV or indel.\n'
-    vc_v_t = '### Varscan2'
-    if len(s['vc']['varscan']) > 0:
-        vc_v_c = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
-        for pos in s['vc']['varscan']:
-            ref = s['vc']['varscan'][pos]['REF']
-            for alt, aln_result in s['vc']['varscan'][pos]['SNV'].items():
-                bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
-                bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
-                bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
-                bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
-                bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
-                bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
-                bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
-                bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
-                vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
-    else:
-        vc_v_c = 'Varscan did not report any SNV or indel.\n'
+    for ref_order in range(1, task.ref_num+1):
+        vc_l_t = '### LoFreq'
+        vc_r_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header'])
+        if len(s['vc']['lofreq'][str(ref_order)]) > 0:
+            vc_l_c += '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
+            for pos in s['vc']['lofreq'][str(ref_order)]:
+                ref = s['vc']['lofreq'][str(ref_order)][pos]['REF']
+                for alt, aln_result in s['vc']['lofreq'][str(ref_order)][pos]['SNV'].items():
+                    bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
+                    bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
+                    bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
+                    bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
+                    bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
+                    bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
+                    bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
+                    bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
+                    vc_l_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+        else:
+            vc_l_c = 'Lofreq did not report any SNV or indel.\n'
+        vc_v_t = '### Varscan2'
+        vc_r_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header'])
+        if len(s['vc']['varscan'][str(ref_order)]) > 0:
+            vc_v_c += '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
+            for pos in s['vc']['varscan'][str(ref_order)]:
+                ref = s['vc']['varscan'][str(ref_order)][pos]['REF']
+                for alt, aln_result in s['vc']['varscan'][str(ref_order)][pos]['SNV'].items():
+                    bt2_ft = aln_result.get('bowtie2', {}).get('FILTER', '-')
+                    bt2_af = aln_result.get('bowtie2', {}).get('FREQ', '-')
+                    bt2_dp = aln_result.get('bowtie2', {}).get('DP', '-')
+                    bt2_gq = aln_result.get('bowtie2', {}).get('QUAL', '-')
+                    bwa_ft = aln_result.get('bwa', {}).get('FILTER', '-')
+                    bwa_af = aln_result.get('bwa', {}).get('FREQ', '-')
+                    bwa_dp = aln_result.get('bwa', {}).get('DP', '-')
+                    bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
+                    vc_v_c += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
+        else:
+            vc_v_c = 'Varscan did not report any SNV or indel.\n'
     genome_t = '## Draft Genome'
-    genome_pth = 'FASTA was saved to : %s' % s['draft_file_path']
-    genome_snv = ('Apllied SNV : %s' % s['draft_snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
-    genome_cf = ('Conflict calling : %s' % s['draft_conflict']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
-    genome_mm = ('Mismatch calling : %s' % s['draft_error']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
-    genome_c = '\n\n'.join([genome_pth, genome_snv, genome_cf, genome_mm])
+    for ref_order in range(1, task.ref_num+1):
+        genome_ref = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header']'
+        genome_pth = 'FASTA was saved to : %s' % s['draft_meta'][str(ref_order)]['file_path']
+        genome_snv = ('Apllied SNV : %s' % s['draft_meta'][str(ref_order)]['snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
+        genome_cf = ('Conflict calling : %s' % s['draft_meta'][str(ref_order)]['conflicts']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
+        genome_mm = ('Mismatch calling : %s' % s['draft_meta'][str(ref_order)]['error']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
+        genome_c = '\n\n'.join([genome_ref, genome_pth, genome_snv, genome_cf, genome_mm])
     cmd_t = '## Commands'
     cmd_c = "\n%s\n"%('\n\n'.join(s['cmd_list']))
     ver_t = '## Versions'

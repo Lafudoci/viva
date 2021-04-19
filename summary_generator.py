@@ -39,11 +39,7 @@ def report_summary(task):
     s['aln'] = single_meta_parser(task, 'alignment', 'flagstat.json')
     s['cov'] = single_meta_parser(task, 'alignment', 'coverage_stat.json')
     s['vc'] = vc_parser(task)
-    draft_meta = draft_meta_parser(task)
-    s['draft_conflict'] = draft_meta.get('conflicts')
-    s['draft_snv_list'] = draft_meta.get('snv_list')
-    s['draft_error'] = draft_meta.get('error')
-    s['draft_file_path'] = draft_meta.get('file_path')
+    s['draft_meta'] = draft_meta_parser(task).copy()
     s['version'] = tool_version_caller()
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),
