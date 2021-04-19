@@ -94,7 +94,7 @@ def build_md_report(task):
             '| Aligner | Start base | End base | Covered base | Mean depth |',
             '| ------- | ---------- | -------- | ------------ | ---------- |',
             '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2'][str(ref_order)]['startpos'], s['cov']['bowtie2']['endpos'], s['cov']['bowtie2']['coverage'], s['cov']['bowtie2']['meandepth']),
-            '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa'][[str(ref_order)]['startpos'], s['cov']['bwa']['endpos'], s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
+            '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa'][str(ref_order)]['startpos'], s['cov']['bwa']['endpos'], s['cov']['bwa']['coverage'], s['cov']['bwa']['meandepth'])])
     vc_t = '## Variant Calling'
     for ref_order in range(1, task.ref_num+1):
         vc_l_t = '### LoFreq'
@@ -135,7 +135,7 @@ def build_md_report(task):
             vc_v_c = 'Varscan did not report any SNV or indel.\n'
     genome_t = '## Draft Genome'
     for ref_order in range(1, task.ref_num+1):
-        genome_ref = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header']'
+        genome_ref = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header'])
         genome_pth = 'FASTA was saved to : %s' % s['draft_meta'][str(ref_order)]['file_path']
         genome_snv = ('Apllied SNV : %s' % s['draft_meta'][str(ref_order)]['snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_cf = ('Conflict calling : %s' % s['draft_meta'][str(ref_order)]['conflicts']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
