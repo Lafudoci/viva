@@ -98,7 +98,7 @@ def build_md_report(task):
     vc_t = '## Variant Calling'
     for ref_order in range(1, task.ref_num+1):
         vc_l_t = '### LoFreq'
-        vc_r_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header'])
+        vc_l_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header'])
         if len(s['vc']['lofreq'][str(ref_order)]) > 0:
             vc_l_c += '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
             for pos in s['vc']['lofreq'][str(ref_order)]:
@@ -116,7 +116,7 @@ def build_md_report(task):
         else:
             vc_l_c = 'Lofreq did not report any SNV or indel.\n'
         vc_v_t = '### Varscan2'
-        vc_r_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header'])
+        vc_l_c = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict'][str(ref_order)]['fasta_header'])
         if len(s['vc']['varscan'][str(ref_order)]) > 0:
             vc_v_c += '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
             for pos in s['vc']['varscan'][str(ref_order)]:
