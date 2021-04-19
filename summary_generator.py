@@ -39,7 +39,7 @@ def report_summary(task):
     s['aln'] = single_meta_parser(task, 'alignment', 'flagstat.json')
     s['cov'] = single_meta_parser(task, 'alignment', 'coverage_stat.json')
     s['vc'] = vc_parser(task)
-    s['draft_meta'] = draft_meta_parser(task).copy()
+    s['draft_meta'] = single_meta_parser(task, 'draft_genome', task.id + '_draft_summary.json').copy()
     s['version'] = tool_version_caller()
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),
@@ -52,16 +52,6 @@ def single_meta_parser(task, folder_name, file_name):
         task.id, folder_name, file_name
     )
     meta_dict = utils.load_json_file(meta_json_path)
-    return meta_dict
-
-
-def draft_meta_parser(task):
-    meta_dict = {}
-    for ref_order in range(1, task.ref_num+1):
-        meta_json_path = task.path.joinpath(
-            task.id, 'draft_genome', '%s_draft_summary_%d.json'%(task.id, ref_order)
-        )
-        meta_dict[ref_order] = utils.load_json_file(meta_json_path)
     return meta_dict
 
 

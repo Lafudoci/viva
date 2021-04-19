@@ -228,7 +228,7 @@ def build_draft_genome_seq(task):
         draft_genome_summary[ref_order]['file_path'] = str(draft_fasta_path)
         Path.mkdir(draft_cwd, parents=True, exist_ok=True)
         utils.build_fasta_file(draft_fasta_path, draft_fasta_dict)
-        utils.build_json_file(draft_cwd.joinpath('%s_draft_summary_%d.json'%(task.id, ref_order)), draft_genome_summary)
+    utils.build_json_file(draft_cwd.joinpath('%s_draft_summary.json'%task.id), draft_genome_summary)
 
 
 def run(task):
