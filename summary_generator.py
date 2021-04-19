@@ -21,23 +21,23 @@ def report_summary(task):
     finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)
     s['finish_date'] = finish_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     s['cmd_list'] = log_abs['cmd_list']
-    s['reads_meta'] = reads_meta_parser(task)
+    s['reads_meta'] = single_meta_parser(task, 'reads', 'reads_meta.json')
     s['fastp_abs'] = fastp_parser(task)
     if task.dehost != None:
-        dehost_meta = dehost_meta_parser(task)
+        dehost_meta = single_meta_parser(task, 'reads', 'dehost_meta.json')
         s['remove_genome'] = {'genome': dehost_meta['genome'], 'remove_percentage': dehost_meta['remove_percentage']}
     else:
         s['remove_genome'] = {'genome': 'N/A', 'remove_percentage': 'N/A'}
-    s['ref_meta_dict'] = ref_meta_parser(task).copy()
+    s['ref_meta_dict'] = single_meta_parser(task, 'reference', task.id + '_ref.json').copy()
     if task.with_ref == False:
-        best_hit = best_hit_meta_parser(task)
+        best_hit = single_meta_parser(task, 'assembly', 'best_hit.json')
         s['ref_source_contig_name'] = best_hit['qseqid']
         s['ref_source_contig_pident'] = best_hit['pident']
     else:
         s['ref_source_contig_name'] = 'N/A'
         s['ref_source_contig_pident'] = 'N/A'
-    s['aln'] = aln_meta_parser(task)
-    s['cov'] = cov_stats_parser(task)
+    s['aln'] = single_meta_parser(task, 'alignment', 'flagstat.json')
+    s['cov'] = single_meta_parser(task, 'alignment', 'coverage_stat.json')
     s['vc'] = vc_parser(task)
     draft_meta = draft_meta_parser(task)
     s['draft_conflict'] = draft_meta.get('conflicts')
@@ -51,58 +51,21 @@ def report_summary(task):
     )
 
 
-def dehost_meta_parser(task):
+def single_meta_parser(task, folder_name, file_name):
     meta_json_path = task.path.joinpath(
-        task.id, 'reads', 'dehost_meta.json'
+        task.id, folder_name, file_name
     )
     meta_dict = utils.load_json_file(meta_json_path)
     return meta_dict
+
 
 def draft_meta_parser(task):
-    meta_json_path = task.path.joinpath(
-        task.id, 'draft_genome', task.id + '_draft_summary.json'
-    )
-    meta_dict = utils.load_json_file(meta_json_path)
-    return meta_dict
-
-
-def reads_meta_parser(task):
-    meta_json_path = task.path.joinpath(
-        task.id, 'reads', 'reads_meta.json'
-    )
-    meta_dict = utils.load_json_file(meta_json_path)
-    return meta_dict
-
-
-def best_hit_meta_parser(task):
-    meta_json_path = task.path.joinpath(
-        task.id, 'assembly', 'best_hit.json'
-    )
-    meta_dict = utils.load_json_file(meta_json_path)
-    return meta_dict
-
-
-def ref_meta_parser(task):
-    meta_json_path = task.path.joinpath(
-        task.id, 'reference', task.id + '_ref.json'
-    )
-    meta_dict = utils.load_json_file(meta_json_path)
-    return meta_dict
-
-
-def aln_meta_parser(task):
-    meta_json_path = task.path.joinpath(
-        task.id, 'alignment', 'flagstat.json'
-    )
-    meta_dict = utils.load_json_file(meta_json_path)
-    return meta_dict
-
-
-def cov_stats_parser(task):
-    meta_json_path = task.path.joinpath(
-        task.id, 'alignment', 'coverage_stat.json'
-    )
-    meta_dict = utils.load_json_file(meta_json_path)
+    meta_dict = {}
+    for ref_order in range(1, task.ref_num+1):
+        meta_json_path = task.path.joinpath(
+            task.id, 'draft_genome', '%s_draft_summary_%d.json'%(task.id, ref_order)
+        )
+        meta_dict[ref_order] = utils.load_json_file(meta_json_path)
     return meta_dict
 
 
