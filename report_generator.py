@@ -22,6 +22,7 @@ def build_md_report(task):
         'Task finish time : %s'% s['finish_date']
     ])
 
+
     reads_t = '## Input Reads'
     reads_c = '\n'.join([
         '| Reads | File name |',
@@ -35,15 +36,28 @@ def build_md_report(task):
         '| R2 | %s |'%(s['reads_meta']['md5']['r2'])
     ])
 
+
     ref_t = '## Input Reference'
     ref_c_m = '\n\n'.join([
         'Reference by user : %s'%(s['ref_meta_dict']['ref_from_user']),
-        'FASTA file name : %s'%(s['ref_meta_dict']['ref_file_name']),
-        'Spades mode: %s'%(s['ref_meta_dict']['spades_mode']),
-        'Contig name: %s'%(s['ref_source_contig_name']),
-        'Contig identity: %s %%'%(s['ref_source_contig_pident']),
-        
+        'Origin file path : %s'%(s['ref_meta_dict']['origin_file_path']),
+        'Numeber of reference : %s'%(s['ref_meta_dict']['ref_num']),
+        'SPAdes assembly mode : %s'%(s['ref_meta_dict']['spades_mode']),
+        'Best contig name : %s'%(s['ref_source_contig_name']),
+        'Best contig identity : %s %%'%(s['ref_source_contig_pident']),
     ])
+    ref_c_t = '\n'.join([
+        '| Order | Header | Length |',
+        '| ----- | ------ | ------ |'
+    ])
+    for ref_order in range(1, task.ref_num+1):
+        ref_c_r += '\n| %d | %s | %s |'%(
+            ref_order,
+            s['ref_meta_dict'][str(ref_order)]['fasta_header'],
+            s['ref_meta_dict'][str(ref_order)]['seq_length']
+            )
+
+
     ref_c_t = '\n'.join([
         '|   | Header | Seq len. |',
         '| - | ------ | -------- |'
@@ -65,6 +79,7 @@ def build_md_report(task):
     ])
     fastp_d_t = '### Duplication'
     fastp_d_c = 'Duplication rate : %.02f%%' % float(s['fastp_abs']['duplication_rate']*100)
+    
     
     dehost_t = '## Host Genome Removal'
     dehost_i_g = 'Remove genome: %s'%(s['remove_genome']['genome'])
