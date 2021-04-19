@@ -138,13 +138,14 @@ def build_md_report(task):
             vc_v_t += 'Varscan did not report any SNV or indel.\n'
         vc_c += '\n'.join([vc_r, vc_l_c, vc_l_t, vc_v_c, vc_v_t])
     genome_t = '## Draft Genome'
+    genome_c = ''
     for ref_order in range(1, task.ref_num+1):
         genome_ref = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
         genome_pth = 'FASTA was saved to : %s' % s['draft_meta'][str(ref_order)]['file_path']
         genome_snv = ('Apllied SNV : %s' % s['draft_meta'][str(ref_order)]['snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_cf = ('Conflict calling : %s' % s['draft_meta'][str(ref_order)]['conflicts']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_mm = ('Mismatch calling : %s' % s['draft_meta'][str(ref_order)]['error']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
-        genome_c = '\n\n'.join([genome_ref, genome_pth, genome_snv, genome_cf, genome_mm])
+        genome_c += '\n\n'.join([genome_ref, genome_pth, genome_snv, genome_cf, genome_mm])
     cmd_t = '## Commands'
     cmd_c = "\n%s\n"%('\n\n'.join(s['cmd_list']))
     ver_t = '## Versions'
