@@ -57,14 +57,6 @@ def build_md_report(task):
             s['ref_meta_dict'][str(ref_order)]['seq_length']
             )
 
-
-    ref_c_t = '\n'.join([
-        '|   | Header | Seq len. |',
-        '| - | ------ | -------- |'
-        ])
-    for order, meta in s['ref_meta_dict']['seq_meta'].items():
-        ref_c_t += '\n| %d | %s | %s |'%(order, meta['fasta_header'], meta['seq_length'])
-        
     
     fastp_t = '## Reads Filter Statistics'
     fastp_f_t = '### Filter'
@@ -80,7 +72,7 @@ def build_md_report(task):
     fastp_d_t = '### Duplication'
     fastp_d_c = 'Duplication rate : %.02f%%' % float(s['fastp_abs']['duplication_rate']*100)
     
-    
+
     dehost_t = '## Host Genome Removal'
     dehost_i_g = 'Remove genome: %s'%(s['remove_genome']['genome'])
     dehost_i_p = '\nPercentage of removed reads: %s'%(s['remove_genome']['remove_percentage'])
