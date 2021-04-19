@@ -140,7 +140,7 @@ def build_md_report(task):
     genome_t = '## Draft Genome'
     genome_c = ''
     for ref_order in range(1, task.ref_num+1):
-        genome_ref = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
+        genome_ref = '\n### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
         genome_pth = 'FASTA was saved to : %s' % s['draft_meta'][str(ref_order)]['file_path']
         genome_snv = ('Apllied SNV : %s' % s['draft_meta'][str(ref_order)]['snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_cf = ('Conflict calling : %s' % s['draft_meta'][str(ref_order)]['conflicts']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
