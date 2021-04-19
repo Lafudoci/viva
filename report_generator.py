@@ -79,17 +79,20 @@ def build_md_report(task):
 
     aln_t = '## Alignment'
     aln_m_t = '### Mapping rate'
+    aln_m_c = ''
     for ref_order in range(1, task.ref_num+1):
-        aln_m_c = '\n'.join([
+        aln_m_c += '\n'.join([
             '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header']),
             '| Aligner | Overall mapped rate |',
             '| ------- | ------------------- |',
             '| Bowtie2 | %s |'%(s['aln']['mapped_rate']['bowtie2'][str(ref_order)]),
             '| BWA MEM | %s |'%(s['aln']['mapped_rate']['bwa'][str(ref_order)])
         ])
+    
     aln_c_t = '### Coverage'
+    aln_c_c = ''
     for ref_order in range(1, task.ref_num+1):
-        aln_c_c = '\n'.join([
+        aln_c_c += '\n'.join([
             '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header']),
             '| Aligner | Start base | End base | Covered base | Mean depth |',
             '| ------- | ---------- | -------- | ------------ | ---------- |',
@@ -134,7 +137,7 @@ def build_md_report(task):
                     vc_v_t += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
         else:
             vc_v_t += 'Varscan did not report any SNV or indel.\n'
-        vc_c = '\n'.join([vc_l_r, vc_l_c, vc_l_t, vc_v_r, vc_v_c, vc_v_t])
+        vc_c += '\n'.join([vc_l_r, vc_l_c, vc_l_t, vc_v_r, vc_v_c, vc_v_t])
     genome_t = '## Draft Genome'
     for ref_order in range(1, task.ref_num+1):
         genome_ref = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
