@@ -147,7 +147,10 @@ def build_md_report(task):
         genome_mm = ('Mismatch calling : %s' % s['draft_meta'][str(ref_order)]['error']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_c += '\n\n'.join([genome_ref, genome_pth, genome_snv, genome_cf, genome_mm])
     cmd_t = '## Commands'
-    cmd_c = "\n%s\n"%('\n\n'.join(s['cmd_list']))
+    cmd_c = '| Duration(s) | Executed command |\n| ---- | ------- |\n'
+    for order, entry in s['log_dict'].items():
+        if entry['string'].startswith('CMD:'):
+            cmd_c += '| %d | %s |\n'%(entry['duration'], entry['string'][5:])
     ver_t = '## Versions'
     ver_c = '| Tool | Version |\n| ---- | ------- |\n'
     for tool, version in s['version'].items():

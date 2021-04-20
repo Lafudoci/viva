@@ -20,7 +20,7 @@ def report_summary(task):
     s['start_date'] = start_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)
     s['finish_date'] = finish_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
-    s['cmd_list'] = log_abs['cmd_list']
+    s['log_dict'] = log_abs['log_dict']
     s['reads_meta'] = single_meta_parser(task, 'reads', 'reads_meta.json')
     s['fastp_abs'] = fastp_parser(task)
     if task.dehost != None:
@@ -88,14 +88,28 @@ def fastp_parser(task):
 def log_parser(task):
     log_path = task.path.joinpath(task.id)
     log_list = utils.load_log_file(log_path)
-    cmd_list = []
+    log_dict = {}
+    start_stamp = log_list[0].split('\t')[0]
+    end_stamp = log_list[-1].split('\t')[0]
+    i = 1
     for log in log_list:
-        if log.split('\t')[1].startswith('CMD:'):
-            cmd_list.append(log.split('\t')[1][5:])
+        log_dict[i] = {}
+        log_dict[i]['time_stamp'] = int(log.split('\t')[0])
+        log_dict[i]['string'] = log.split('\t')[1].strip()
+        i += 1
+    # duration calculation
+    last_time_stamp = start_stamp
+    copy_dict = log_dict.copy()
+    for order, entry in copy_dict.items():
+        log_dict[order]['duration'] = 0
+        previous_log_duration = int(entry['time_stamp']) - int(last_time_stamp)
+        if order > 1:
+            log_dict[order-1]['duration'] = previous_log_duration
+        last_time_stamp = int(entry['time_stamp'])
     log_abs = {
-        'start_timestamp': log_list[0].split('\t')[0],
-        'finish_timestamp': log_list[-1].split('\t')[0],
-        'cmd_list': cmd_list
+        'start_timestamp': start_stamp,
+        'finish_timestamp': end_stamp,
+        'log_dict': log_dict
     }
     return log_abs
 

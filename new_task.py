@@ -114,13 +114,16 @@ def main():
         reference_prepare.run(task)
         reads_alignment.run(task)
         variant_calling.run(task)
-        summary_generator.run(task)
-        report_generator.run(task)
         logger.info('Pipeline finished.')
         utils.write_log_file(
             task.path.joinpath(task.id),
             'Pipeline finished.'
         )
+
+        # report generator
+        summary_generator.run(task)
+        report_generator.run(task)
+        
     else:
         logger.error('Reads not found. Exiting pipeline.')
         sys.exit()
