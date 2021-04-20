@@ -51,10 +51,12 @@ def build_md_report(task):
         '| ----- | ------ | ------ |'
     ])
     for ref_order in range(1, task.ref_num+1):
+        header = s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'].replace("|", "")
+        length = s['ref_meta_dict']['seq_meta'][str(ref_order)]['seq_length']
         ref_c_t += '\n| %d | %s | %s |'%(
             ref_order,
-            s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'],
-            s['ref_meta_dict']['seq_meta'][str(ref_order)]['seq_length']
+            header,
+            length
             )
 
     
