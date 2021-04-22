@@ -120,7 +120,7 @@ def build_md_report(task):
                     bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
                     vc_l_t += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
         else:
-            vc_l_t += 'Lofreq did not report any SNV or indel.\n'
+            vc_l_t = 'Lofreq did not report any SNV or indel.\n'
         vc_v_c = '#### Varscan2'
         if len(s['vc']['varscan'][str(ref_order)]) > 0:
             vc_v_t = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
@@ -137,7 +137,7 @@ def build_md_report(task):
                     bwa_gq = aln_result.get('bwa', {}).get('QUAL', '-')
                     vc_v_t += '| %s | %s | %s | %s / %s / %s / %s | %s / %s / %s / %s |\n'%(pos, ref, alt, bt2_ft, bt2_af, bt2_dp, bt2_gq, bwa_ft, bwa_af, bwa_dp, bwa_gq)
         else:
-            vc_v_t += 'Varscan did not report any SNV or indel.\n'
+            vc_v_t = 'Varscan did not report any SNV or indel.\n'
         vc_c += '\n'.join([vc_r, vc_l_c, vc_l_t, vc_v_c, vc_v_t])
     genome_t = '## Draft Genome'
     genome_c = ''
