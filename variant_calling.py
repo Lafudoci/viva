@@ -118,10 +118,10 @@ def build_vc_summary_json(task):
     )
     varscan_vc_dict = {}
     lofreq_vc_dict = {}
-    for aligner in task.alns:
-        for ref_order in range(1, task.ref_num+1): 
-            varscan_vc_dict[ref_order] = {}
-            lofreq_vc_dict[ref_order] = {}
+    for ref_order in range(1, task.ref_num+1):
+        varscan_vc_dict[ref_order] = {}
+        lofreq_vc_dict[ref_order] = {}
+        for aligner in task.alns:
             # parse varscan vcf file
             varscan_vcf_file_path = task.path.joinpath(
                 task.id, 'alignment', aligner, '%s_%s_ref_%d_varscan.vcf' % (task.id, aligner, ref_order)
