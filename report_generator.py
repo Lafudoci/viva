@@ -51,7 +51,7 @@ def build_md_report(task):
         '| ----- | ------ | ------ |'
     ])
     for ref_order in range(1, task.ref_num+1):
-        header = s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'].replace("|", "&#124;")
+        header = s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header_escape']
         length = s['ref_meta_dict']['seq_meta'][str(ref_order)]['seq_length']
         ref_c_t += '\n| %d | %s | %s |'%(
             ref_order,
@@ -84,7 +84,7 @@ def build_md_report(task):
     aln_m_c = ''
     for ref_order in range(1, task.ref_num+1):
         aln_m_c += '\n'.join([
-            '\n#### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header']),
+            '\n#### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header_escape']),
             '| Aligner | Overall mapped rate |',
             '| ------- | ------------------- |',
             '| Bowtie2 | %s |'%(s['aln']['mapped_rate']['bowtie2'][str(ref_order)]),
@@ -95,7 +95,7 @@ def build_md_report(task):
     aln_c_c = ''
     for ref_order in range(1, task.ref_num+1):
         aln_c_c += '\n'.join([
-            '\n#### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header']),
+            '\n#### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header_escape']),
             '| Aligner | Start base | End base | Covered base | Mean depth |',
             '| ------- | ---------- | -------- | ------------ | ---------- |',
             '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2'][str(ref_order)]['startpos'], s['cov']['bowtie2'][str(ref_order)]['endpos'], s['cov']['bowtie2'][str(ref_order)]['coverage'], s['cov']['bowtie2'][str(ref_order)]['meandepth']),
@@ -103,7 +103,7 @@ def build_md_report(task):
     vc_t = '## Variant Calling'
     vc_c = ''
     for ref_order in range(1, task.ref_num+1):
-        vc_r = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
+        vc_r = '### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header_escape'])
         vc_l_c = '#### LoFreq'
         if len(s['vc']['lofreq'][str(ref_order)]) > 0:
             vc_l_t = '| Position | REF | ALT | Bowtie2(Filter/AF/DP/GQ) | BWA(Filter/AF/DP/GQ) |\n| -------- | --- | --- | ------- | --- |\n'
@@ -142,7 +142,7 @@ def build_md_report(task):
     genome_t = '## Draft Genome'
     genome_c = ''
     for ref_order in range(1, task.ref_num+1):
-        genome_ref = '\n### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header'])
+        genome_ref = '\n### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header_escape'])
         genome_pth = 'FASTA was saved to : %s' % s['draft_meta'][str(ref_order)]['file_path']
         genome_snv = ('Apllied SNV : %s' % s['draft_meta'][str(ref_order)]['snv_list']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_cf = ('Conflict calling : %s' % s['draft_meta'][str(ref_order)]['conflicts']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')

@@ -115,6 +115,7 @@ def ref_import(task):
         # collect seqs meta
         meta_dict['seq_meta'][i] = {
             'fasta_header': header,
+            'fasta_header_escape': header.replace("|", "&#124;"),
             'seq_length': str(len(seq))
         }
         i += 1
