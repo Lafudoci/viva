@@ -209,17 +209,19 @@ def build_draft_genome_seq(task):
             else:
                 ref_mer = vc['REF']
                 alt_mer = list(vc['ALT'].keys())[0]
-                # apply snv onto reference sequence
-                i = 0
-                for base in ref_mer[1:]:
-                    if fasta_base_list[int(pos)+i] != base:
-                        draft_genome_summary[ref_order]['error'].append(pos)
-                        break
-                    fasta_base_list[int(pos)+i] = ''
-                    i += 1
-                fasta_base_list[int(pos)-1] = alt_mer
-                # record apllied snv
-                draft_genome_summary[ref_order]['snv_list'].append('%s%s%s'%(ref_mer, pos, alt_mer))
+                score = int(vc['ALT'][alt_mer]['SCORE'])
+                if score >= int(task.min_vc_score):
+                    # apply snv onto reference sequence
+                    i = 0
+                    for base in ref_mer[1:]:
+                        if fasta_base_list[int(pos)+i] != base:
+                            draft_genome_summary[ref_order]['error'].append(pos)
+                            break
+                        fasta_base_list[int(pos)+i] = ''
+                        i += 1
+                    fasta_base_list[int(pos)-1] = alt_mer
+                    # record apllied snv
+                    draft_genome_summary[ref_order]['snv_list'].append('%s%s%s'%(ref_mer, pos, alt_mer))
     
         draft_fasta_dict = { '%s_draft_%d'%(task.id, ref_order) :''.join(fasta_base_list) }
 

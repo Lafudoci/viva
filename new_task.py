@@ -26,6 +26,7 @@ parser.add_argument('--remove_host', help="Remove specific host genome.", defaul
 parser.add_argument('--test', default=None)
 parser.add_argument('--spades_mem', default=22)
 parser.add_argument('--spades_mode', default='metaviral')
+parser.add_argument('--min_vc_score', default=1)
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
@@ -81,6 +82,7 @@ def main():
     task.spades_mode = args.spades_mode
     task.vc_threshold = '0.7'
     task.ref_num = 0
+    task.min_vc_score = args.min_vc_score
 
     if args.test != None:
         task.name = 'test_run'
