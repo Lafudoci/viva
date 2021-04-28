@@ -37,12 +37,12 @@ def run_de_novo(task):
 
 
 def blast_assembled(task):
-    logger.info('Finding refseq.')
+    logger.info('Finding ref seqeunce.')
     assembled_cwd = task.path.joinpath(task.id, 'assembly', '%s_spades_%s'%(task.id, task.spades_mode))
     blast_cmd = [
         'blastn',
         '-db',
-        'refseq_virus.fasta',
+        'U-RVDBv21.0.fasta',
         '-query',
         'contigs.fasta',
         '-out',
@@ -68,7 +68,7 @@ def extract_virus_refseq(task):
     if len(fmt6_dict) > 0:
         best_hit_dict = utils.find_top_score_hits(fmt6_dict)
         utils.build_json_file(task.path.joinpath(task.id, 'assembly', 'best_hit.json'), best_hit_dict)
-        refseq_virus_fasta_path = Path(Path.home(), 'bioapp', 'blastdb', 'refseq_virus.fasta')
+        refseq_virus_fasta_path = Path(Path.home(), 'bioapp', 'blastdb', 'U-RVDBv21.0.fasta')
         fasta_dict = utils.extract_seq_from_fasta(refseq_virus_fasta_path, best_hit_dict['sseqid'])
         task.ref = task.path.joinpath(task.id, 'assembly', '%s.fasta'%best_hit_dict['sseqid'])
         utils.build_fasta_file(task.ref, fasta_dict)
