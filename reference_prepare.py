@@ -52,7 +52,7 @@ def blast_assembled(task):
         '-num_threads',
         task.threads,
         '-max_target_seqs',
-        '1'
+        '5'
     ]
     logger.info('CMD: '+' '.join(blast_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(blast_cmd))
