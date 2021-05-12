@@ -64,8 +64,7 @@ def variant_calling_varscan2(task):
     logger.info('Starting variant calling by VarScan2.')
     mpileup_cmd = ['samtools', 'mpileup', '-B']
     mpileup2cns_cmd = [
-        'java', '-jar',
-        '/home/leftc/bioapp/varscan2/VarScan.v2.4.4.jar',
+        'varscan',
         'mpileup2cns'
     ]
     output_cmd = ['--output-vcf', '1']

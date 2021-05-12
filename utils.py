@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import subprocess
 import textwrap
 import time
 from decimal import Decimal
@@ -162,3 +163,31 @@ def load_blast_fmt_sciname_max1_bitscore(file_path):
                 'common': hit[6]
             }
     return fmt6_dict
+
+
+def deps_check(dep_list):
+    try:
+        for dep in dep_list:
+            logger.info('Dependency check: %s'%dep)
+            subprocess.run(['which', dep], check=True)
+    except subprocess.CalledProcessError as e:
+        logger.error('Dependency check error: %s.'%str(e))
+        return -1
+
+
+def conda_pkg_versions(pkg_list):
+    verions_dict = {}
+    if deps_check(['conda']) != -1:
+        all_pkg_list = subprocess.run(['conda', 'list'], capture_output=True).stdout.decode(encoding='utf-8').split('\n')
+        for pkg_string in all_pkg_list:
+            print(pkg_string)
+            if not pkg_string.startswith('#'):
+                if len(pkg_string.split()) == 4:
+                    name = pkg_string.split()[0].strip()
+                    version = pkg_string.split()[1].strip()
+                    if name in pkg_list:
+                        verions_dict[name] = version
+        print(verions_dict)
+        return verions_dict
+    else:
+        return -1

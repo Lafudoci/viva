@@ -40,7 +40,7 @@ def report_summary(task):
     s['cov'] = single_meta_parser(task, 'alignment', 'coverage_stat.json')
     s['vc'] = vc_parser(task)
     s['draft_meta'] = single_meta_parser(task, 'draft_genome', task.id + '_draft_summary.json').copy()
-    s['version'] = tool_version_caller()
+    s['version'] = tool_version_caller(task)
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),
         s
@@ -121,32 +121,12 @@ def vc_parser(task):
     return vc_dict
 
 
-def tool_version_caller():
-    version_dict = {}
-    fastp_cmd = ['fastp', '--version']
-    samtools_cmd = ['samtools', '--version']
-    bowtie2_cmd = ['bowtie2', '--version']
-    bwa_cmd = ['bwa']
-    lofreq_cmd = ['lofreq', 'version']
-    varscan2_cmd = ['java', '-jar', '/home/leftc/bioapp/varscan2/VarScan.v2.4.4.jar']
-    spades_cmd = ['spades.py', '--version']
-    last_commit_cmd = ['git', 'describe', '--always']
-    version_dict['fastp'] = subprocess.run(
-        fastp_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[1].strip()
-    version_dict['samtools'] = subprocess.run(
-        samtools_cmd, capture_output=True).stdout.decode(encoding='utf-8').split(' ')[1].split('\n')[0]
-    version_dict['bowtie2'] = subprocess.run(
-        bowtie2_cmd, capture_output=True).stdout.decode(encoding='utf-8').split(' ')[2].split('\n')[0]
-    version_dict['bwa'] = subprocess.run(
-        bwa_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[6].split('\n')[0]
-    version_dict['lofreq'] = subprocess.run(
-        lofreq_cmd, capture_output=True).stdout.decode(encoding='utf-8').split(' ')[1].split('\n')[0]
-    version_dict['varscan2'] = subprocess.run(
-        varscan2_cmd, capture_output=True).stderr.decode(encoding='utf-8').split(' ')[1].split('\n')[0][1:]
-    version_dict['spades'] = subprocess.run(
-        spades_cmd, capture_output=True).stdout.decode(encoding='utf-8').split(' ')[3].strip()
-    version_dict['last_commit'] = subprocess.run(
-        last_commit_cmd, capture_output=True).stdout.decode(encoding='utf-8').strip()
+def tool_version_caller(task):
+    version_dict = utils.conda_pkg_versions(task.conda_pkgs)
+    viva_commit_cmd = ['git', 'describe', '--always']
+    version_dict['viva'] = subprocess.run(
+        viva_commit_cmd,
+        capture_output=True).stdout.decode(encoding='utf-8').strip()
     return version_dict
     
 

@@ -54,19 +54,17 @@ def check_ref_file(task):
         return False
 
 
-def check_tools():
-    try:
-        version_dict = summary_generator.tool_version_caller()
-        for tool, vs in version_dict.items():
-            logger.info('%s:%s'%(str(tool),str(vs)))
-    except Exception as e:
-        logger.critical('Tools check failed. %s'%e)
-        sys.exit(-1)
+def check_deps(task):
+    sys_deps = ['wget', 'git', 'apt', 'conda', 'python']
+    if utils.deps_check(task.conda_pkgs+sys_deps) == -1:
+        logger.critical('Depency check fail.')
+        sys.exit(100)
 
 
 def main():
-    check_tools()
     task = Task()
+    task.conda_pkgs = ['fastp', 'samtools', 'bcftools', 'bowtie2', 'bwa', 'varscan', 'lofreq', 'spades.py', 'blastn']
+    check_deps(task)
     task.path = Path.cwd().joinpath('tasks')
     task.name = args.prefix
     task.id = ''
@@ -83,7 +81,7 @@ def main():
     task.vc_threshold = '0.7'
     task.ref_num = 0
     task.min_vc_score = args.min_vc_score
-
+    
     if args.test != None:
         task.name = 'test_run'
         task.ex_r1 = Path.cwd().joinpath('test_data','AdV_R1.fastq.gz')
