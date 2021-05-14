@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--r1', help="Read-R1.")
 parser.add_argument('--r2', help="Read-R2.")
 parser.add_argument('--prefix', help="For output prefix.", default='newtask')
-parser.add_argument('--ref', help="Reference FASTA file path.")
+parser.add_argument('--ref', help="Reference FASTA file path.", default=None)
 parser.add_argument('--threads', help="CPU threads.", default=6)
 parser.add_argument('--alns', help="Reads mapper list", default='bowtie2,bwa')
 parser.add_argument('--trimming', help="Global trimming bases for reads.", default=0)
@@ -55,7 +55,7 @@ def check_ref_file(task):
 
 
 def check_deps(task):
-    sys_deps = ['wget', 'git', 'apt', 'conda', 'python']
+    sys_deps = ['wget', 'git', 'apt', 'conda', 'python', 'gzip']
     if utils.deps_check(task.conda_pkgs+sys_deps) == -1:
         logger.critical('Depency check fail.')
         sys.exit(100)
@@ -63,7 +63,12 @@ def check_deps(task):
 
 def main():
     task = Task()
-    task.conda_pkgs = ['fastp', 'samtools', 'bcftools', 'bowtie2', 'bwa', 'varscan', 'lofreq', 'spades.py', 'blastn']
+    task.conda_pkgs = [
+        'fastp', 'samtools', 'bcftools',
+        'bowtie2', 'bwa',
+        'varscan', 'lofreq',
+        'spades.py', 'blastn', 'makeblastdb'
+        ]
     check_deps(task)
     task.path = Path.cwd().joinpath('tasks')
     task.name = args.prefix
@@ -92,12 +97,30 @@ def main():
             task.ref = Path.cwd().joinpath('test_data', 'adv_multi_ref.fasta')
         elif args.test == 'denovo':
             task.dehost = 'human'
-            task.ref = ''
+            task.ref = None
 
-    logger.info('Checking input file.')
+    logger.info('Checking reference.')
     if task.ref != None:
         if check_ref_file(task):
             task.with_ref = True
+        else:
+            logger.error('Input reference not found. Exiting pipeline.')
+            sys.exit()
+    else:
+        logger.info('Input reference not provided. Will go de novo')
+    
+    if task.with_ref == False:
+        logger.info('Checking RVDB.')
+        if utils.setup_rvdb() == -1:
+            logger.error('Reads not found. Exiting pipeline.')
+            sys.exit()
+
+    if task.dehost != None:
+        if utils.setup_genomes(task.dehost) == -1:
+            logger.error('Host genome not found. Exiting pipeline.')
+            sys.exit()
+    
+    logger.info('Checking reads files.')
     if check_reads_file(task) != -1:
         task.id = "%s_%s" % (task.name, time.strftime(
             "%Y%m%d%H%M", time.localtime()))

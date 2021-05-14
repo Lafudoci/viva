@@ -191,3 +191,87 @@ def conda_pkg_versions(pkg_list):
         return verions_dict
     else:
         return -1
+
+
+def setup_rvdb():
+    if deps_check(['wget', 'gunzip', 'makeblastdb']) == -1:
+        return -1
+    if subprocess.run(['blastdbcmd', '-db', 'U-RVDBv21.0.fast', '-info']).returncode == 0:
+        return
+    try:
+        logger.info('Preparing RVDB')
+        # logger.info('Downloading RVDB')
+        # subprocess.run(
+        #     [
+        #     'wget',
+        #     'https://rvdb.dbi.udel.edu/download/U-RVDBv21.0.fasta.gz',
+        #     '-P', '/app/blastdb'
+        #     ],
+        #     check=True)
+        logger.info('Decompressing RVDB')
+        subprocess.run(
+            [
+            'gunzip',
+            '--keep',
+            'U-RVDBv21.0.fasta.gz',
+            ],
+            check=True,
+            cwd='/app/blastdb')
+        logger.info('Building blastdb of RVDB')
+        subprocess.run(
+            [
+            'makeblastdb',
+            '-in',
+            'U-RVDBv21.0.fasta',
+            '-blastdb_version',
+            '5',
+            '-title',
+            'Reference Viral DataBase',
+            '-dbtype',
+            'nucl'
+            ],
+            check=True,
+            cwd='/app/blastdb')
+    except subprocess.CalledProcessError as e:
+        logger.error('RVDB setup error: %s.'%str(e))
+        return -1
+
+
+def setup_genomes(host_name):
+    if deps_check(['wget', 'gzip', 'bowtie2-inspect', 'bowtie2-build']) == -1:
+        return -1
+    if subprocess.run(['bowtie2-inspect', '--summary', 'grch38'], cwd='/app/genomes/grch38').returncode == 0:
+        return
+    try:
+        logger.info('Preparing host genome file')
+        # logger.info('Downloading genome file')
+        # subprocess.run(
+        #     [
+        #     'wget',
+        #     'https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz',
+        #     '-P', '/app/genome'
+        #     ],
+        #     check=True)
+        # logger.info('Decompressing genome file')
+        subprocess.run(
+            [
+            'gunzip',
+            '--keep',
+            'GCF_000001405.39_GRCh38.p13_genomic.fna.gz',
+            ],
+            check=True,
+            cwd='/app/genomes/grch38')
+        logger.info('Indexing genome file')
+        subprocess.run(
+            [
+            'bowtie2-build',
+            '--threads',
+            '6',
+            'GCF_000001405.39_GRCh38.p13_genomic.fna',
+            'grch38'
+            ],
+            check=True,
+            cwd='/app/genome')
+    except subprocess.CalledProcessError as e:
+        logger.error('RVDB setup error: %s.'%str(e))
+        return -1
