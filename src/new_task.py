@@ -112,7 +112,7 @@ def main():
     if task.with_ref == False:
         logger.info('Checking RVDB.')
         if utils.setup_rvdb() == -1:
-            logger.error('Reads not found. Exiting pipeline.')
+            logger.error('RVDB setup error. Exiting pipeline.')
             sys.exit()
 
     if task.dehost != None:
