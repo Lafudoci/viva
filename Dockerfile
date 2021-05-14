@@ -24,5 +24,6 @@ RUN conda install --yes \
     spades==3.15.2 blast==2.11.0 \
     && conda clean -afy
 COPY ./src /app
+COPY ./test_data /app
 WORKDIR /app
 ENTRYPOINT ["python","new_task.py"]

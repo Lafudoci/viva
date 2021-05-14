@@ -1,4 +1,6 @@
 /.vscode
 /tasks
 /md
+/blastdb
+/genomes
 /__pycache__
