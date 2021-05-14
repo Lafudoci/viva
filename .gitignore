@@ -2,3 +2,5 @@
 /tasks
 /md
 /__pycache__
+/src/genomes
+/src/blastdb
