@@ -200,6 +200,7 @@ def setup_rvdb():
         return
     try:
         logger.info('Preparing RVDB')
+        Path.mkdir(Path("/app/blastdb"), parents=True, exist_ok=True)
         # logger.info('Downloading RVDB')
         # subprocess.run(
         #     [
@@ -250,6 +251,7 @@ def setup_genomes(host_name):
         pass
     try:
         logger.info('Preparing host genome file')
+        Path.mkdir(Path("/app/genomes"), parents=True, exist_ok=True)
         # logger.info('Downloading genome file')
         # subprocess.run(
         #     [
