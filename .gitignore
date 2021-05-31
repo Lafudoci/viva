@@ -2,5 +2,7 @@
 /tasks
 /md
 /__pycache__
-/src/genomes
-/src/blastdb
+/genomes
+/blastdb
+/src/genomes_arch
+/src/blastdb_arch
