@@ -201,24 +201,27 @@ def setup_rvdb():
     try:
         logger.info('Preparing RVDB')
         Path.mkdir(Path("/app/blastdb"), parents=True, exist_ok=True)
-        # logger.info('Downloading RVDB')
-        # subprocess.run(
-        #     [
-        #     'wget',
-        #     'https://rvdb.dbi.udel.edu/download/U-RVDBv21.0.fasta.gz',
-        #     '-P', '/app/blastdb'
-        #     ],
-        #     check=True)
+        if Path("/app/blastdb_arch/U-RVDBv21.0.fasta.gz").exists() != True:
+            logger.info('Downloading RVDB')
+            subprocess.run(
+                [
+                'wget',
+                'https://rvdb.dbi.udel.edu/download/U-RVDBv21.0.fasta.gz',
+                '-P', '/app/blastdb_arch'
+                ],
+                check=True)
+        else:
+            logger.info('RVDB archive exists.')
         logger.info('Decompressing RVDB')
         with open("/app/blastdb/U-RVDBv21.0.fasta", "w") as f:
             subprocess.run(
                 [
                 'gunzip',
                 '-c',
-                'U-RVDBv21.0.fasta.gz',
+                '/app/blastdb_arch/U-RVDBv21.0.fasta.gz',
                 ],
                 check=True,
-                cwd='/app/blastdb_arch',
+                cwd='/app/blastdb',
                 stdout=f
                 )
         logger.info('Building blastdb of RVDB')
@@ -242,34 +245,47 @@ def setup_rvdb():
 
 
 def setup_genomes(host_name):
+    genome_source_table = {
+        'human':{
+            'bt2_gname': 'grch38',
+            'arch_name': 'GCF_000001405.39_GRCh38.p13_genomic.fna.gz',
+            'file_name': 'GCF_000001405.39_GRCh38.p13_genomic.fna',
+            'source_url': 'https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz'
+        }
+    }
+    if genome_source_table.get(host_name) == None:
+        return -1
     if deps_check(['wget', 'gzip', 'bowtie2-inspect', 'bowtie2-build']) == -1:
         return -1
     try:
-        if subprocess.run(['bowtie2-inspect', '--summary', 'grch38'], cwd='/app/genomes').returncode == 0:
+        if subprocess.run(['bowtie2-inspect', '--summary', genome_source_table[host_name]['bt2_gname']], cwd='/app/genomes').returncode == 0:
             return
     except Exception:
         pass
     try:
         logger.info('Preparing host genome file')
         Path.mkdir(Path("/app/genomes"), parents=True, exist_ok=True)
-        # logger.info('Downloading genome file')
-        # subprocess.run(
-        #     [
-        #     'wget',
-        #     'https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz',
-        #     '-P', '/app/genome'
-        #     ],
-        #     check=True)
-        # logger.info('Decompressing genome file')
-        with open("/app/genomes/GCF_000001405.39_GRCh38.p13_genomic.fna", "w") as f:
+        if Path("/app/genomes/"+genome_source_table[host_name]['arch_name']).exists() != True:
+            logger.info('Downloading genome file')
+            subprocess.run(
+                [
+                'wget',
+                genome_source_table[host_name]['source_url'],
+                '-P', '/app/genomes_arch'
+                ],
+                check=True)
+        else:
+            logger.info('Genome archive exists.')
+        logger.info('Decompressing genome file')
+        with open(genome_source_table[host_name]['file_name'], "w") as f:
             subprocess.run(
                 [
                 'gunzip',
                 '-c',
-                'GCF_000001405.39_GRCh38.p13_genomic.fna.gz',
+                '/app/genomes_arch/'+genome_source_table[host_name]['arch_name'],
                 ],
                 check=True,
-                cwd='/app/genomes_arch',
+                cwd='/app/genomes',
                 stdout=f)
         logger.info('Indexing genome file')
         subprocess.run(
@@ -277,7 +293,7 @@ def setup_genomes(host_name):
             'bowtie2-build',
             '--threads',
             '6',
-            'GCF_000001405.39_GRCh38.p13_genomic.fna',
+            genome_source_table[host_name]['file_name'],
             'grch38'
             ],
             check=True,
