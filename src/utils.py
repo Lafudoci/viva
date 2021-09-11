@@ -265,7 +265,7 @@ def setup_genomes(host_name):
     try:
         logger.info('Preparing host genome file')
         Path.mkdir(Path("/app/genomes"), parents=True, exist_ok=True)
-        if Path("/app/genomes/"+genome_source_table[host_name]['arch_name']).exists() != True:
+        if Path("/app/genomes_arch/"+genome_source_table[host_name]['arch_name']).exists() != True:
             logger.info('Downloading genome file')
             subprocess.run(
                 [
@@ -277,15 +277,15 @@ def setup_genomes(host_name):
         else:
             logger.info('Genome archive exists.')
         logger.info('Decompressing genome file')
-        with open(genome_source_table[host_name]['file_name'], "w") as f:
+        with open('/app/genomes/'+genome_source_table[host_name]['file_name'], "w") as f:
             subprocess.run(
                 [
                 'gunzip',
                 '-c',
-                '/app/genomes_arch/'+genome_source_table[host_name]['arch_name'],
+                genome_source_table[host_name]['arch_name'],
                 ],
                 check=True,
-                cwd='/app/genomes',
+                cwd='/app/genomes_arch',
                 stdout=f)
         logger.info('Indexing genome file')
         subprocess.run(
