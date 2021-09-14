@@ -114,6 +114,9 @@ def remove_host(task):
     elif task.dehost == 'rhesus_monkey':
         dehost_meta['genome'] = 'Rhesus monkey (Mmul_10, GCF_003339765.1)'
         genome_path = '/app/genomes/' + 'mmul_10'
+    else:
+        dehost_meta['genome'] = 'Custom sequence file (%s)'%task.dehost
+        genome_path = '/app/genomes/' + task.dehost
 
     unconc_reads_out = task.id + '_host_removed_R%.fastq.gz'
     mapped_reads_out = 'host_mapped.sam'
