@@ -253,8 +253,9 @@ def setup_genomes(host_name):
             'source_url': 'https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz'
         }
     }
+    # TEMP return 0 for custom genome input
     if genome_source_table.get(host_name) == None:
-        return -1
+        return 0
     if deps_check(['wget', 'gzip', 'bowtie2-inspect', 'bowtie2-build']) == -1:
         return -1
     try:
