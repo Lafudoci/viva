@@ -17,13 +17,17 @@ def is_valid_fasta(file_path):
 
 def load_fasta_file(file_path):
     fasta_dict = {}
+    header = ''
     with open(file_path, 'r') as f:
         for line in f.readlines():
             if line.startswith('>'):
                 header = line[1:].strip()
-                fasta_dict[header] = ''
+                if len(header) > 0:
+                    fasta_dict[header] = ''
             else:
-                fasta_dict[header] += line.strip()
+                # only write base after first ">" symbol
+                if header != '':
+                    fasta_dict[header] += line.strip()
     return fasta_dict
 
 
