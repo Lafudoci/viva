@@ -198,6 +198,9 @@ def build_draft_genome_seq(task):
         fasta_base_list = []
         imported_ref = task.path.joinpath(task.id, 'reference', '%s_ref_%d.fasta'%(task.id, ref_order))
         ref_fasta_dict = utils.load_fasta_file(imported_ref)
+        if ref_fasta_dict == -1:
+            logger.critical('Failed to load FASTA.')
+            sys.exit(-1)
         for base in list(ref_fasta_dict.values())[0]:
             fasta_base_list.append(base)
 

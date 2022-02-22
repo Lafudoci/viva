@@ -81,6 +81,9 @@ def ref_import(task):
     imported_ref_path = task.path.joinpath(task.id, 'reference')
     Path.mkdir(imported_ref_path, parents=True, exist_ok=True)
     ref_fasta_dict = utils.load_fasta_file(task.ref)
+    if ref_fasta_dict == -1:
+        logger.critical('Failed to load FASTA.')
+        sys.exit(-1)
     task.ref_num = len(ref_fasta_dict)
     if task.ref_num == 1:
         pass
