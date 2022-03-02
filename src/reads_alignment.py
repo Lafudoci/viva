@@ -53,6 +53,7 @@ def align_bowtie2(task):
         bt2_run = subprocess.run(aln_cmd, cwd=aligner_cwd, capture_output=True)
         print(bt2_run.stdout.decode(encoding='utf-8'))
         print(bt2_run.stderr.decode(encoding='utf-8'))
+        bam_sort_n_index(task, 'bowtie2', ref_order)
 
 
 def align_bwa(task):
@@ -75,28 +76,28 @@ def align_bwa(task):
         bt2_run = subprocess.run(aln_cmd, cwd=aligner_cwd, capture_output=True)
         print(bt2_run.stdout.decode(encoding='utf-8'))
         print(bt2_run.stderr.decode(encoding='utf-8'))
+        bam_sort_n_index(task, 'bwa', ref_order)
 
 
-def bam_sort_n_index(task, aligner):
-    for ref_order in range(1, task.ref_num+1):
-        logger.info('Sorting & indexing BAM file for aln #%d.'%ref_order)
-        aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
-        # sorting
-        sorting_cmd = ['samtools', 'sort', '-@', task.threads, '%s_ref_%d.sam'%(task.id, ref_order), '-o', '%s_ref_%d.sorted.bam'%(task.id, ref_order)]
-        logger.info('CMD: '+' '.join(sorting_cmd))
-        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(sorting_cmd))
-        sorting_run = subprocess.run(sorting_cmd, cwd=aligner_cwd, capture_output=True)
-        print(sorting_run.stdout.decode(encoding='utf-8'))
-        print(sorting_run.stderr.decode(encoding='utf-8'))
-        # indexing
-        indexing_cmd = ['samtools', 'index', '-@', task.threads, '%s_ref_%d.sorted.bam'%(task.id, ref_order)]
-        logger.info('CMD: '+' '.join(indexing_cmd))
-        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(indexing_cmd))
-        index_run = subprocess.run(indexing_cmd, cwd=aligner_cwd, capture_output=True)
-        print(index_run.stdout.decode(encoding='utf-8'))
-        print(index_run.stderr.decode(encoding='utf-8'))
-        # remove sam file to release disk space
-        os.remove(aligner_cwd.joinpath('%s_ref_%d.sam'%(task.id, ref_order)))
+def bam_sort_n_index(task, aligner, ref_order):
+    logger.info('Sorting & indexing BAM file for aln #%d.'%ref_order)
+    aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
+    # sorting
+    sorting_cmd = ['samtools', 'sort', '-@', task.threads, '%s_ref_%d.sam'%(task.id, ref_order), '-o', '%s_ref_%d.sorted.bam'%(task.id, ref_order)]
+    logger.info('CMD: '+' '.join(sorting_cmd))
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(sorting_cmd))
+    sorting_run = subprocess.run(sorting_cmd, cwd=aligner_cwd, capture_output=True)
+    print(sorting_run.stdout.decode(encoding='utf-8'))
+    print(sorting_run.stderr.decode(encoding='utf-8'))
+    # indexing
+    indexing_cmd = ['samtools', 'index', '-@', task.threads, '%s_ref_%d.sorted.bam'%(task.id, ref_order)]
+    logger.info('CMD: '+' '.join(indexing_cmd))
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(indexing_cmd))
+    index_run = subprocess.run(indexing_cmd, cwd=aligner_cwd, capture_output=True)
+    print(index_run.stdout.decode(encoding='utf-8'))
+    print(index_run.stderr.decode(encoding='utf-8'))
+    # remove sam file to release disk space
+    os.remove(aligner_cwd.joinpath('%s_ref_%d.sam'%(task.id, ref_order)))
 
 
 def align_flagstat(task, aligners):
@@ -149,6 +150,5 @@ def run(task):
     for aligner in aligners:
         ref_index(task, aligner)
         align_disp(task, aligner)
-        bam_sort_n_index(task, aligner)
     align_flagstat(task, aligners)
     align_coverage_stat(task, aligners)
