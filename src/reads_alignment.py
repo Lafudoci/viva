@@ -160,3 +160,4 @@ def run(task):
         align_disp(task, aligner)
     align_flagstat(task, aligners)
     align_coverage_stat(task, aligners)
+    extract_unmapped_reads(task, aligners)
