@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 import reads_alignment
+import unmapped_analysis
 import reads_preprocess
 import reference_prepare
 import utils
@@ -20,13 +21,16 @@ parser.add_argument('--r2', help="Read-R2.")
 parser.add_argument('--prefix', help="For output prefix.", default='newtask')
 parser.add_argument('--ref', help="Reference FASTA file path.", default=None)
 parser.add_argument('--threads', help="CPU threads.", default=6)
-parser.add_argument('--alns', help="Reads mapper list", default='bowtie2,bwa')
+parser.add_argument('--alns', help="Reads mapper list.", default='bowtie2,bwa')
 parser.add_argument('--trimming', help="Global trimming bases for reads.", default=0)
 parser.add_argument('--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
 parser.add_argument('--test', default=None)
-parser.add_argument('--spades_mem', default=22)
+parser.add_argument('--spades_mem', help="The memory (GB) allocated for spades, apply to both ref and unmapped assemble.", default=22)
 parser.add_argument('--spades_mode', default='metaviral')
+parser.add_argument('--unmapped_spades_mode', default='meta')
 parser.add_argument('--min_vc_score', default=1)
+parser.add_argument('--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default=True)
+parser.add_argument('--unmapped_blastdb', help="BLASTDB name in unmapped reads assemble BLAST.", default=None)
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
@@ -86,6 +90,9 @@ def main():
     task.vc_threshold = '0.7'
     task.ref_num = 0
     task.min_vc_score = args.min_vc_score
+    task.unmapped_assemble = args.unmapped_assemble
+    task.unmapped_spades_mode = args.unmapped_spades_mode
+    task.unmapped_blastdb = args.unmapped_blastdb
     
     if args.test != None:
         task.name = 'test_run'
@@ -98,6 +105,9 @@ def main():
         elif args.test == 'denovo':
             task.dehost = 'human'
             task.ref = None
+
+    if task.unmapped_blastdb != None:
+        task.unmapped_assemble = True
 
     logger.info('Checking reference.')
     if task.ref != None:
@@ -136,6 +146,7 @@ def main():
         reads_preprocess.run(task)
         reference_prepare.run(task)
         reads_alignment.run(task)
+        unmapped_analysis.run(task)
         variant_calling.run(task)
         logger.info('Pipeline finished.')
         utils.write_log_file(
