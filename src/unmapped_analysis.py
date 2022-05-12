@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 def run_de_novo(task):
     logger.info('Runing De Novo assembly of unmapped reads.')
-    unmapped_assembly_cwd = task.path.joinpath(task.id, 'assembly', 'umapped')
+    unmapped_assembly_cwd = task.path.joinpath(task.id, 'assembly', 'unmapped')
     Path.mkdir(unmapped_assembly_cwd, parents=True, exist_ok=True)
     bwa_aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bwa')
     # ONLY apply to the first bwa ref alignment.
@@ -36,7 +36,7 @@ def run_de_novo(task):
 
 def blast_assembled(task):
     logger.info('BLASTing unmapped reads assembled.')
-    assembled_cwd = task.path.joinpath(task.id, 'assembly', 'umapped', '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode))
+    assembled_cwd = task.path.joinpath(task.id, 'assembly', 'unmapped', '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode))
     blast_cmd = [
         'blastn',
         '-db',
