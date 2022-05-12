@@ -142,7 +142,7 @@ def extract_unmapped_reads(task, aligners):
         aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
         for ref_order in range(1, task.ref_num+1):
             samtools_option_cmd = ['samtools', 'fastq', '-f 13']
-            samtools_fastq_cmd = ['-1 %s_ref_%d_umapped_R1.fastq.gz'%(task.id, ref_order), '-2 %s_ref_%d_umapped_R2.fastq.gz'%(task.id, ref_order)]
+            samtools_fastq_cmd = ['-1 %s_ref_%d_unmapped_R1.fastq.gz'%(task.id, ref_order), '-2 %s_ref_%d_unmapped_R2.fastq.gz'%(task.id, ref_order)]
             samtools_run_cmd = samtools_option_cmd + samtools_fastq_cmd + ['%s_ref_%d.sorted.bam'%(task.id, ref_order)]
             subprocess.run(samtools_run_cmd, cwd=aligner_cwd, check=True)
 
