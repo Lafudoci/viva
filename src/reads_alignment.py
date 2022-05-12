@@ -136,6 +136,17 @@ def align_coverage_stat(task, aligners):
     utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'coverage_stat.json'), cov_dict)
 
 
+def extract_unmapped_reads(task, aligners):
+    for aligner in aligners:
+        logger.info('Extract unmapped reads from %s BAM files.' % aligner)
+        aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
+        for ref_order in range(1, task.ref_num+1):
+            samtools_option_cmd = ['samtools', 'fastq', '-f 13']
+            samtools_fastq_cmd = ['-1 %s_ref_%d_umapped_R2.fastq.gz', '-2 %s_ref_%d_umapped_R2.fastq.gz']
+            samtools_run_cmd = samtools_option_cmd + samtools_fastq_cmd + ['%s_ref_%d.sorted.bam'%(task.id, ref_order)]
+            subprocess.run(samtools_run_cmd, cwd=aligner_cwd, check=True)
+
+
 def align_disp(task, aligner):
     if aligner == 'bowtie2':
         align_bowtie2(task)
