@@ -46,7 +46,7 @@ def blast_assembled(task):
         '-out',
         '%s_spades_%s.tsv'%(task.id, task.unmapped_spades_mode),
         '-outfmt',
-        '6',
+        '"6 qseqid sacc pident qlen length evalue stitle"',
         '-num_threads',
         task.threads,
         '-max_target_seqs',
