@@ -62,7 +62,7 @@ def blast_assembled(task):
     
     # filter highly matched hits
     logger.info('Filter highly matched hits')
-    blast_result_path = assembled_cwd.path.joinpath(blast_result_filename)
+    blast_result_path = assembled_cwd.joinpath(blast_result_filename)
     highly_match_result_list = []
     with open(blast_result_path, 'r') as f:
         for line in f.readlines():
@@ -87,7 +87,7 @@ def blast_assembled(task):
             ]
             highly_match_result_list.append(hit_list)
     
-    highly_match_result_list_json_path = assembled_cwd.path.joinpath('highly_match_result_list.json')
+    highly_match_result_list_json_path = task.path.joinpath(task.id, 'assembly', 'unmapped', 'highly_match_result_list.json')
     utils.build_json_file(highly_match_result_list_json_path, {highly_match_result_list})
 
 
