@@ -148,6 +148,21 @@ def build_md_report(task):
         genome_cf = ('Conflict calling : %s' % s['draft_meta'][str(ref_order)]['conflicts']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_mm = ('Mismatch calling : %s' % s['draft_meta'][str(ref_order)]['error']).replace('[]', 'None').replace("'", '').replace('[', '').replace(']', '')
         genome_c += '\n\n'.join([genome_ref, genome_pth, genome_snv, genome_cf, genome_mm])
+
+    unmapped_t = '## Unmapped reads analysis'
+    unmapped_c = ''
+    if s['unmapped_analysis'] == {}:
+        unmapped_as = 'Assembly mode: %s'%['unmapped_analysis']['spades_mode']
+        unmapped_db = ''%s['unmapped_analysis']['BLASTdb_name']
+        unmapped_c_t = '| Hits | Orgnism | Ident(%) | Length(bp) | E-value |\n'
+        hit_order = 1
+        for hit in s['unmapped_analysis']['highly_matched_result']:
+            unmapped_c_t += '| %d | %s | %s | %s | %s |\n'%(hit_order, hit['clean_stitle_org'], hit['pident'], hit['length'], hit['evalue'])
+            hit_order += 1
+        unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_c_t])
+    else:
+        unmapped_c = "N/A"
+
     cmd_t = '## Commands'
     cmd_c = '| Duration(s) | Executed command |\n| ---- | ------- |\n'
     for order, entry in s['log_dict'].items():
@@ -185,6 +200,8 @@ def build_md_report(task):
         vc_c,
         genome_t,
         genome_c,
+        unmapped_t,
+        unmapped_c,
         cmd_t,
         cmd_c,
         ver_t,

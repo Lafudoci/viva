@@ -97,12 +97,12 @@ def blast_assembled(task):
 
     unmapped_analysis = {
         'spades_mode': task.unmapped_spades_mode,
-        'BLASTdb name': task.unmapped_blastdb,
+        'BLASTdb_name': task.unmapped_blastdb,
         'highly_matched_result': highly_match_result_list
     }
     
     unmapped_analysis_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'unmapped_analysis.json')
-    utils.build_json_file(unmapped_analysis_json_path, {'highly_match_result_list': highly_match_result_list})
+    utils.build_json_file(unmapped_analysis_json_path, unmapped_analysis)
 
 
 def run(task):

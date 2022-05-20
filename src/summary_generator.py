@@ -40,6 +40,10 @@ def report_summary(task):
     s['cov'] = single_meta_parser(task, 'alignment', 'coverage_stat.json')
     s['vc'] = vc_parser(task)
     s['draft_meta'] = single_meta_parser(task, 'draft_genome', task.id + '_draft_summary.json').copy()
+    if task.unmapped_blastdb != None:
+        s['unmapped_analysis'] = single_meta_parser(task, 'unmapped_analysis', 'unmapped_analysis.json')
+    else:
+        s['unmapped_analysis'] = {}
     s['version'] = tool_version_caller(task)
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),
