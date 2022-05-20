@@ -153,13 +153,18 @@ def build_md_report(task):
     unmapped_c = ''
     if s['unmapped_analysis'] != {}:
         unmapped_as = 'Assembly mode: %s'%['unmapped_analysis']['spades_mode']
-        unmapped_db = ''%s['unmapped_analysis']['BLASTdb_name']
-        unmapped_c_t = '| Hits | Orgnism | Ident(%) | Length(bp) | E-value |\n'
-        hit_order = 1
-        for hit in s['unmapped_analysis']['highly_matched_result']:
-            unmapped_c_t += '| %d | %s | %s | %s | %s |\n'%(hit_order, hit['clean_stitle_org'], hit['pident'], hit['length'], hit['evalue'])
-            hit_order += 1
-        unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_c_t])
+        unmapped_db = 'BLAST database'%s['unmapped_analysis']['BLASTdb_name']
+        unmapped_hits = ''
+        if s['unmapped_analysis']['BLASTdb_name']['highly_matched_result'] != []:
+            unmapped_hits = 'BLAST Hits:\n| Hits | Orgnism | Ident(%) | Length(bp) | E-value |\n'
+            hit_order = 1
+            for hit in s['unmapped_analysis']['highly_matched_result']:
+                unmapped_hits += '| %d | %s | %s | %s | %s |\n'%(hit_order, hit['clean_stitle_org'], hit['pident'], hit['length'], hit['evalue'])
+                hit_order += 1
+            unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_hits])
+        else:
+            unmapped_hits = 'N/A'
+            unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_hits])
     else:
         unmapped_c = "N/A"
 
