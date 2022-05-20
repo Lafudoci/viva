@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import utils
