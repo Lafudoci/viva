@@ -89,7 +89,7 @@ def blast_assembled(task):
             highly_match_result_list.append(hit_list)
     
     highly_match_result_list_json_path = task.path.joinpath(task.id, 'assembly', 'unmapped', 'highly_match_result_list.json')
-    utils.build_json_file(highly_match_result_list_json_path, {highly_match_result_list})
+    utils.build_json_file(highly_match_result_list_json_path, {'highly_match_result_list': highly_match_result_list})
 
 
 def run(task):
