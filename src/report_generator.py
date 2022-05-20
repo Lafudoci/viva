@@ -151,7 +151,7 @@ def build_md_report(task):
 
     unmapped_t = '## Unmapped reads analysis'
     unmapped_c = ''
-    if s['unmapped_analysis'] == {}:
+    if s['unmapped_analysis'] != {}:
         unmapped_as = 'Assembly mode: %s'%['unmapped_analysis']['spades_mode']
         unmapped_db = ''%s['unmapped_analysis']['BLASTdb_name']
         unmapped_c_t = '| Hits | Orgnism | Ident(%) | Length(bp) | E-value |\n'
