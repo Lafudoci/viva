@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 def run_de_novo(task):
     logger.info('Runing De Novo assembly of unmapped reads.')
-    unmapped_assembly_cwd = task.path.joinpath(task.id, 'assembly', 'unmapped')
+    unmapped_assembly_cwd = task.path.joinpath(task.id, 'unmapped_analysis')
     Path.mkdir(unmapped_assembly_cwd, parents=True, exist_ok=True)
     bwa_aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bwa')
     # ONLY apply to the first bwa ref alignment.
@@ -37,7 +37,7 @@ def run_de_novo(task):
 
 def blast_assembled(task):
     logger.info('BLASTing unmapped reads assembled.')
-    assembled_cwd = task.path.joinpath(task.id, 'assembly', 'unmapped', '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode))
+    assembled_cwd = task.path.joinpath(task.id, 'unmapped_analysis', '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode))
     qeury_filename = 'contigs.fasta'
     blast_result_filename = '%s_spades_%s.tsv'%(task.id, task.unmapped_spades_mode)
     blast_cmd = [
@@ -88,7 +88,7 @@ def blast_assembled(task):
             ]
             highly_match_result_list.append(hit_list)
     
-    highly_match_result_list_json_path = task.path.joinpath(task.id, 'assembly', 'unmapped', 'highly_match_result_list.json')
+    highly_match_result_list_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'highly_match_result_list.json')
     utils.build_json_file(highly_match_result_list_json_path, {'highly_match_result_list': highly_match_result_list})
 
 
