@@ -155,7 +155,7 @@ def build_md_report(task):
         unmapped_as = 'Assembly mode: %s'%s['unmapped_analysis']['spades_mode']
         unmapped_db = 'BLAST database: %s'%s['unmapped_analysis']['BLASTdb_name']
         unmapped_hits = ''
-        if s['unmapped_analysis']['BLASTdb_name']['highly_matched_result'] != []:
+        if s['unmapped_analysis']['highly_matched_result'] != []:
             unmapped_hits = 'BLAST Hits:\n| Hits | Orgnism | Ident(%) | Length(bp) | E-value |\n'
             hit_order = 1
             for hit in s['unmapped_analysis']['highly_matched_result']:
