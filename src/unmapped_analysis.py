@@ -53,7 +53,7 @@ def blast_assembled(task):
         '-num_threads',
         task.threads,
         '-max_target_seqs',
-        '5'
+        '5',
         '-evalue',
         '1e-15',
     ]
