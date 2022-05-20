@@ -69,13 +69,10 @@ def blast_assembled(task):
         for line in f.readlines():
             hit = line.strip().split('\t')
             # identity
-            if Decimal(hit[2]) <= Decimal('90'):
+            if Decimal(hit[2]) <= Decimal('95'):
                 break
             # mapped length
-            if Decimal(hit[4]) <= Decimal('200'):
-                break
-            # query coverage
-            if Decimal(hit[4])/Decimal(hit[3]) <= Decimal('0.8'):
+            if Decimal(hit[4]) <= Decimal('50'):
                 break
             hit_list = [
                 hit[0],
