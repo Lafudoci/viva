@@ -54,6 +54,8 @@ def blast_assembled(task):
         task.threads,
         '-max_target_seqs',
         '5'
+        '-evalue',
+        '1e-15',
     ]
     logger.info('CMD: '+' '.join(blast_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(blast_cmd))
@@ -71,22 +73,36 @@ def blast_assembled(task):
             # identity
             if Decimal(hit[2]) <= Decimal('95'):
                 break
-            # mapped length
-            if Decimal(hit[4]) <= Decimal('50'):
-                break
-            hit_list = [
-                hit[0],
-                hit[1],
-                hit[2],
-                hit[3],
-                hit[4],
-                hit[5],
-                hit[6]
-            ]
-            highly_match_result_list.append(hit_list)
+            if task.unmapped_blastdb == "U-RVDBv21.0.fasta":
+                clean_sacc = hit[6].split('|')[2]
+                clean_stitle = hit[6].split('|')[3]
+                clean_stitle_org = hit[6].split('|')[4]
+            else:
+                clean_sacc = hit[1]
+                clean_stitle = hit[6]
+                clean_stitle_org = hit[6]
+
+            highly_match_result_list.append({
+                'qseqid': hit[0],
+                'sacc': hit[1],
+                'pident': hit[2],
+                'qlen': hit[3],
+                'length': hit[4],
+                'evalue': hit[5],
+                'stitle': hit[6],
+                'clean_sacc': clean_sacc,
+                'clean_stitle': clean_stitle,
+                'clean_stitle_org': clean_stitle_org
+            })
+
+    unmapped_analysis = {
+        'spades_mode': task.unmapped_spades_mode,
+        'BLASTdb name': task.unmapped_blastdb,
+        'highly_matched_result': highly_match_result_list
+    }
     
-    highly_match_result_list_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'highly_match_result_list.json')
-    utils.build_json_file(highly_match_result_list_json_path, {'highly_match_result_list': highly_match_result_list})
+    unmapped_analysis_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'unmapped_analysis.json')
+    utils.build_json_file(unmapped_analysis_json_path, {'highly_match_result_list': highly_match_result_list})
 
 
 def run(task):
