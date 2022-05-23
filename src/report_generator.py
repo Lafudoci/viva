@@ -163,7 +163,7 @@ def build_md_report(task):
                 hit_order += 1
             unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_hits])
         else:
-            unmapped_hits = 'N/A'
+            unmapped_hits = 'BLAST Hits: No significant result was reported.'
             unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_hits])
     else:
         unmapped_c = "N/A"
