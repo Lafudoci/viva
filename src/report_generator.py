@@ -156,10 +156,10 @@ def build_md_report(task):
         unmapped_db = 'BLAST database: %s'%s['unmapped_analysis']['BLASTdb_name']
         unmapped_hits = ''
         if s['unmapped_analysis']['highly_matched_result'] != []:
-            unmapped_hits = 'BLAST Hits:\n\n| Hits | Acc. | Orgnism | Ident(%) | Length(bp) | E-value |\n| ---- | ---- | ------- | -------- | ---------- | ------- |\n'
+            unmapped_hits = 'BLAST Hits:\n\n| Hits | Acc. | Orgnism | Ident(%) | Query len.(bp) | Align len.(bp) | E-value |\n| ---- | ---- | ------- | -------- | ---------- | ---------- | ------- |\n'
             hit_order = 1
             for hit in s['unmapped_analysis']['highly_matched_result']:
-                unmapped_hits += '| %d | %s | %s | %s | %s | %s |\n'%(hit_order, hit['clean_sacc'], hit['clean_stitle_org'], hit['pident'], hit['length'], hit['evalue'])
+                unmapped_hits += '| %d | %s | %s | %s | %s | %s | %s |\n'%(hit_order, hit['clean_sacc'], hit['clean_stitle_org'], hit['pident'], hit['qlen'], hit['length'], hit['evalue'])
                 hit_order += 1
             unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_hits])
         else:
