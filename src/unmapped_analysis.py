@@ -72,7 +72,7 @@ def blast_assembled(task):
             hit = line.strip().split('\t')
             # identity
             if Decimal(hit[2]) <= Decimal('95'):
-                break
+                continue
             if task.unmapped_blastdb == "U-RVDBv21.0.fasta":
                 clean_sacc = hit[6].split('|')[2]
                 clean_stitle = hit[6].split('|')[3]
