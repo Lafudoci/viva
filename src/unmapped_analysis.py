@@ -106,6 +106,7 @@ def blast_assembled(task):
 
 
 def run(task):
-    run_de_novo(task)
-    if task.unmapped_blastdb != None:
-        blast_assembled(task)
+    if task.unmapped_assemble == True:
+        run_de_novo(task)
+        if task.unmapped_blastdb != None:
+            blast_assembled(task)
