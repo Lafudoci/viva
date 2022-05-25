@@ -31,6 +31,8 @@ parser.add_argument('--unmapped_spades_mode', default='meta')
 parser.add_argument('--min_vc_score', default=1)
 parser.add_argument('--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default=True)
 parser.add_argument('--unmapped_blastdb', help="BLASTDB name in unmapped reads assemble BLAST.", default=None)
+parser.add_argument('--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
+parser.add_argument('--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
@@ -93,6 +95,8 @@ def main():
     task.unmapped_assemble = args.unmapped_assemble
     task.unmapped_spades_mode = args.unmapped_spades_mode
     task.unmapped_blastdb = args.unmapped_blastdb
+    task.unmapped_len_filter = args.unmapped_len_filter
+    task.unmapped_ident_filter = args.unmapped_ident_filter
     
     if args.test != None:
         task.name = 'test_run'

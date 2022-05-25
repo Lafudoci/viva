@@ -53,7 +53,9 @@ def blast_assembled(task):
         '-num_threads',
         task.threads,
         '-max_target_seqs',
-        '5',
+        '100',
+        '-max_hsps',
+        '1',
         '-evalue',
         '1e-15',
     ]
@@ -70,30 +72,9 @@ def blast_assembled(task):
     with open(blast_result_path, 'r') as f:
         for line in f.readlines():
             hit = line.strip().split('\t')
-            # identity
-            if Decimal(hit[2]) <= Decimal('95'):
-                continue
-            if task.unmapped_blastdb == "U-RVDBv21.0.fasta":
-                clean_sacc = hit[6].split('|')[2]
-                clean_stitle = hit[6].split('|')[3]
-                clean_stitle_org = hit[6].split('|')[4]
-            else:
-                clean_sacc = hit[1]
-                clean_stitle = hit[6]
-                clean_stitle_org = hit[6]
-
-            highly_match_result_list.append({
-                'qseqid': hit[0],
-                'sacc': hit[1],
-                'pident': hit[2],
-                'qlen': hit[3],
-                'length': hit[4],
-                'evalue': hit[5],
-                'stitle': hit[6],
-                'clean_sacc': clean_sacc,
-                'clean_stitle': clean_stitle,
-                'clean_stitle_org': clean_stitle_org
-            })
+            if blast_hits_significant_filter(task, hit):
+                filterd_hits = blast_hits_string_formater(task, hit)
+                highly_match_result_list.append(filterd_hits)
 
     unmapped_analysis = {
         'spades_mode': task.unmapped_spades_mode,
@@ -104,6 +85,37 @@ def blast_assembled(task):
     unmapped_analysis_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'unmapped_analysis.json')
     utils.build_json_file(unmapped_analysis_json_path, unmapped_analysis)
 
+
+def blast_hits_significant_filter(task, hit):
+    if Decimal(hit[2]) < Decimal(task.unmapped_ident_filter):
+        return False
+    if Decimal(hit[4]) < Decimal(task.unmapped_len_filter):
+        return False
+    else:
+        return True
+
+
+def blast_hits_string_formater(task, hit):
+    if task.unmapped_blastdb == "U-RVDBv21.0.fasta":
+        clean_sacc = hit[6].split('|')[2]
+        clean_stitle = hit[6].split('|')[3]
+        clean_stitle_org = hit[6].split('|')[4]
+    else:
+        clean_sacc = hit[1]
+        clean_stitle = hit[6]
+        clean_stitle_org = hit[6]
+    return {
+        'qseqid': hit[0],
+        'sacc': hit[1],
+        'pident': hit[2],
+        'qlen': hit[3],
+        'length': hit[4],
+        'evalue': hit[5],
+        'stitle': hit[6],
+        'clean_sacc': clean_sacc,
+        'clean_stitle': clean_stitle,
+        'clean_stitle_org': clean_stitle_org
+    }
 
 def run(task):
     if task.unmapped_assemble == True:
