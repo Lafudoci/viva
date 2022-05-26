@@ -98,8 +98,8 @@ def blast_hits_max1_bitscore_filter(task, hits_list):
                 'hit': {}
             }
         if Decimal(hit['bitscore']) > Decimal(filtered_dict['current_best_score']):
-            filtered_dict['hit'] = hit.copy()
-            filtered_dict['current_best_score'] = Decimal(hit['bitscore'])
+            filtered_dict[hit['qseqid']]['hit'] = hit.copy()
+            filtered_dict[hit['qseqid']]['current_best_score'] = Decimal(hit['bitscore'])
     for v in filtered_dict.values():
         filtered_list.append(v['hit'])
     return filtered_list
