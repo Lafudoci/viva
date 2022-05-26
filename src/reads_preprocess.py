@@ -99,24 +99,24 @@ def remove_host(task):
     host_remove_cwd = task.path.joinpath(task.id, 'reads')
     Path.mkdir(host_remove_cwd, parents=True, exist_ok=True)
 
-    if task.dehost == 'dog':
+    if task.remove_host == 'dog':
         dehost_meta['genome'] = 'Dog (Dog10K_Boxer_Tasha, GCF_000002285.5)'
         genome_path = '/app/genomes/' + 'dog10k'
-    elif task.dehost == 'human':
+    elif task.remove_host == 'human':
         dehost_meta['genome'] = 'Human (GRCh38.p13, GCF_000001405.39)'
         genome_path = '/app/genomes/' + 'grch38'
-    elif task.dehost == 'vero':
+    elif task.remove_host == 'vero':
         dehost_meta['genome'] = 'Vero (Vero_WHO_p1.0, GCF_015252025.1)'
         genome_path = '/app/genomes/' +  'vero'
-    elif task.dehost == 'chicken':
+    elif task.remove_host == 'chicken':
         dehost_meta['genome'] = 'Chicken (GRCg6a, GCF_000002315.6)'
         genome_path = '/app/genomes/' + 'grcg6a'
-    elif task.dehost == 'rhesus_monkey':
+    elif task.remove_host == 'rhesus_monkey':
         dehost_meta['genome'] = 'Rhesus monkey (Mmul_10, GCF_003339765.1)'
         genome_path = '/app/genomes/' + 'mmul_10'
     else:
-        dehost_meta['genome'] = 'Custom sequence file (%s)'%task.dehost
-        genome_path = '/app/genomes/' + task.dehost
+        dehost_meta['genome'] = 'Custom sequence file (%s)'%task.remove_host
+        genome_path = '/app/genomes/' + task.remove_host
 
     unconc_reads_out = task.id + '_host_removed_R%.fastq.gz'
     mapped_reads_out = 'host_mapped.sam'
@@ -165,5 +165,5 @@ def run(task):
     logger.info('Importing reads.')
     import_reads(task)
     run_fastp(task)
-    if task.dehost != None:
+    if task.remove_host != None:
         remove_host(task)

@@ -23,7 +23,7 @@ def report_summary(task):
     s['log_dict'] = log_abs['log_dict']
     s['reads_meta'] = single_meta_parser(task, 'reads', 'reads_meta.json')
     s['fastp_abs'] = fastp_parser(task)
-    if task.dehost != None:
+    if task.remove_host != None:
         dehost_meta = single_meta_parser(task, 'reads', 'dehost_meta.json')
         s['remove_genome'] = {'genome': dehost_meta['genome'], 'remove_percentage': dehost_meta['remove_percentage']}
     else:

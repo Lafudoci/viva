@@ -34,7 +34,7 @@ def align_bowtie2(task):
         logger.info('Running Bowtie2 alignment for ref #%d.'%ref_order)
         aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bowtie2')
         ref_index_path = str(aligner_cwd.joinpath('%s_ref_%d'%(task.id, ref_order)))
-        if task.dehost != None:
+        if task.remove_host != None:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
         else:
@@ -58,7 +58,7 @@ def align_bwa(task):
         logger.info('Running BWA alignment for ref #%d.'%ref_order)
         aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bwa')
         ref_index_path = str(aligner_cwd.joinpath('%s_ref_%d'%(task.id, ref_order)))
-        if task.dehost != None:
+        if task.remove_host != None:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
         else:

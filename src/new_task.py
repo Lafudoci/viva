@@ -1,4 +1,5 @@
 import argparse
+import configparser
 import logging
 import os
 import subprocess
@@ -16,23 +17,25 @@ import report_generator
 import summary_generator
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--r1', help="Read-R1.")
-parser.add_argument('--r2', help="Read-R2.")
+parser.add_argument('--ex_r1', help="Read-R1.")
+parser.add_argument('--ex_r2', help="Read-R2.")
 parser.add_argument('--prefix', help="For output prefix.", default='newtask')
 parser.add_argument('--ref', help="Reference FASTA file path.", default=None)
 parser.add_argument('--threads', help="CPU threads.", default=6)
 parser.add_argument('--alns', help="Reads mapper list.", default='bowtie2,bwa')
-parser.add_argument('--trimming', help="Global trimming bases for reads.", default=0)
+parser.add_argument('--global_trimming', help="Global trimming bases for reads.", default=0)
 parser.add_argument('--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
 parser.add_argument('--test', default=None)
 parser.add_argument('--spades_mem', help="The memory (GB) allocated for spades, apply to both ref and unmapped assemble.", default=22)
 parser.add_argument('--spades_mode', default='metaviral')
 parser.add_argument('--unmapped_spades_mode', default='meta')
 parser.add_argument('--min_vc_score', default=1)
+parser.add_argument('--vc_threshold', default='0.7')
 parser.add_argument('--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default=True)
 parser.add_argument('--unmapped_blastdb', help="BLASTDB name in unmapped reads assemble BLAST.", default=None)
 parser.add_argument('--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
 parser.add_argument('--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
+parser.add_argument('--preset', help="Load VIVA analysis setting from given preset file path.", default=None)
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
@@ -79,25 +82,42 @@ def main():
     task.path = Path.cwd().joinpath('tasks')
     task.name = args.prefix
     task.id = ''
-    task.ref = args.ref
     task.with_ref = False
-    task.ex_r1 = args.r1
-    task.ex_r2 = args.r2
-    task.threads = str(args.threads)
+    task.ex_r1 = args.ex_r1
+    task.ex_r2 = args.ex_r2
     task.alns = args.alns.split(',')
-    task.global_trimming = str(args.trimming)
-    task.dehost = args.remove_host
-    task.spades_mem = str(args.spades_mem)
-    task.spades_mode = args.spades_mode
-    task.vc_threshold = '0.7'
     task.ref_num = 0
-    task.min_vc_score = args.min_vc_score
-    task.unmapped_assemble = args.unmapped_assemble
-    task.unmapped_spades_mode = args.unmapped_spades_mode
-    task.unmapped_blastdb = args.unmapped_blastdb
-    task.unmapped_len_filter = args.unmapped_len_filter
-    task.unmapped_ident_filter = args.unmapped_ident_filter
-    
+    if args.preset == None:
+        task.ref = args.ref
+        task.threads = str(args.threads)
+        task.global_trimming = str(args.trimming)
+        task.remove_host = args.remove_host
+        task.spades_mem = str(args.spades_mem)
+        task.spades_mode = args.spades_mode
+        task.vc_threshold = args.vc_threshold
+        task.min_vc_score = args.min_vc_score
+        task.unmapped_assemble = args.unmapped_assemble
+        task.unmapped_spades_mode = args.unmapped_spades_mode
+        task.unmapped_blastdb = args.unmapped_blastdb
+        task.unmapped_len_filter = args.unmapped_len_filter
+        task.unmapped_ident_filter = args.unmapped_ident_filter
+    else:
+        config = configparser.ConfigParser()
+        config.read(args.preset)
+        task.ref = config['PRESET']['ref']
+        task.threads = str(config['PRESET']['threads'])
+        task.global_trimming = str(config['PRESET']['global_trimming'])
+        task.remove_host = config['PRESET']['remove_host']
+        task.spades_mem = str(config['PRESET']['spades_mem'])
+        task.spades_mode = config['PRESET']['spades_mode']
+        task.vc_threshold = config['PRESET']['vc_threshold']
+        task.min_vc_score = config['PRESET']['min_vc_score']
+        task.unmapped_assemble = config['PRESET']['unmapped_assemble']
+        task.unmapped_spades_mode = config['PRESET']['unmapped_spades_mode']
+        task.unmapped_blastdb = config['PRESET']['unmapped_blastdb']
+        task.unmapped_len_filter = config['PRESET']['unmapped_len_filter']
+        task.unmapped_ident_filter = config['PRESET']['unmapped_ident_filter']
+
     if args.test != None:
         task.name = 'test_run'
         task.ex_r1 = Path.cwd().joinpath('test_data','AdV_R1.fastq.gz')
@@ -107,7 +127,7 @@ def main():
         elif args.test == 'multi_ref':
             task.ref = Path.cwd().joinpath('test_data', 'adv_multi_ref.fasta')
         elif args.test == 'denovo':
-            task.dehost = 'human'
+            task.remove_host = 'human'
             task.ref = None
 
     if task.unmapped_blastdb != None:
@@ -129,8 +149,8 @@ def main():
             logger.error('RVDB setup error. Exiting pipeline.')
             sys.exit()
 
-    if task.dehost != None:
-        if utils.setup_genomes(task.dehost) == -1:
+    if task.remove_host != None:
+        if utils.setup_genomes(task.remove_host) == -1:
             logger.error('Host genome not found. Exiting pipeline.')
             sys.exit()
     

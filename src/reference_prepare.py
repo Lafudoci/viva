@@ -13,7 +13,7 @@ def run_de_novo(task):
     logger.info('Runing De Novo assembly.')
     assembly_cwd = task.path.joinpath(task.id, 'assembly')
     Path.mkdir(assembly_cwd, parents=True, exist_ok=True)
-    if task.dehost != None:
+    if task.remove_host != None:
         r1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
         r2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
     else:
