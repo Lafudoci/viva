@@ -49,7 +49,7 @@ def blast_assembled(task):
         '-out',
         blast_result_filename,
         '-outfmt',
-        '6 qseqid sacc pident qlen length evalue stitle',
+        '6 qseqid sacc pident qlen length evalue stitle bitscore',
         '-num_threads',
         task.threads,
         '-max_target_seqs',
@@ -68,13 +68,15 @@ def blast_assembled(task):
     # filter highly matched hits
     logger.info('Filter highly matched hits')
     blast_result_path = assembled_cwd.joinpath(blast_result_filename)
-    highly_match_result_list = []
+    filtered_hits_list = []
     with open(blast_result_path, 'r') as f:
         for line in f.readlines():
             hit = line.strip().split('\t')
             if blast_hits_significant_filter(task, hit):
-                filterd_hits = blast_hits_string_formater(task, hit)
-                highly_match_result_list.append(filterd_hits)
+                filtered_hits = blast_hits_string_formater(task, hit)
+                filtered_hits_list.append(filtered_hits)
+    
+    highly_match_result_list = blast_hits_max1_bitscore_filter(task, filtered_hits_list)
 
     unmapped_analysis = {
         'spades_mode': task.unmapped_spades_mode,
@@ -84,6 +86,23 @@ def blast_assembled(task):
     
     unmapped_analysis_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'unmapped_analysis.json')
     utils.build_json_file(unmapped_analysis_json_path, unmapped_analysis)
+
+
+def blast_hits_max1_bitscore_filter(task, hits_list):
+    filtered_dict = {}
+    filtered_list = []
+    for hit in hits_list:
+        if not hit['qseqid'] in filtered_dict:
+            filtered_dict[hit['qseqid']] = {
+                'current_best_score': Decimal('0'),
+                'hit': {}
+            }
+        if Decimal(hit['bitscore']) > Decimal(filtered_dict['current_best_score']):
+            filtered_dict['hit'] = hit.copy()
+            filtered_dict['current_best_score'] = Decimal(hit['bitscore'])
+    for v in filtered_dict.values():
+        filtered_list.append(v['hit'])
+    return filtered_list
 
 
 def blast_hits_significant_filter(task, hit):
@@ -116,6 +135,7 @@ def blast_hits_string_formater(task, hit):
         'length': hit[4],
         'evalue': hit[5],
         'stitle': hit[6],
+        'bitscore': hit[7],
         'clean_sacc': clean_sacc,
         'clean_stitle': clean_stitle,
         'clean_stitle_org': clean_stitle_org
