@@ -97,13 +97,17 @@ def blast_hits_significant_filter(task, hit):
 
 def blast_hits_string_formater(task, hit):
     if task.unmapped_blastdb == "U-RVDBv21.0.fasta":
-        clean_sacc = hit[6].split('|')[2]
-        clean_stitle = hit[6].split('|')[3]
-        clean_stitle_org = hit[6].split('|')[4]
+        hit_split_list = hit[6].split('|')
+        clean_sacc = hit_split_list[2]
+        clean_stitle = hit_split_list[3]
+        if len(hit_split_list) >= 5:
+            clean_stitle_org = hit_split_list[4]
+        else:
+            clean_stitle_org = ''
     else:
         clean_sacc = hit[1]
         clean_stitle = hit[6]
-        clean_stitle_org = hit[6]
+        clean_stitle_org = ''
     return {
         'qseqid': hit[0],
         'sacc': hit[1],
