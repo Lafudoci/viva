@@ -23,7 +23,7 @@ def build_md_report(task):
     ])
 
     preset_t = '## Analysis Preset'
-    if task.preset != None:
+    if task.preset_path != None:
         preset_c = '\n\n'.join([
         'Preset ID : %s'% s['preset']['preset_id'],
         'Version : %s'% s['preset']['version'],
