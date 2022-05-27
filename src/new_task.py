@@ -48,10 +48,14 @@ class Task:
 
 
 def check_reads_file(task):
-    if Path(task.ex_r1).is_file() and Path(task.ex_r2).is_file():
-        return 1
+    if task.ex_r1 != None and task.ex_r2 != None:
+        if Path(task.ex_r1).is_file() and Path(task.ex_r2).is_file():
+            return 1
+        else:
+            logger.error('Reads file not found.')
+            return -1
     else:
-        logger.error('Reads file not found.')
+        logger.error('Reads file path can not be empty.')
         return -1
 
 
