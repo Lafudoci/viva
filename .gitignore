@@ -6,3 +6,4 @@
 /blastdb
 /src/genomes_arch
 /src/blastdb_arch
+*.ini
