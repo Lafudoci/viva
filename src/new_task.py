@@ -35,7 +35,7 @@ parser.add_argument('--unmapped_assemble', help="De novo Assemble the unmapped r
 parser.add_argument('--unmapped_blastdb', help="BLASTDB name in unmapped reads assemble BLAST.", default=None)
 parser.add_argument('--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
 parser.add_argument('--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
-parser.add_argument('--preset', help="Load VIVA analysis setting from given preset file path.", default=None)
+parser.add_argument('--preset_path', help="Load VIVA analysis setting from given preset file path.", default=None)
 args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ def main():
     task.ex_r2 = args.ex_r2
     task.alns = args.alns.split(',')
     task.ref_num = 0
-    if args.preset == None:
+    if args.preset_path == None:
         task.ref = args.ref
         task.threads = str(args.threads)
         task.global_trimming = str(args.trimming)
@@ -121,6 +121,12 @@ def main():
         task.unmapped_blastdb = config['PRESET']['unmapped_blastdb']
         task.unmapped_len_filter = config['PRESET']['unmapped_len_filter']
         task.unmapped_ident_filter = config['PRESET']['unmapped_ident_filter']
+        task.preset_path = args.preset_path
+        task.preset_id = config['VERSION']['preset_id']
+        task.preset_version = config['VERSION']['version']
+        task.preset_last_rev_date = config['VERSION']['last_rev_date']
+        task.preset_author = config['VERSION']['author']
+        task.preset_note = config['VERSION']['note']
 
     if args.test != None:
         task.name = 'test_run'

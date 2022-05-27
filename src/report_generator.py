@@ -22,6 +22,17 @@ def build_md_report(task):
         'Task finish time : %s'% s['finish_date']
     ])
 
+    preset_t = '## Analysis Preset'
+    if task.preset != None:
+        preset_c = '\n\n'.join([
+        'Preset ID : %s'% s['preset']['preset_id'],
+        'Version : %s'% s['preset']['version'],
+        'Last rev. date : %s'% s['preset']['last_rev_date'],
+        'Autor : %s'% s['preset']['author'],
+        'Note : %s'% s['preset']['note']
+        ])
+    else:
+        preset_c = 'No preset was apllied'
 
     reads_t = '## Input Reads'
     reads_c = '\n'.join([
@@ -184,6 +195,8 @@ def build_md_report(task):
         headline,
         meta_t,
         meta_c,
+        preset_t,
+        preset_c,
         reads_t,
         reads_c,
         ref_t,
