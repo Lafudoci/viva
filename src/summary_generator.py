@@ -22,10 +22,10 @@ def report_summary(task):
     s['finish_date'] = finish_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     s['preset'] = {
         'preset_id': task.preset_id,
-        'version': task.version,
-        'last_rev_date': task.last_rev_date,
-        'author': task.author,
-        'note': task.note
+        'version': task.preset_version,
+        'last_rev_date': task.preset_last_rev_date,
+        'author': task.preset_author,
+        'note': task.preset_note
     }
     s['log_dict'] = log_abs['log_dict']
     s['reads_meta'] = single_meta_parser(task, 'reads', 'reads_meta.json')
