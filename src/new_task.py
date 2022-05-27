@@ -107,7 +107,7 @@ def main():
         task.unmapped_ident_filter = args.unmapped_ident_filter
     else:
         config = configparser.ConfigParser()
-        config.read(args.preset)
+        config.read(args.preset_path)
         task.ref = config['PRESET']['ref']
         task.threads = str(config['PRESET']['threads'])
         task.global_trimming = str(config['PRESET']['global_trimming'])
