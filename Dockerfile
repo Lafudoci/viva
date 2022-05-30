@@ -26,4 +26,4 @@ RUN conda install --yes \
 COPY ./src /app
 COPY ./.git /app
 WORKDIR /app
-ENTRYPOINT ["python","new_task.py"]
+ENTRYPOINT ["python","tasks_manager.py"]
