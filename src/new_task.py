@@ -16,27 +16,6 @@ import variant_calling
 import report_generator
 import summary_generator
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--ex_r1', help="Read-R1.")
-parser.add_argument('--ex_r2', help="Read-R2.")
-parser.add_argument('--prefix', help="For output prefix.", default='newtask')
-parser.add_argument('--ref', help="Reference FASTA file path.", default=None)
-parser.add_argument('--threads', help="CPU threads.", default=6)
-parser.add_argument('--alns', help="Reads mapper list.", default='bowtie2,bwa')
-parser.add_argument('--global_trimming', help="Global trimming bases for reads.", default=0)
-parser.add_argument('--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
-parser.add_argument('--test', default=None)
-parser.add_argument('--spades_mem', help="The memory (GB) allocated for spades, apply to both ref and unmapped assemble.", default=22)
-parser.add_argument('--spades_mode', default='metaviral')
-parser.add_argument('--unmapped_spades_mode', default='meta')
-parser.add_argument('--min_vc_score', default=1)
-parser.add_argument('--vc_threshold', default='0.7')
-parser.add_argument('--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default=True)
-parser.add_argument('--unmapped_blastdb', help="BLASTDB name in unmapped reads assemble BLAST.", default=None)
-parser.add_argument('--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
-parser.add_argument('--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
-parser.add_argument('--preset_path', help="Load VIVA analysis setting from given preset file path.", default=None)
-args = parser.parse_args()
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -74,14 +53,55 @@ def check_deps(task):
         sys.exit(100)
 
 
-def main():
+def main(input_args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--ex_r1', help="Read-R1.")
+    parser.add_argument(
+        '--ex_r2', help="Read-R2.")
+    parser.add_argument(
+        '--prefix', help="For output prefix.", default='newtask')
+    parser.add_argument(
+        '--ref', help="Reference FASTA file path.", default=None)
+    parser.add_argument(
+        '--threads', help="CPU threads.", default=6)
+    parser.add_argument(
+        '--alns', help="Reads mapper list.", default='bowtie2,bwa')
+    parser.add_argument(
+        '--global_trimming', help="Global trimming bases for reads.", default=0)
+    parser.add_argument(
+        '--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
+    parser.add_argument(
+        '--test', default=None)
+    parser.add_argument(
+        '--spades_mem', help="The memory (GB) allocated for spades, apply to both ref and unmapped assemble.", default=22)
+    parser.add_argument(
+        '--spades_mode', default='metaviral')
+    parser.add_argument(
+        '--unmapped_spades_mode', default='meta')
+    parser.add_argument(
+        '--min_vc_score', default=1)
+    parser.add_argument(
+        '--vc_threshold', default='0.7')
+    parser.add_argument(
+        '--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default=True)
+    parser.add_argument(
+        '--unmapped_blastdb', help="BLASTDB name in unmapped reads assemble BLAST.", default=None)
+    parser.add_argument(
+        '--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
+    parser.add_argument(
+        '--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
+    parser.add_argument(
+        '--preset_path', help="Load VIVA analysis setting from given preset file path.", default=None)
+    args, unknown = parser.parse_known_args(input_args)
+
     task = Task()
     task.conda_pkgs = [
         'fastp', 'samtools', 'bcftools',
         'bowtie2', 'bwa',
         'varscan', 'lofreq',
         'spades.py', 'blastn', 'makeblastdb'
-        ]
+    ]
     check_deps(task)
     task.path = Path.cwd().joinpath('tasks')
     task.name = args.prefix
@@ -91,10 +111,11 @@ def main():
     task.ex_r2 = args.ex_r2
     task.alns = args.alns.split(',')
     task.ref_num = 0
-    if args.preset_path == None:
+    task.preset_path = args.preset_path
+    if task.preset_path == None:
         task.ref = args.ref
         task.threads = str(args.threads)
-        task.global_trimming = str(args.trimming)
+        task.global_trimming = str(args.global_trimming)
         task.remove_host = args.remove_host
         task.spades_mem = str(args.spades_mem)
         task.spades_mode = args.spades_mode
@@ -121,7 +142,6 @@ def main():
         task.unmapped_blastdb = config['PRESET']['unmapped_blastdb']
         task.unmapped_len_filter = config['PRESET']['unmapped_len_filter']
         task.unmapped_ident_filter = config['PRESET']['unmapped_ident_filter']
-        task.preset_path = args.preset_path
         task.preset_id = config['VERSION']['preset_id']
         task.preset_version = config['VERSION']['version']
         task.preset_last_rev_date = config['VERSION']['last_rev_date']
@@ -130,8 +150,8 @@ def main():
 
     if args.test != None:
         task.name = 'test_run'
-        task.ex_r1 = Path.cwd().joinpath('test_data','AdV_R1.fastq.gz')
-        task.ex_r2 = Path.cwd().joinpath('test_data','AdV_R2.fastq.gz')
+        task.ex_r1 = Path.cwd().joinpath('test_data', 'AdV_R1.fastq.gz')
+        task.ex_r2 = Path.cwd().joinpath('test_data', 'AdV_R2.fastq.gz')
         if args.test == 'ref':
             task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
         elif args.test == 'multi_ref':
@@ -152,7 +172,7 @@ def main():
             sys.exit()
     else:
         logger.info('Input reference not provided. Will go de novo')
-    
+
     if task.with_ref == False:
         logger.info('Checking RVDB.')
         if utils.setup_rvdb() == -1:
@@ -163,7 +183,7 @@ def main():
         if utils.setup_genomes(task.remove_host) == -1:
             logger.error('Host genome not found. Exiting pipeline.')
             sys.exit()
-    
+
     logger.info('Checking reads files.')
     if check_reads_file(task) != -1:
         task.id = "%s_%s" % (task.name, time.strftime(
@@ -191,11 +211,12 @@ def main():
         # report generator
         summary_generator.run(task)
         report_generator.run(task)
-        
+
     else:
         logger.error('Reads not found. Exiting pipeline.')
         sys.exit()
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv[1:])
