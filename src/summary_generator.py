@@ -20,13 +20,14 @@ def report_summary(task):
     s['start_date'] = start_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)
     s['finish_date'] = finish_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
-    s['preset'] = {
-        'preset_id': task.preset_id,
-        'version': task.preset_version,
-        'last_rev_date': task.preset_last_rev_date,
-        'author': task.preset_author,
-        'note': task.preset_note
-    }
+    if task.preset_path != None:
+        s['preset'] = {
+            'preset_id': task.preset_id,
+            'version': task.preset_version,
+            'last_rev_date': task.preset_last_rev_date,
+            'author': task.preset_author,
+            'note': task.preset_note
+        }
     s['log_dict'] = log_abs['log_dict']
     s['reads_meta'] = single_meta_parser(task, 'reads', 'reads_meta.json')
     s['fastp_abs'] = fastp_parser(task)
