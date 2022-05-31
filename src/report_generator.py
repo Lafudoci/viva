@@ -35,17 +35,26 @@ def build_md_report(task):
     else:
         preset_c = 'No preset was apllied'
 
+
     reads_t = '## Input Reads'
+    sample_meta_t = '### Sample meta'
+    sample_meta_c = '\n\n'.join([
+        'Sample (product) name : %s'%s['reads_meta']['sample_meta']['sample_product_name'],
+        'Sample lot : %s'%s['reads_meta']['sample_meta']['sample_product_lot'],
+        'Sequencing date : %s'%s['reads_meta']['sample_meta']['sample_sequencing_date'],
+        'Sample note : %s'%s['reads_meta']['sample_meta']['sample_note']
+    ])
+    reads_f = '### Reads files'
     reads_c = '\n'.join([
         '| Reads | File name |',
         '| ----- | --------- |',
-        '| R1 | %s |'%(s['reads_meta']['file_name']['r1']),
-        '| R2 | %s |'%(s['reads_meta']['file_name']['r2']),
+        '| R1 | %s |'%(s['reads_meta']['reads_file_meta']['file_name']['r1']),
+        '| R2 | %s |'%(s['reads_meta']['reads_file_meta']['file_name']['r2']),
         '\n',
         '| Reads | MD5 hash |',
         '| ----- | --------- |',
-        '| R1 | %s |'%(s['reads_meta']['md5']['r1']),
-        '| R2 | %s |'%(s['reads_meta']['md5']['r2'])
+        '| R1 | %s |'%(s['reads_meta']['reads_file_meta']['md5']['r1']),
+        '| R2 | %s |'%(s['reads_meta']['reads_file_meta']['md5']['r2'])
     ])
 
 
@@ -199,6 +208,9 @@ def build_md_report(task):
         preset_t,
         preset_c,
         reads_t,
+        sample_meta_t,
+        sample_meta_c,
+        reads_f,
         reads_c,
         ref_t,
         ref_c_m,

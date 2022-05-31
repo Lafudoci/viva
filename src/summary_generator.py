@@ -30,7 +30,24 @@ def report_summary(task):
             'note': task.preset_note
         }
     s['log_dict'] = log_abs['log_dict']
-    s['reads_meta'] = single_meta_parser(task, 'reads', 'reads_meta.json')
+    if task.sample_product_name in (None,''):
+        task.sample_product_name = 'N/A'
+    if task.sample_product_lot in (None,''):
+        task.sample_product_lot = 'N/A'
+    if task.sample_sequencing_date in (None,''):
+        task.sample_sequencing_date = 'N/A'
+    if task.sample_note in (None,''):
+        task.sample_note = 'N/A'
+    sample_meta = {
+        'sample_product_name': task.sample_product_name,
+        'sample_product_lot': task.sample_product_lot,
+        'sample_sequencing_date': task.sample_sequencing_date,
+        'sample_note': task.sample_note
+    }
+    s['reads_meta'] = {
+        'sample_meta': sample_meta,
+        'reads_file_meta': single_meta_parser(task, 'reads', 'reads_meta.json')
+    }
     s['fastp_abs'] = fastp_parser(task)
     if task.remove_host != None:
         dehost_meta = single_meta_parser(task, 'reads', 'dehost_meta.json')

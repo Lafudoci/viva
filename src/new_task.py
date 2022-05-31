@@ -94,7 +94,13 @@ def main(input_args):
     parser.add_argument(
         '--preset_path', help="Load VIVA analysis setting from given preset file path.", default=None)
     parser.add_argument(
-        '--task_note', help="Note of task.", default=None)
+        '--sample_product_name', help="Sample (product) name. Anotation purpose only.", default=None)
+    parser.add_argument(
+        '--sample_product_lot', help="Sample (product) lot. Anotation purpose only.", default=None)
+    parser.add_argument(
+        '--sample_sequencing_date', help="Sample sequencing date. Anotation purpose only.", default=None)
+    parser.add_argument(
+        '--sample_note', help="Sample note. Anotation purpose only.", default=None)
     args, unknown = parser.parse_known_args(input_args)
 
     task = Task()
@@ -115,6 +121,10 @@ def main(input_args):
     task.alns = args.alns.split(',')
     task.ref_num = 0
     task.preset_path = args.preset_path
+    task.sample_product_name = args.sample_product_name
+    task.sample_product_lot = args.sample_product_lot
+    task.sample_sequencing_date = args.sample_sequencing_date
+    task.sample_note = args.sample_note
     if task.preset_path == None:
         task.ref = args.ref
         task.threads = str(args.threads)
