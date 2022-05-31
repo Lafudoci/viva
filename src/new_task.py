@@ -94,6 +94,8 @@ def main(input_args):
     parser.add_argument(
         '--preset_path', help="Load VIVA analysis setting from given preset file path.", default=None)
     parser.add_argument(
+        '--task_note', help="Task note. Anotation purpose only.", default=None)
+    parser.add_argument(
         '--sample_product_name', help="Sample (product) name. Anotation purpose only.", default=None)
     parser.add_argument(
         '--sample_product_lot', help="Sample (product) lot. Anotation purpose only.", default=None)
