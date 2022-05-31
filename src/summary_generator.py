@@ -16,6 +16,7 @@ def report_summary(task):
     log_abs = log_parser(task)
     s['task_name'] = task.id.split('_')[:-1][0]
     s['task_id'] = task.id
+    s['task_note'] = task.task_note
     start_t = datetime.utcfromtimestamp(int(log_abs['start_timestamp']))+ timedelta(hours=8)
     s['start_date'] = start_t.strftime('%Y-%m-%d %H:%M:%S UTC+8')
     finish_t = datetime.utcfromtimestamp(int(log_abs['finish_timestamp']))+ timedelta(hours=8)

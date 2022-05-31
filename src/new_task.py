@@ -93,6 +93,8 @@ def main(input_args):
         '--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
     parser.add_argument(
         '--preset_path', help="Load VIVA analysis setting from given preset file path.", default=None)
+    parser.add_argument(
+        '--task_note', help="Note of task.", default=None)
     args, unknown = parser.parse_known_args(input_args)
 
     task = Task()
@@ -105,6 +107,7 @@ def main(input_args):
     check_deps(task)
     task.path = Path.cwd().joinpath('tasks')
     task.name = args.prefix
+    task.task_note = args.task_note
     task.id = ''
     task.with_ref = False
     task.ex_r1 = args.ex_r1
