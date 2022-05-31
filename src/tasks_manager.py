@@ -50,10 +50,14 @@ def batch_task_viva(task_sheet_dict):
             read_id_list, v['read_meta_path'])
         number = 1
         for read_id, read_meta in reads_meta_dict.items():
+            if v['batch_tasks_note'] != '':
+                batch_task_note = v['batch_tasks_note']
+            else:
+                batch_task_note = None
             queue_dict[number] = {
                 'read_id': read_id,
                 'read_meta_dict': read_meta,
-                'task_note': v['batch_tasks_note'],
+                'batch_task_note': batch_task_note,
                 'preset_path': v['preset_path']
             }
             number += 1
@@ -69,7 +73,14 @@ def batch_task_viva(task_sheet_dict):
         ex_r1 = task_inputs['read_meta_dict']['ex_r1']
         ex_r2 = task_inputs['read_meta_dict']['ex_r2']
         preset = task_inputs['preset_path']
-        new_task.main(['--prefix', prefix, '--ex_r1', ex_r1, '--ex_r2', ex_r2, '--preset', preset])
+        task_note = task_inputs['batch_task_note']
+        new_task.main([
+            '--prefix', prefix,
+            '--ex_r1', ex_r1,
+            '--ex_r2', ex_r2,
+            '--preset', preset,
+            '--task_note', task_note
+        ])
 
 
 def main():
