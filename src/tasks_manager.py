@@ -79,7 +79,11 @@ def batch_task_viva(task_sheet_dict):
             '--ex_r1', ex_r1,
             '--ex_r2', ex_r2,
             '--preset', preset,
-            '--task_note', task_note
+            '--task_note', task_note,
+            '--sample_product_name', task_inputs['read_meta_dict']['product'],
+            '--sample_product_lot', task_inputs['read_meta_dict']['lot'],
+            '--sample_sequencing_date', task_inputs['read_meta_dict']['seq_date'],
+            '--sample_note', task_inputs['read_meta_dict']['reads_note']
         ])
 
 
