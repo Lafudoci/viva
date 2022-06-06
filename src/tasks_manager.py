@@ -1,12 +1,14 @@
 import argparse
-from ast import keyword
 import configparser
 import logging
 import subprocess
 import sys
+import time
+from ast import keyword
 from pathlib import Path
 
 import new_task
+import utils
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -44,11 +46,11 @@ def input_paths_check(file_path):
 
 def batch_task_viva(task_sheet_dict):
     queue_dict = {}
+    number = 1
     for v in task_sheet_dict.values():
         read_id_list = load_sample_list_file(v['samples_list_filepath'])
         reads_meta_dict = get_reads_meta_from_ids(
             read_id_list, v['read_meta_path'])
-        number = 1
         for read_id, read_meta in reads_meta_dict.items():
             if v['batch_tasks_note'] != '':
                 batch_task_note = v['batch_tasks_note']
@@ -58,18 +60,22 @@ def batch_task_viva(task_sheet_dict):
                 'read_id': read_id,
                 'read_meta_dict': read_meta,
                 'batch_task_note': batch_task_note,
-                'preset_path': v['preset_path']
+                'preset_path': v['preset_path'],
+                'task_prefix': '%s-%s-%s' % (
+                    read_meta['product'],
+                    read_meta['lot'],
+                    read_meta['seq_date'])
             }
             number += 1
+    batch_task_id = "batch_task_%s" % time.strftime(
+        "%Y%m%d%H%M", time.localtime())
+    batch_task_queue_path = Path.cwd().joinpath('tasks').joinpath('%s_queue.json' % batch_task_id)
+    utils.build_json_file(batch_task_queue_path, queue_dict)
     queue_length = len(queue_dict)
     for current_queue_number in range(1, queue_length+1):
-        logger.info('Excuting queue No. %d'%current_queue_number)
+        logger.info('Excuting queue No. %d' % current_queue_number)
         task_inputs = queue_dict[current_queue_number].copy()
-        prefix = '-'.join([
-            task_inputs['read_meta_dict']['product'],
-            task_inputs['read_meta_dict']['lot'],
-            task_inputs['read_meta_dict']['seq_date']
-        ])
+        prefix = task_inputs['task_prefix']
         ex_r1 = task_inputs['read_meta_dict']['ex_r1']
         ex_r2 = task_inputs['read_meta_dict']['ex_r2']
         preset = task_inputs['preset_path']
@@ -104,7 +110,6 @@ def main():
             task_sheet_dict[section] = {}
             for key, val in task_sheet_config.items(section):
                 task_sheet_dict[section][key] = val
-        print(task_sheet_dict)
         batch_task_viva(task_sheet_dict)
     else:
         logger.critical('Must provide a task sheet or use --single_task arg.')
