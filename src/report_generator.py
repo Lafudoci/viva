@@ -29,7 +29,7 @@ def build_md_report(task):
         'Preset ID : %s'% s['preset']['preset_id'],
         'Version : %s'% s['preset']['version'],
         'Last rev. date : %s'% s['preset']['last_rev_date'],
-        'Autor : %s'% s['preset']['author'],
+        'Author : %s'% s['preset']['author'],
         'Note : %s'% s['preset']['note']
         ])
     else:
