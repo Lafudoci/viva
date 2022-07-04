@@ -32,7 +32,7 @@ def generate_summary_csv(batch_task_id, taks_id_list):
             }
 
     
-    with open('%s_summary.csv'%batch_task_id, 'w', newline='') as csvfile:
+    with open('/app/tasks/%s_summary.csv'%batch_task_id, 'w', newline='') as csvfile:
         fieldnames = [
             'task ID',
             'task date',
