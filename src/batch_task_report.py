@@ -12,6 +12,7 @@ def generate_summary_csv(batch_task_id, taks_id_list):
         with open('/app/tasks/%s/%s_summary.json'%(task_id, task_id), 'r') as f:
             j = json.load(f)
             summaries_dict[task_id] = {
+                'task ID': task_id,
                 'task date': j['start_date'],
                 'product': j['reads_meta']['sample_meta']['sample_product_name'],
                 'lot': j['reads_meta']['sample_meta']['sample_product_lot'],
@@ -26,30 +27,33 @@ def generate_summary_csv(batch_task_id, taks_id_list):
                 'cov bt2 of 1st ref': j['cov']['bowtie2']['1']['coverage'],
                 'cov bwa of 1st ref': j['cov']['bwa']['1']['coverage'],
                 'depth bt2 of 1st ref': j['cov']['bwa']['1']['meandepth'],
-                'depth bwa of 1st ref': j['cov']['bwa']['1']['meandepth']
+                'depth bwa of 1st ref': j['cov']['bwa']['1']['meandepth'],
+                'unmapped hits': len(j['unmapped_analysis']['highly_matched_result'])
             }
 
     
     with open('%s_summary.csv'%batch_task_id, 'w', newline='') as csvfile:
         fieldnames = [
-        'task date',
-        'product',
-        'lot',
-        'seq date',
-        'fastp pre Q30',
-        'fastp pre Q30',
-        'fastp duplication',
-        'remove genome name',
-        'remove genome precent',
-        'aln rate bt2 of 1st ref',
-        'aln rate bwa of 1st ref',
-        'cov bt2 of 1st ref',
-        'cov bwa of 1st ref',
-        'depth bt2 of 1st ref',
-        'depth bwa of 1st ref'
+            'task ID',
+            'task date',
+            'product',
+            'lot',
+            'seq date',
+            'fastp pre Q30',
+            'fastp pre Q30',
+            'fastp duplication',
+            'remove genome name',
+            'remove genome precent',
+            'aln rate bt2 of 1st ref',
+            'aln rate bwa of 1st ref',
+            'cov bt2 of 1st ref',
+            'cov bwa of 1st ref',
+            'depth bt2 of 1st ref',
+            'depth bwa of 1st ref',
+            'unmapped hits'
         ]
         csv_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csv_writer.writeheader()
-        for s in summaries_dict:
+        for s in summaries_dict.values():
             csv_writer.writerow(s)
         
