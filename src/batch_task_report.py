@@ -40,7 +40,7 @@ def generate_summary_csv(batch_task_id, taks_id_list):
             'lot',
             'seq date',
             'fastp pre Q30',
-            'fastp pre Q30',
+            'fastp post Q30',
             'fastp duplication',
             'remove genome name',
             'remove genome precent',
