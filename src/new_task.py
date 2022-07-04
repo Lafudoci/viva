@@ -227,6 +227,8 @@ def main(input_args):
         summary_generator.run(task)
         report_generator.run(task)
 
+        return task.id
+
     else:
         logger.error('Reads not found. Exiting pipeline.')
         sys.exit()
