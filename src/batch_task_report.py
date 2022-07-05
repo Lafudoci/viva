@@ -28,7 +28,11 @@ def generate_summary_csv(batch_task_id, taks_id_list):
                 'cov bwa of 1st ref': j['cov']['bwa']['1']['coverage'],
                 'depth bt2 of 1st ref': j['cov']['bwa']['1']['meandepth'],
                 'depth bwa of 1st ref': j['cov']['bwa']['1']['meandepth'],
-                'unmapped hits': len(j['unmapped_analysis']['highly_matched_result'])
+                'vc lofreq counts of 1st ref': len(j['vc']['lofreq']['1']),
+                'vc varscan counts of 1st ref': len(j['vc']['varscan']['1']),
+                'vc applied counts of 1st ref': len(j['draft_meta']['1']['snv_list']),
+                'unmapped hits': len(j['unmapped_analysis']['highly_matched_result']),
+                'viva version': j['version']['viva'],
             }
 
     
@@ -50,7 +54,11 @@ def generate_summary_csv(batch_task_id, taks_id_list):
             'cov bwa of 1st ref',
             'depth bt2 of 1st ref',
             'depth bwa of 1st ref',
-            'unmapped hits'
+            'vc lofreq counts of 1st ref',
+            'vc varscan counts of 1st ref',
+            'vc applied counts of 1st ref',
+            'unmapped hits',
+            'viva version'
         ]
         csv_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csv_writer.writeheader()
