@@ -157,7 +157,7 @@ def remove_host(task):
     total_reads = stats_list[0].split(' ')[0]
     mapped_reads = stats_list[4].split(' ')[0]
     mapped_rate = Decimal(mapped_reads)/Decimal(total_reads)
-    dehost_meta['remove_percentage'] = "%s%%" % mapped_rate*100
+    dehost_meta['remove_percentage'] = "%f%%" % (mapped_rate*Decimal('100'))
     utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
     # remove sam file to release disk space
     os.remove(task.path.joinpath(host_remove_cwd, mapped_reads_out))
