@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
+from decimal import Decimal
 from pathlib import Path
 
 import utils
@@ -153,8 +154,10 @@ def remove_host(task):
     stats_text = flagstat_run.stdout.decode(encoding='utf-8')
     stats_list = stats_text.split('\n')
     utils.build_text_file(task.path.joinpath(host_remove_cwd, 'flagstat.txt'), stats_text)
-    mapped_rate = stats_list[4].split(' ')[4][1:]
-    dehost_meta['remove_percentage'] = mapped_rate
+    total_reads = stats_list[0].split(' ')[0]
+    mapped_reads = stats_list[4].split(' ')[0]
+    mapped_rate = Decimal(mapped_reads)/Decimal(total_reads)
+    dehost_meta['remove_percentage'] = "%s%%" % mapped_rate*100
     utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
     # remove sam file to release disk space
     os.remove(task.path.joinpath(host_remove_cwd, mapped_reads_out))
