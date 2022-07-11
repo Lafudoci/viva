@@ -77,30 +77,42 @@ def batch_task_viva(task_sheet_dict):
     finished_task_queue_path = Path.cwd().joinpath('tasks').joinpath('%s_queue_finished.json' % batch_task_id)
     finished_task_id_list = []
     queue_length = len(queue_dict)
+    error_flag = False
     for current_queue_number in range(1, queue_length+1):
-        logger.info('Excuting queue No. %d' % current_queue_number)
-        task_inputs = queue_dict[current_queue_number].copy()
-        prefix = task_inputs['task_prefix']
-        ex_r1 = task_inputs['read_meta_dict']['ex_r1']
-        ex_r2 = task_inputs['read_meta_dict']['ex_r2']
-        preset = task_inputs['preset_path']
-        task_note = task_inputs['batch_task_note']
-        task_id = new_task.main([
-            '--prefix', prefix,
-            '--ex_r1', ex_r1,
-            '--ex_r2', ex_r2,
-            '--preset', preset,
-            '--task_note', task_note,
-            '--sample_product_name', task_inputs['read_meta_dict']['product'],
-            '--sample_product_lot', task_inputs['read_meta_dict']['lot'],
-            '--sample_sequencing_date', task_inputs['read_meta_dict']['seq_date'],
-            '--sample_note', task_inputs['read_meta_dict']['reads_note']
-        ])
-        task_inputs['task_id'] = task_id
-        finished_task_queue[current_queue_number] = task_inputs
-        finished_task_id_list.append(task_id)
+        try:
+            logger.info('Excuting queue No. %d' % current_queue_number)
+            finished_task_queue[current_queue_number] = {}
+            task_inputs = queue_dict[current_queue_number].copy()
+            prefix = task_inputs['task_prefix']
+            ex_r1 = task_inputs['read_meta_dict']['ex_r1']
+            ex_r2 = task_inputs['read_meta_dict']['ex_r2']
+            preset = task_inputs['preset_path']
+            task_note = task_inputs['batch_task_note']
+            task_id = new_task.main([
+                '--prefix', prefix,
+                '--ex_r1', ex_r1,
+                '--ex_r2', ex_r2,
+                '--preset', preset,
+                '--task_note', task_note,
+                '--sample_product_name', task_inputs['read_meta_dict']['product'],
+                '--sample_product_lot', task_inputs['read_meta_dict']['lot'],
+                '--sample_sequencing_date', task_inputs['read_meta_dict']['seq_date'],
+                '--sample_note', task_inputs['read_meta_dict']['reads_note']
+            ])
+            task_inputs['task_id'] = task_id
+            finished_task_queue[current_queue_number] = task_inputs
+            finished_task_queue[current_queue_number]['task_status'] = 'done'
+            finished_task_id_list.append(task_id)
+        except Exception as e:
+            logger.error('Task error occured: %s'%e)
+            finished_task_queue[current_queue_number]['task_status'] = 'Error: %s'%e
+            error_flag = True
     utils.build_json_file(finished_task_queue_path, finished_task_queue)
     batch_task_report.generate_summary_csv(batch_task_id, finished_task_id_list)
+    if error_flag:
+        logger.warning('Batch VIVA was finished with error. Task done: %s/%s'%(len(finished_task_id_list), queue_length))
+    else:
+        logger.info('Batch VIVA was finished. Task done: %s/%s'%(len(finished_task_id_list), queue_length))
 
 def main():
     parser = argparse.ArgumentParser()

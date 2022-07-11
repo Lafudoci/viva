@@ -142,7 +142,7 @@ def main(input_args):
         task.unmapped_len_filter = args.unmapped_len_filter
         task.unmapped_ident_filter = args.unmapped_ident_filter
     else:
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(allow_no_value=True)
         config.read(args.preset_path)
         task.ref = config['PRESET']['ref']
         task.threads = str(config['PRESET']['threads'])
