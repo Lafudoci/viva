@@ -24,6 +24,7 @@ def run_de_novo(task):
         '-t', task.threads,
         '-m', task.spades_mem,
         '--' + task.unmapped_spades_mode,
+        '--phred-offset', '33',
         '-1', r1,
         '-2', r2,
         '-o', '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode)
