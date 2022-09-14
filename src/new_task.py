@@ -47,7 +47,7 @@ def check_ref_file(task):
 
 
 def check_deps(task):
-    sys_deps = ['wget', 'git', 'apt', 'conda', 'python', 'gzip']
+    sys_deps = ['wget', 'git', 'apt', 'conda', 'python', 'gzip', 'makeblastdb']
     if utils.sys_deps_check(sys_deps) == -1:
         logger.critical('System depency check fail.')
         sys.exit(100)
@@ -113,7 +113,7 @@ def main(input_args):
         'fastp', 'samtools', 'bcftools', 'htslib',
         'bowtie2', 'bwa',
         'varscan', 'lofreq',
-        'spades', 'blast', 'makeblastdb'
+        'spades', 'blast'
     ]
     check_deps(task)
     task.path = Path.cwd().joinpath('tasks')

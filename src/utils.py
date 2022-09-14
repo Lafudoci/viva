@@ -186,6 +186,8 @@ def conda_deps_check(dep_list):
             if dep not in verions_dict:
                 logger.error('Dependency check error: %s.'%dep)
                 return -1
+    else:
+        return -1
 
 def conda_pkg_versions(pkg_list):
     verions_dict = {}
