@@ -107,10 +107,11 @@ def main(input_args):
 
     task = Task()
     task.conda_pkgs = [
-        'fastp', 'samtools', 'bcftools',
+        'conda', 'python', 'perl',
+        'fastp', 'samtools', 'bcftools', 'htslib',
         'bowtie2', 'bwa',
         'varscan', 'lofreq',
-        'spades.py', 'blastn', 'makeblastdb'
+        'spades', 'blast', 'makeblastdb'
     ]
     check_deps(task)
     task.path = Path.cwd().joinpath('tasks')
