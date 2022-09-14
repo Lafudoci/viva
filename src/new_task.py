@@ -48,10 +48,12 @@ def check_ref_file(task):
 
 def check_deps(task):
     sys_deps = ['wget', 'git', 'apt', 'conda', 'python', 'gzip']
-    if utils.deps_check(task.conda_pkgs+sys_deps) == -1:
-        logger.critical('Depency check fail.')
+    if utils.sys_deps_check(sys_deps) == -1:
+        logger.critical('System depency check fail.')
         sys.exit(100)
-
+    if utils.conda_deps_check(task.conda_pkgs) == -1:
+        logger.critical('Conda pkg depency check fail.')
+        sys.exit(100)
 
 def main(input_args):
     parser = argparse.ArgumentParser()
