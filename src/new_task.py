@@ -1,21 +1,19 @@
 import argparse
 import configparser
 import logging
-import os
-import subprocess
 import sys
 import time
 from pathlib import Path
 
 import reads_alignment
-import unmapped_analysis
 import reads_preprocess
 import reference_prepare
+import report_generator
+import residues_detector
+import summary_generator
+import unmapped_analysis
 import utils
 import variant_calling
-import report_generator
-import summary_generator
-
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -216,6 +214,7 @@ def main(input_args):
 
         # main pipeline
         reads_preprocess.run(task)
+        residues_detector.run(task)
         reference_prepare.run(task)
         reads_alignment.run(task)
         unmapped_analysis.run(task)
