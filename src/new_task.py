@@ -44,6 +44,13 @@ def check_ref_file(task):
         return False
 
 
+def check_residues_file(task):
+    if Path(task.residues).is_file():
+        return True
+    else:
+        logger.info('Residues sequence file not found.')
+        return False
+
 def check_deps(task):
     sys_deps = ['wget', 'git', 'apt', 'conda', 'python', 'gzip', 'makeblastdb']
     if utils.sys_deps_check(sys_deps) == -1:
@@ -71,6 +78,8 @@ def main(input_args):
         '--global_trimming', help="Global trimming bases for reads.", default=0)
     parser.add_argument(
         '--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
+    parser.add_argument(
+        '--residues', help="Residues FASTA file path.", default=None)
     parser.add_argument(
         '--test', default=None)
     parser.add_argument(
@@ -133,6 +142,7 @@ def main(input_args):
         task.threads = str(args.threads)
         task.global_trimming = str(args.global_trimming)
         task.remove_host = args.remove_host
+        task.residues = args.residues
         task.spades_mem = str(args.spades_mem)
         task.spades_mode = args.spades_mode
         task.vc_threshold = args.vc_threshold
@@ -149,6 +159,7 @@ def main(input_args):
         task.threads = str(config['PRESET']['threads'])
         task.global_trimming = str(config['PRESET']['global_trimming'])
         task.remove_host = config['PRESET']['remove_host']
+        task.residues = config['PRESET']['residues']
         task.spades_mem = str(config['PRESET']['spades_mem'])
         task.spades_mode = config['PRESET']['spades_mode']
         task.vc_threshold = config['PRESET']['vc_threshold']
@@ -188,6 +199,14 @@ def main(input_args):
             sys.exit()
     else:
         logger.info('Input reference not provided. Will go de novo')
+    
+    logger.info('Checking residues.')
+    if task.residues != None:
+        if check_residues_file(task):
+            task.with_ref = True
+        else:
+            logger.error('Input residues not found. Exiting pipeline.')
+            sys.exit()
 
     if task.with_ref == False:
         logger.info('Checking RVDB.')
