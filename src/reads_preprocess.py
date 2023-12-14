@@ -6,6 +6,7 @@ import subprocess
 from decimal import Decimal
 from pathlib import Path
 
+import summary_generator
 import utils
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,8 @@ def run_fastp(task):
         capture_output=True
     )
     print(fastp_run.stderr.decode(encoding='utf-8'))
+    # record total reads after fastp
+    task.total_reads_after_fastp = summary_generator.fastp_parser(task)['after_total_reads']
 
 
 def reads_hash_md5(task):
@@ -154,9 +157,10 @@ def remove_host(task):
     stats_text = flagstat_run.stdout.decode(encoding='utf-8')
     stats_list = stats_text.split('\n')
     utils.build_text_file(task.path.joinpath(host_remove_cwd, 'flagstat.txt'), stats_text)
-    total_reads = stats_list[0].split(' ')[0]
+    total_reads = task.total_reads_after_fastp
     mapped_reads = stats_list[4].split(' ')[0]
     mapped_rate = Decimal(mapped_reads)/Decimal(total_reads)
+    dehost_meta['mapped_reads'] = mapped_reads
     dehost_meta['remove_percentage'] = "%f%%" % (mapped_rate*Decimal('100'))
     utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
     # remove sam file to release disk space

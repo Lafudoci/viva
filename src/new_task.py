@@ -15,6 +15,7 @@ import utils
 import variant_calling
 import report_generator
 import summary_generator
+import impurities_prefilter
 
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,8 @@ def main(input_args):
     parser.add_argument(
         '--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
     parser.add_argument(
+        '--remove_impurities', help="Remove specific impurity sequences FASTA file path.", default=None)
+    parser.add_argument(
         '--test', default=None)
     parser.add_argument(
         '--spades_mem', help="The memory (GB) allocated for spades, apply to both ref and unmapped assemble.", default=22)
@@ -125,6 +128,8 @@ def main(input_args):
     task.ex_r2 = args.ex_r2
     task.alns = args.alns.split(',')
     task.ref_num = 0
+    task.impurities_prefilter_num = 0
+    task.total_reads_after_fastp = 0
     task.preset_path = args.preset_path
     task.sample_product_name = args.sample_product_name
     task.sample_product_lot = args.sample_product_lot
@@ -135,6 +140,7 @@ def main(input_args):
         task.threads = str(args.threads)
         task.global_trimming = str(args.global_trimming)
         task.remove_host = args.remove_host
+        task.remove_impurities = args.remove_impurities
         task.spades_mem = str(args.spades_mem)
         task.spades_mode = args.spades_mode
         task.vc_threshold = args.vc_threshold
@@ -151,6 +157,7 @@ def main(input_args):
         task.threads = str(config['PRESET']['threads'])
         task.global_trimming = str(config['PRESET']['global_trimming'])
         task.remove_host = config['PRESET']['remove_host']
+        task.remove_impurities = config['PRESET']['remove_impurities']
         task.spades_mem = str(config['PRESET']['spades_mem'])
         task.spades_mode = config['PRESET']['spades_mode']
         task.vc_threshold = config['PRESET']['vc_threshold']
@@ -201,6 +208,11 @@ def main(input_args):
         if utils.setup_genomes(task.remove_host) == -1:
             logger.error('Host genome not found. Exiting pipeline.')
             sys.exit()
+    
+    if task.remove_impurities != None:
+        if not Path(task.remove_impurities).is_file():
+            logger.error('Impurities source file not found. Exiting pipeline.')
+            sys.exit()
 
     logger.info('Checking reads files.')
     if check_reads_file(task) != -1:
@@ -217,6 +229,7 @@ def main(input_args):
         # main pipeline
         reads_preprocess.run(task)
         reference_prepare.run(task)
+        impurities_prefilter.run(task)
         reads_alignment.run(task)
         unmapped_analysis.run(task)
         variant_calling.run(task)

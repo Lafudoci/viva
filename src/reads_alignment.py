@@ -37,6 +37,11 @@ def align_bowtie2(task):
         if task.remove_host != None:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
+        elif task.impurities_prefilter_num > 0:
+            filterd_R1 = str(task.path.joinpath(
+                task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, impurities_prefilter_num)))
+            filterd_R2 = str(task.path.joinpath(
+                task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, impurities_prefilter_num)))
         else:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
@@ -61,6 +66,11 @@ def align_bwa(task):
         if task.remove_host != None:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
+        elif task.impurities_prefilter_num > 0:
+            filterd_R1 = str(task.path.joinpath(
+                task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, impurities_prefilter_num)))
+            filterd_R2 = str(task.path.joinpath(
+                task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, impurities_prefilter_num)))
         else:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
@@ -98,11 +108,12 @@ def bam_sort_n_index(task, aligner, ref_order):
 
 
 def align_flagstat(task, aligners):
-    stats_dict = {'mapped_rate':{}}
+    stats_dict = {'mapped_rate':{}, 'mapped_reads':{}}
     for aligner in aligners:
         logger.info('Analysis BAM file from %s' % aligner)
         aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
         stats_dict['mapped_rate'][aligner] = {}
+        stats_dict['mapped_reads'][aligner] = {}
         for ref_order in range(1, task.ref_num+1):
             flagstat_cmd = ['samtools', 'flagstat', '-@', task.threads, '%s_ref_%d.sorted.bam'%(task.id, ref_order)]
             logger.info('CMD: '+' '.join(flagstat_cmd))
@@ -112,7 +123,9 @@ def align_flagstat(task, aligners):
             stats_list = stats_text.split('\n')
             utils.build_text_file(task.path.joinpath(aligner_cwd, 'flagstat_ref_%d.txt'%ref_order), stats_text)
             mapped_rate = stats_list[4].split(' ')[4][1:]
+            mapped_reads = stats_list[4].split(' ')[0]
             stats_dict['mapped_rate'][aligner][ref_order]= mapped_rate
+            stats_dict['mapped_reads'][aligner][ref_order]= mapped_reads
     utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'flagstat.json'), stats_dict)
 
 
