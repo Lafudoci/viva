@@ -92,8 +92,9 @@ def remove_impurities(task):
         logger.info('Removing impurities #%d' % impurities_order)
         impurities_remove_meta[impurities_order] = {
             'mapped_reads': "", 'remove_percentage': ""}
-        unconc_reads_out = task.id + '_%d' % impurities_order + \
-            '_impurity_removed_R%.fastq.gz'
+        unconc_reads_out = str(task.path.joinpath(
+                    task.id, 'reads', task.id + '_%d' % impurities_order + \
+            '_impurity_removed_R%.fastq.gz'))
         mapped_sam = 'impurity_%d_mapped.sam' % impurities_order
         if impurities_order == 1:
             if task.remove_host != None:
