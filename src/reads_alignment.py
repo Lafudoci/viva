@@ -39,9 +39,9 @@ def align_bowtie2(task):
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
         elif task.impurities_prefilter_num > 0:
             filterd_R1 = str(task.path.joinpath(
-                task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, impurities_prefilter_num)))
+                task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, task.impurities_prefilter_num)))
             filterd_R2 = str(task.path.joinpath(
-                task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, impurities_prefilter_num)))
+                task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, task.impurities_prefilter_num)))
         else:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
@@ -68,9 +68,9 @@ def align_bwa(task):
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
         elif task.impurities_prefilter_num > 0:
             filterd_R1 = str(task.path.joinpath(
-                task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, impurities_prefilter_num)))
+                task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, task.impurities_prefilter_num)))
             filterd_R2 = str(task.path.joinpath(
-                task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, impurities_prefilter_num)))
+                task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, task.impurities_prefilter_num)))
         else:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
