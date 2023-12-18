@@ -62,7 +62,7 @@ def report_summary(task):
     else:
         s['ref_source_contig_name'] = 'N/A'
         s['ref_source_contig_pident'] = 'N/A'
-    if task.remove_host != None:
+    if task.remove_impurities != None:
         s['impurit_filter_meta'] = single_meta_parser(task, 'impurities_prefilter', 'impurities_prefilter_meta.json')
         s['impurit_filter_results'] = single_meta_parser(task, 'impurities_prefilter', 'impurities_remove.json')
     else:
