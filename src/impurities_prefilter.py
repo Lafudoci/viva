@@ -92,9 +92,6 @@ def remove_impurities(task):
         logger.info('Removing impurities #%d' % impurities_order)
         impurities_remove_meta[impurities_order] = {
             'mapped_reads': "", 'remove_percentage': ""}
-        unconc_reads_out = str(task.path.joinpath(
-                    task.id, 'reads', task.id + '_%d' % impurities_order + \
-            '_impurity_removed_R%.fastq.gz'))
         mapped_sam = 'impurity_%d_mapped.sam' % impurities_order
         if impurities_order == 1:
             if task.remove_host != None:
@@ -119,8 +116,7 @@ def remove_impurities(task):
             '-1', filterd_R1,
             '-2', filterd_R2,
             '-S', str(mapped_sam),
-            '--very-sensitive-local',
-            '--un-conc-gz', '%s' % str(unconc_reads_out)
+            '--very-sensitive-local'
         ]
         logger.info('CMD: '+' '.join(align_cmd))
         utils.write_log_file(task.path.joinpath(task.id),
@@ -142,6 +138,18 @@ def remove_impurities(task):
             sorting_cmd, cwd=aligner_cwd, capture_output=True)
         print(sorting_run.stdout.decode(encoding='utf-8'))
         print(sorting_run.stderr.decode(encoding='utf-8'))
+        # extract unmapped
+        unmapped_fastq_r1 = str(task.path.joinpath(
+                    task.id, 'reads', task.id + '_%d' % impurities_order + \
+            '_impurity_removed_R1.fastq.gz'))
+        unmapped_fastq_r2 = str(task.path.joinpath(
+                    task.id, 'reads', task.id + '_%d' % impurities_order + \
+            '_impurity_removed_R2.fastq.gz'))
+        samtools_option_cmd = ['samtools', 'fastq', '-f 13']
+        samtools_fastq_cmd = ['-1', unmapped_fastq_r1, '-2', unmapped_fastq_r2]
+        samtools_run_cmd = samtools_option_cmd + samtools_fastq_cmd + [sorted_bam]
+        subprocess.run(samtools_run_cmd, cwd=aligner_cwd, check=True)
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(samtools_run_cmd))
         # flagstat
         flagstat_cmd = ['samtools', 'flagstat', '-@',
                         task.threads, sorted_bam]
@@ -153,7 +161,7 @@ def remove_impurities(task):
         stats_text = flagstat_run.stdout.decode(encoding='utf-8')
         stats_list = stats_text.split('\n')
         utils.build_text_file(task.path.joinpath(
-            aligner_cwd, 'flagstat.txt'), stats_text)
+            aligner_cwd, 'flagstat_impurities_%d.txt'%impurities_order), stats_text)
         total_reads = task.total_reads_after_fastp
         mapped_reads = stats_list[4].split(' ')[0]
         mapped_rate = Decimal(mapped_reads)/Decimal(total_reads)
@@ -165,7 +173,7 @@ def remove_impurities(task):
         # remove sam file to release disk space
         os.remove(task.path.joinpath(aligner_cwd, mapped_sam))
         # remove host bam file to release disk space
-        os.remove(task.path.joinpath(aligner_cwd, sorted_bam))
+        # os.remove(task.path.joinpath(aligner_cwd, sorted_bam))
 
 
 def run(task):

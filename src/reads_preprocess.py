@@ -122,7 +122,6 @@ def remove_host(task):
         dehost_meta['genome'] = 'Custom sequence file (%s)'%task.remove_host
         genome_path = '/app/genomes/' + task.remove_host
 
-    unconc_reads_out = task.id + '_host_removed_R%.fastq.gz'
     mapped_reads_out = 'host_mapped.sam'
     align_cmd = [
         'bowtie2',
@@ -131,8 +130,7 @@ def remove_host(task):
         '-1', str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz')),
         '-2', str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz')),
         '-S', str(mapped_reads_out),
-        '--very-sensitive-local',
-        '--un-conc-gz', '%s' % str(unconc_reads_out)
+        '--very-sensitive-local'
     ]
     logger.info('CMD: '+' '.join(align_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(align_cmd))
@@ -149,6 +147,14 @@ def remove_host(task):
     sorting_run = subprocess.run(sorting_cmd, cwd=host_remove_cwd, capture_output=True)
     print(sorting_run.stdout.decode(encoding='utf-8'))
     print(sorting_run.stderr.decode(encoding='utf-8'))
+    # extract unmapped
+    unmapped_fastq_r1 = task.id + '_host_removed_R1.fastq.gz'
+    unmapped_fastq_r2 = task.id + '_host_removed_R2.fastq.gz'
+    samtools_option_cmd = ['samtools', 'fastq', '-f 13']
+    samtools_fastq_cmd = ['-1', unmapped_fastq_r1, '-2', unmapped_fastq_r2]
+    samtools_run_cmd = samtools_option_cmd + samtools_fastq_cmd + ['host_mapped.sorted.bam']
+    subprocess.run(samtools_run_cmd, cwd=host_remove_cwd, check=True)
+    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(samtools_run_cmd))
     # flagstat
     flagstat_cmd = ['samtools', 'flagstat', '-@', task.threads, 'host_mapped.sorted.bam']
     logger.info('CMD: '+' '.join(flagstat_cmd))

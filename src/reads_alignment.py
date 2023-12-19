@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import subprocess
+from decimal import Decimal
 from pathlib import Path
 
 import utils
@@ -34,14 +35,15 @@ def align_bowtie2(task):
         logger.info('Running Bowtie2 alignment for ref #%d.'%ref_order)
         aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bowtie2')
         ref_index_path = str(aligner_cwd.joinpath('%s_ref_%d'%(task.id, ref_order)))
-        if task.remove_host != None:
-            filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
-            filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
-        elif task.impurities_prefilter_num > 0:
+        # impurities_prefilter is latter process, so need to be check first, then remove_host
+        if task.impurities_prefilter_num > 0:
             filterd_R1 = str(task.path.joinpath(
                 task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, task.impurities_prefilter_num)))
             filterd_R2 = str(task.path.joinpath(
                 task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, task.impurities_prefilter_num)))
+        elif task.remove_host != None:
+            filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
+            filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
         else:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
@@ -63,14 +65,15 @@ def align_bwa(task):
         logger.info('Running BWA alignment for ref #%d.'%ref_order)
         aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bwa')
         ref_index_path = str(aligner_cwd.joinpath('%s_ref_%d'%(task.id, ref_order)))
-        if task.remove_host != None:
-            filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
-            filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
-        elif task.impurities_prefilter_num > 0:
+        # impurities_prefilter is latter process, so need to be check first, then remove_host
+        if task.impurities_prefilter_num > 0:
             filterd_R1 = str(task.path.joinpath(
                 task.id, 'reads', '%s_%d_impurity_removed_R1.fastq.gz' % (task.id, task.impurities_prefilter_num)))
             filterd_R2 = str(task.path.joinpath(
                 task.id, 'reads', '%s_%d_impurity_removed_R2.fastq.gz' % (task.id, task.impurities_prefilter_num)))
+        elif task.remove_host != None:
+            filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R1.fastq.gz'))
+            filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_host_removed_R2.fastq.gz'))
         else:
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
@@ -122,9 +125,9 @@ def align_flagstat(task, aligners):
             stats_text = flagstat_run.stdout.decode(encoding='utf-8')
             stats_list = stats_text.split('\n')
             utils.build_text_file(task.path.joinpath(aligner_cwd, 'flagstat_ref_%d.txt'%ref_order), stats_text)
-            mapped_rate = stats_list[4].split(' ')[4][1:]
             mapped_reads = stats_list[4].split(' ')[0]
-            stats_dict['mapped_rate'][aligner][ref_order]= mapped_rate
+            mapped_rate = Decimal(mapped_reads)/Decimal(task.total_reads_after_fastp)
+            stats_dict['mapped_rate'][aligner][ref_order]= "%f%%" % (mapped_rate*Decimal('100'))
             stats_dict['mapped_reads'][aligner][ref_order]= mapped_reads
     utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'flagstat.json'), stats_dict)
 
