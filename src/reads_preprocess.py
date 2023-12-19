@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from decimal import Decimal
 from pathlib import Path
 
@@ -77,6 +78,11 @@ def run_fastp(task):
     print(fastp_run.stderr.decode(encoding='utf-8'))
     # record total reads after fastp
     task.total_reads_after_fastp = summary_generator.fastp_parser(task)['after_total_reads']
+    mininal_reads = 100
+    if task.total_reads_after_fastp <= mininal_reads:
+        logger.critical('Reads too less (%s) to run, minimal is %s'%(task.total_reads_after_fastp, mininal_reads))
+        sys.exit(-1)
+
 
 
 def reads_hash_md5(task):
