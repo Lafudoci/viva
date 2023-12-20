@@ -51,9 +51,9 @@ def report_summary(task):
     s['fastp_abs'] = fastp_parser(task)
     if task.remove_host != None:
         dehost_meta = single_meta_parser(task, 'reads', 'dehost_meta.json')
-        s['remove_genome'] = {'genome': dehost_meta['genome'], 'remove_percentage': dehost_meta['remove_percentage']}
+        s['remove_genome'] = {'genome': dehost_meta['genome'], 'mapped_reads': dehost_meta['mapped_reads'], 'remove_percentage': dehost_meta['remove_percentage']}
     else:
-        s['remove_genome'] = {'genome': 'N/A', 'remove_percentage': 'N/A'}
+        s['remove_genome'] = {'genome': 'N/A', 'mapped_reads': 'N/A', 'remove_percentage': 'N/A'}
     s['ref_meta_dict'] = single_meta_parser(task, 'reference', task.id + '_ref.json').copy()
     if task.with_ref == False:
         best_hit = single_meta_parser(task, 'assembly', 'best_hit.json')
@@ -62,6 +62,12 @@ def report_summary(task):
     else:
         s['ref_source_contig_name'] = 'N/A'
         s['ref_source_contig_pident'] = 'N/A'
+    if task.remove_impurities != None:
+        s['impurit_filter_meta'] = single_meta_parser(task, 'impurities_prefilter', 'impurities_prefilter_meta.json')
+        s['impurit_filter_results'] = single_meta_parser(task, 'impurities_prefilter', 'impurities_remove.json')
+    else:
+        s['impurit_filter_meta'] = {}
+        s['impurit_filter_results'] = {}
     s['aln'] = single_meta_parser(task, 'alignment', 'flagstat.json')
     s['cov'] = single_meta_parser(task, 'alignment', 'coverage_stat.json')
     s['vc'] = vc_parser(task)

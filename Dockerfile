@@ -14,7 +14,7 @@ RUN wget \
 RUN conda config --add channels defaults \
     && conda config --add channels bioconda \
     && conda config --add channels conda-forge \
-    && conda config --set channel_priority false \
+    && conda config --set channel_priority flexible \
     && conda update --all --yes
 RUN conda install --yes \
     python==3.8 \

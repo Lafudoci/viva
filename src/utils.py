@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import os
@@ -118,7 +119,7 @@ def load_blast_fmt6_max1_bitscore(file_path):
 def build_fmt6_file(file_path, fmt6_dict):
     with open(file_path, 'w') as f:
         for sseqid, rest in fmt6_dict.items():
-            hit_line = '%s'%sseqid
+            hit_line = '%s' % sseqid
             for col in rest.values():
                 hit_line += '\t'+col
             f.write(hit_line+'\n')
@@ -172,95 +173,170 @@ def load_blast_fmt_sciname_max1_bitscore(file_path):
 def sys_deps_check(dep_list):
     try:
         for dep in dep_list:
-            logger.info('Dependency check: %s'%dep)
+            logger.info('Dependency check: %s' % dep)
             subprocess.run(['which', dep], check=True)
     except subprocess.CalledProcessError as e:
-        logger.error('Dependency check error: %s.'%str(e))
+        logger.error('Dependency check error: %s.' % str(e))
         return -1
+
 
 def conda_deps_check(dep_list):
     verions_dict = conda_pkg_versions(dep_list)
     if verions_dict != -1:
         for dep in dep_list:
-            logger.info('Dependency check: %s'%dep)
+            logger.info('Dependency check: %s' % dep)
             if dep not in verions_dict:
-                logger.error('Dependency check error: %s.'%dep)
+                logger.error('Dependency check error: %s.' % dep)
                 return -1
     else:
         return -1
 
+
 def conda_pkg_versions(pkg_list):
     verions_dict = {}
     if sys_deps_check(['conda']) != -1:
-        all_pkg_list = subprocess.run(['conda', 'list'], capture_output=True).stdout.decode(encoding='utf-8').split('\n')
+        all_pkg_list = subprocess.run(['conda', 'list'], capture_output=True).stdout.decode(
+            encoding='utf-8').split('\n')
         for pkg_string in all_pkg_list:
-            print(pkg_string)
+            # print(pkg_string)
             if not pkg_string.startswith('#'):
                 if len(pkg_string.split()) == 4:
                     name = pkg_string.split()[0].strip()
                     version = pkg_string.split()[1].strip()
                     if name in pkg_list:
                         verions_dict[name] = version
-        print(verions_dict)
+        # print(verions_dict)
         return verions_dict
     else:
         return -1
 
 
-def setup_rvdb():
-    if sys_deps_check(['wget', 'gunzip', 'makeblastdb']) == -1:
-        return -1
-    if subprocess.run(['blastdbcmd', '-db', 'U-RVDBv21.0.fasta', '-info']).returncode == 0:
-        return
+def md5_check(file_path, md5_string):
     try:
-        logger.info('Preparing RVDB')
-        Path.mkdir(Path("/app/blastdb"), parents=True, exist_ok=True)
-        if Path("/app/blastdb_arch/U-RVDBv21.0.fasta.gz").exists() != True:
-            logger.info('Downloading RVDB')
-            subprocess.run(
-                [
-                'wget',
-                'https://rvdb.dbi.udel.edu/download/U-RVDBv21.0.fasta.gz',
-                '-P', '/app/blastdb_arch'
-                ],
-                check=True)
+        logger.info('Checking RVDB md5 hash.')
+        hashmd5 = hashlib.md5()
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hashmd5.update(chunk)
+        hashmd5_string = hashmd5.hexdigest()
+        if hashmd5_string != md5_string:
+            logger.error('md5 hash mismatched\nDownload: %s\n Expected:%s\n')
+            return -1
+    except subprocess.CalledProcessError as e:
+        logger.error('md5 hash error: %s.' % str(e))
+        return -1
+
+
+def setup_blastdb(blastdb_path, blastdb_name):
+    auto_rvdb_fasta_ver_list = ['U-RVDBv27.0.fasta', 'C-RVDBv27.0.fasta']
+    auto_rvdb_fastagz_md5_dict = {
+        'C-RVDBv27.0.fasta.gz': '338bf30e810c309874835feff8e07701',
+        'U-RVDBv27.0.fasta.gz': 'd08d83e26ba465da4f3063309fd13857'
+    }
+    try:
+        if sys_deps_check(['wget', 'gunzip', 'makeblastdb']) == -1:
+            return -1
+        if blastdb_path != None:
+            # use coustom blastdb
+            # copy n modify BLASDB env
+            m_env = os.environ.copy()
+            m_env['BLASTDB'] = blastdb_path
+            if subprocess.run(['blastdbcmd', '-db', blastdb_name, '-info'], env=m_env).returncode == 0:
+                logger.info('blastdb %s at %s exists.' %
+                            (blastdb_name, blastdb_path))
+                return
+            else:
+                logger.info('blastdb %s at %s not found.' %
+                            (blastdb_name, blastdb_path))
+                return -1
         else:
-            logger.info('RVDB archive exists.')
+            # check built-in app/blastdb
+            if subprocess.run(['blastdbcmd', '-db', blastdb_name, '-info']).returncode == 0:
+                logger.info('blastdb %s at app/blastdb exists.' %
+                            (blastdb_name))
+                return
+            else:
+                logger.info('blastdb %s at app/blastdb not found.' %
+                            (blastdb_name))
+                # if use rvdb then go setup, else then exit
+                if blastdb_name in auto_rvdb_fasta_ver_list:
+                    if Path("/app/blastdb_arch/%s.gz" % blastdb_name).is_file():
+                        logger.info('blastdb archive gz exists.')
+                    else:
+                        download_rvdb(blastdb_name)
+                    # check md5 hash
+                    if md5_check(Path("/app/blastdb_arch/%s.gz" % blastdb_name),
+                                 auto_rvdb_fastagz_md5_dict[blastdb_name+'.gz']) == -1:
+                        return -1
+                    # decompress
+                    decompress_rvdb(blastdb_name)
+                    # build blastdb
+                    Path.mkdir(Path("/app/blastdb"),
+                               parents=True, exist_ok=True)
+                    logger.info('Building blastdb')
+                    subprocess.run(
+                        [
+                            'makeblastdb',
+                            '-in',
+                            blastdb_name,
+                            '-blastdb_version',
+                            '5',
+                            '-title',
+                            'Reference Viral DataBase (%s)' % blastdb_name,
+                            '-dbtype',
+                            'nucl'
+                        ],
+                        check=True,
+                        cwd='/app/blastdb')
+                else:
+                    logger.error('%s not found in app/blastdb' % blastdb_name)
+                    return -1
+    except subprocess.CalledProcessError as e:
+        logger.error('blastdb setup error: %s.' % str(e))
+        return -1
+
+
+def download_rvdb(blastdb_name):
+    logger.info('Preparing RVDB')
+    rvdb_fasta = blastdb_name
+    rvdb_fastagz = blastdb_name + '.gz'
+    try:
+        logger.info('Downloading RVDB %s' % blastdb_name)
+        subprocess.run(
+            [
+                'wget',
+                'https://rvdb.dbi.udel.edu/download/%s' % rvdb_fastagz,
+                '-P', '/app/blastdb_arch'
+            ],
+            check=True)
+    except subprocess.CalledProcessError as e:
+        logger.error('RVDB setup error: %s.' % str(e))
+        return -1
+
+
+def decompress_rvdb(blastdb_name):
+    rvdb_fastagz = blastdb_name + '.gz'
+    try:
         logger.info('Decompressing RVDB')
-        with open("/app/blastdb/U-RVDBv21.0.fasta", "w") as f:
+        with open("/app/blastdb/%s" % blastdb_name, "w") as f:
             subprocess.run(
                 [
-                'gunzip',
-                '-c',
-                '/app/blastdb_arch/U-RVDBv21.0.fasta.gz',
+                    'gunzip',
+                    '-c',
+                    '/app/blastdb_arch/%s' % rvdb_fastagz,
                 ],
                 check=True,
                 cwd='/app/blastdb',
                 stdout=f
-                )
-        logger.info('Building blastdb of RVDB')
-        subprocess.run(
-            [
-            'makeblastdb',
-            '-in',
-            'U-RVDBv21.0.fasta',
-            '-blastdb_version',
-            '5',
-            '-title',
-            'Reference Viral DataBase',
-            '-dbtype',
-            'nucl'
-            ],
-            check=True,
-            cwd='/app/blastdb')
+            )
     except subprocess.CalledProcessError as e:
-        logger.error('RVDB setup error: %s.'%str(e))
+        logger.error('RVDB setup error: %s.' % str(e))
         return -1
 
 
 def setup_genomes(host_name):
     genome_source_table = {
-        'human':{
+        'human': {
             'bt2_gname': 'grch38',
             'arch_name': 'GCF_000001405.39_GRCh38.p13_genomic.fna.gz',
             'file_name': 'GCF_000001405.39_GRCh38.p13_genomic.fna',
@@ -284,9 +360,9 @@ def setup_genomes(host_name):
             logger.info('Downloading genome file')
             subprocess.run(
                 [
-                'wget',
-                genome_source_table[host_name]['source_url'],
-                '-P', '/app/genomes_arch'
+                    'wget',
+                    genome_source_table[host_name]['source_url'],
+                    '-P', '/app/genomes_arch'
                 ],
                 check=True)
         else:
@@ -295,9 +371,9 @@ def setup_genomes(host_name):
         with open('/app/genomes/'+genome_source_table[host_name]['file_name'], "w") as f:
             subprocess.run(
                 [
-                'gunzip',
-                '-c',
-                genome_source_table[host_name]['arch_name'],
+                    'gunzip',
+                    '-c',
+                    genome_source_table[host_name]['arch_name'],
                 ],
                 check=True,
                 cwd='/app/genomes_arch',
@@ -305,14 +381,14 @@ def setup_genomes(host_name):
         logger.info('Indexing genome file')
         subprocess.run(
             [
-            'bowtie2-build',
-            '--threads',
-            '6',
-            genome_source_table[host_name]['file_name'],
-            'grch38'
+                'bowtie2-build',
+                '--threads',
+                '6',
+                genome_source_table[host_name]['file_name'],
+                'grch38'
             ],
             check=True,
             cwd='/app/genomes')
     except subprocess.CalledProcessError as e:
-        logger.error('RVDB setup error: %s.'%str(e))
+        logger.error('RVDB setup error: %s.' % str(e))
         return -1

@@ -116,7 +116,7 @@ def blast_hits_significant_filter(task, hit):
 
 
 def blast_hits_string_formater(task, hit):
-    if task.unmapped_blastdb == "U-RVDBv21.0.fasta":
+    if task.unmapped_blastdb.startswith(("U-RVDB","C-RVDB")):
         hit_split_list = hit[6].split('|')
         clean_sacc = hit_split_list[2]
         clean_stitle = hit_split_list[3]

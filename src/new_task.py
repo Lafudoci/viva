@@ -15,6 +15,7 @@ import utils
 import variant_calling
 import report_generator
 import summary_generator
+import impurities_prefilter
 
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,8 @@ def main(input_args):
     parser.add_argument(
         '--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
     parser.add_argument(
+        '--remove_impurities', help="Remove specific impurity sequences FASTA file path.", default=None)
+    parser.add_argument(
         '--test', default=None)
     parser.add_argument(
         '--spades_mem', help="The memory (GB) allocated for spades, apply to both ref and unmapped assemble.", default=22)
@@ -86,9 +89,11 @@ def main(input_args):
     parser.add_argument(
         '--vc_threshold', default='0.7')
     parser.add_argument(
+        '--blastdb_path', default=None)
+    parser.add_argument(
         '--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default=True)
     parser.add_argument(
-        '--unmapped_blastdb', help="BLASTDB name in unmapped reads assemble BLAST.", default=None)
+        '--unmapped_blastdb', help="BLASTDB for reference prepare and unmapped reads assemble.", default=None)
     parser.add_argument(
         '--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
     parser.add_argument(
@@ -125,6 +130,8 @@ def main(input_args):
     task.ex_r2 = args.ex_r2
     task.alns = args.alns.split(',')
     task.ref_num = 0
+    task.impurities_prefilter_num = 0
+    task.total_reads_after_fastp = 0
     task.preset_path = args.preset_path
     task.sample_product_name = args.sample_product_name
     task.sample_product_lot = args.sample_product_lot
@@ -135,10 +142,12 @@ def main(input_args):
         task.threads = str(args.threads)
         task.global_trimming = str(args.global_trimming)
         task.remove_host = args.remove_host
+        task.remove_impurities = args.remove_impurities
         task.spades_mem = str(args.spades_mem)
         task.spades_mode = args.spades_mode
         task.vc_threshold = args.vc_threshold
         task.min_vc_score = args.min_vc_score
+        task.blastdb_path = args.blastdb_path
         task.unmapped_assemble = args.unmapped_assemble
         task.unmapped_spades_mode = args.unmapped_spades_mode
         task.unmapped_blastdb = args.unmapped_blastdb
@@ -151,12 +160,14 @@ def main(input_args):
         task.threads = str(config['PRESET']['threads'])
         task.global_trimming = str(config['PRESET']['global_trimming'])
         task.remove_host = config['PRESET']['remove_host']
+        task.remove_impurities = config['PRESET']['remove_impurities']
         task.spades_mem = str(config['PRESET']['spades_mem'])
         task.spades_mode = config['PRESET']['spades_mode']
         task.vc_threshold = config['PRESET']['vc_threshold']
         task.min_vc_score = config['PRESET']['min_vc_score']
         task.unmapped_assemble = config['PRESET']['unmapped_assemble']
         task.unmapped_spades_mode = config['PRESET']['unmapped_spades_mode']
+        task.blastdb_path = config['PRESET']['blastdb_path']
         task.unmapped_blastdb = config['PRESET']['unmapped_blastdb']
         task.unmapped_len_filter = config['PRESET']['unmapped_len_filter']
         task.unmapped_ident_filter = config['PRESET']['unmapped_ident_filter']
@@ -179,7 +190,12 @@ def main(input_args):
             task.ref = None
 
     if task.unmapped_blastdb != None:
-        task.unmapped_assemble = True
+        logger.info('Checking BlastDB.')
+        if utils.setup_blastdb(task.blastdb_path, task.unmapped_blastdb) == -1:
+            logger.error('BlastDB setup error. Exiting pipeline.')
+            sys.exit()
+        else:
+            task.unmapped_assemble = True
 
     logger.info('Checking reference.')
     if task.ref != None:
@@ -192,14 +208,19 @@ def main(input_args):
         logger.info('Input reference not provided. Will go de novo')
 
     if task.with_ref == False:
-        logger.info('Checking RVDB.')
-        if utils.setup_rvdb() == -1:
-            logger.error('RVDB setup error. Exiting pipeline.')
+        logger.info('Checking BlastDB.')
+        if utils.setup_blastdb(task.blastdb_path, task.unmapped_blastdb) == -1:
+            logger.error('BlastDB setup error. Exiting pipeline.')
             sys.exit()
 
     if task.remove_host != None:
         if utils.setup_genomes(task.remove_host) == -1:
             logger.error('Host genome not found. Exiting pipeline.')
+            sys.exit()
+    
+    if task.remove_impurities != None:
+        if not Path(task.remove_impurities).is_file():
+            logger.error('Impurities source file not found. Exiting pipeline.')
             sys.exit()
 
     logger.info('Checking reads files.')
@@ -217,6 +238,7 @@ def main(input_args):
         # main pipeline
         reads_preprocess.run(task)
         reference_prepare.run(task)
+        impurities_prefilter.run(task)
         reads_alignment.run(task)
         unmapped_analysis.run(task)
         variant_calling.run(task)

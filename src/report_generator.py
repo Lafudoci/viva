@@ -98,7 +98,20 @@ def build_md_report(task):
 
     dehost_t = '## Host Genome Removal'
     dehost_i_g = 'Remove genome: %s'%(s['remove_genome']['genome'])
-    dehost_i_p = '\nPercentage of removed reads: %s'%(s['remove_genome']['remove_percentage'])
+    dehost_i_p = '\nPercentage of removed reads: %s (%s)'%(s['remove_genome']['remove_percentage'],s['remove_genome']['mapped_reads'])
+
+    impurit_t = '## Impurities Pre-filter'
+    impurit_m_c = ''
+    if task.remove_impurities != None:
+        for impurit_order in range(1, task.impurities_prefilter_num+1):
+            impurit_m_c += '\n'.join([
+                '\n#### Impurities Prefilter #%d :%s'%(impurit_order, s['impurit_filter_meta']['seq_meta'][str(impurit_order)]['fasta_header_escape']),
+                '| Aligner | Overall mapped rate | Removed reads | ',
+                '| ------- | ------------------- | ------------- | ',
+                '| Bowtie2 | %s | %s |'%(s['impurit_filter_results'][str(impurit_order)]['remove_percentage'],s['impurit_filter_results'][str(impurit_order)]['mapped_reads']),
+            ])
+    else:
+        impurit_m_c = 'No impurities pre-filter was set'
 
     aln_t = '## Alignment'
     aln_m_t = '### Mapping rate'
@@ -106,10 +119,10 @@ def build_md_report(task):
     for ref_order in range(1, task.ref_num+1):
         aln_m_c += '\n'.join([
             '\n#### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header_escape']),
-            '| Aligner | Overall mapped rate |',
-            '| ------- | ------------------- |',
-            '| Bowtie2 | %s |'%(s['aln']['mapped_rate']['bowtie2'][str(ref_order)]),
-            '| BWA MEM | %s |'%(s['aln']['mapped_rate']['bwa'][str(ref_order)])
+            '| Aligner | Overall mapped rate | Mapped reads | ',
+            '| ------- | ------------------- | ------------ | ',
+            '| Bowtie2 | %s | %s |'%(s['aln']['mapped_rate']['bowtie2'][str(ref_order)],s['aln']['mapped_reads']['bowtie2'][str(ref_order)]),
+            '| BWA MEM | %s | %s |'%(s['aln']['mapped_rate']['bwa'][str(ref_order)], s['aln']['mapped_reads']['bwa'][str(ref_order)])
         ])
     
     aln_c_t = '### Coverage'
@@ -223,6 +236,8 @@ def build_md_report(task):
         dehost_t,
         dehost_i_g,
         dehost_i_p,
+        impurit_t,
+        impurit_m_c,
         aln_t,
         aln_m_t,
         aln_m_c,
