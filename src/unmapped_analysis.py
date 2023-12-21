@@ -15,6 +15,7 @@ def run_de_novo(task):
     unmapped_assembly_cwd = task.path.joinpath(task.id, 'unmapped_analysis')
     Path.mkdir(unmapped_assembly_cwd, parents=True, exist_ok=True)
     bwa_aligner_cwd = task.path.joinpath(task.id, 'alignment', 'bwa')
+    output_folder_name = '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode)
     # ONLY apply to the first bwa ref alignment.
     r1 = str(task.path.joinpath(bwa_aligner_cwd, task.id+'_ref_1_unmapped_R1.fastq.gz'))
     r2 = str(task.path.joinpath(bwa_aligner_cwd, task.id+'_ref_1_unmapped_R2.fastq.gz'))
@@ -27,13 +28,18 @@ def run_de_novo(task):
         '--phred-offset', '33',
         '-1', r1,
         '-2', r2,
-        '-o', '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode)
+        '-o', output_folder_name
     ]
     logger.info('CMD: '+' '.join(assemble_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(assemble_cmd))
     cmd_run = subprocess.run(assemble_cmd, cwd=unmapped_assembly_cwd, capture_output=True)
     print(cmd_run.stdout.decode(encoding='utf-8'))
     print(cmd_run.stderr.decode(encoding='utf-8'))
+    # check if assemble result exists
+    contigs_path = Path(unmapped_assembly_cwd, output_folder_name, 'contigs.fasta')
+    if contigs_path.is_file() != True:
+        logger.error('Assemble file not found.')
+        return -1
 
 
 def blast_assembled(task):
@@ -79,12 +85,14 @@ def blast_assembled(task):
     
     highly_match_result_list = blast_hits_max1_bitscore_filter(task, filtered_hits_list)
 
+    return highly_match_result_list
+
+def build_unmapped_json(task, result_list):
     unmapped_analysis = {
         'spades_mode': task.unmapped_spades_mode,
         'BLASTdb_name': task.unmapped_blastdb,
-        'highly_matched_result': highly_match_result_list
+        'highly_matched_result': result_list
     }
-    
     unmapped_analysis_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'unmapped_analysis.json')
     utils.build_json_file(unmapped_analysis_json_path, unmapped_analysis)
 
@@ -144,6 +152,12 @@ def blast_hits_string_formater(task, hit):
 
 def run(task):
     if task.unmapped_assemble == True:
-        run_de_novo(task)
-        if task.unmapped_blastdb != None:
-            blast_assembled(task)
+        contigs = run_de_novo(task)
+        highly_match_result_list = []
+        if contigs != -1:
+            if task.unmapped_blastdb != None:
+                highly_match_result_list = blast_assembled(task)
+                logger.warning('unmapped_blastdb not set, skipping blast.')
+        else:
+            logger.warning('Contigs not found, skipping blast.')
+        build_unmapped_json(task, highly_match_result_list)
