@@ -75,7 +75,7 @@ def report_summary(task):
     if task.unmapped_blastdb != None:
         s['unmapped_analysis'] = single_meta_parser(task, 'unmapped_analysis', 'unmapped_analysis.json')
     else:
-        s['unmapped_analysis'] = {}
+        s['unmapped_analysis'] = {'spades_mode':task.unmapped_spades_mode, 'BLASTdb_name':'N/A','highly_matched_result':[]}
     s['version'] = tool_version_caller(task)
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),
