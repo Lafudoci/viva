@@ -78,9 +78,10 @@ def align_bwa(task):
             filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
             filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
         reads_cmd = [filterd_R1, filterd_R2]
+        option_cmd = ['-K 100000000 -Y']
         thread_cmd = ['-t', str(task.threads)]
         output_cmd = ['-o', '%s_ref_%d.sam'%(task.id, ref_order)]
-        aln_cmd = ['bwa', 'mem'] + thread_cmd + [ref_index_path] + reads_cmd + output_cmd
+        aln_cmd = ['bwa', 'mem'] + option_cmd + thread_cmd + [ref_index_path] + reads_cmd + output_cmd
         logger.info('CMD: '+' '.join(aln_cmd))
         utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(aln_cmd))
         bt2_run = subprocess.run(aln_cmd, cwd=aligner_cwd, capture_output=True)
