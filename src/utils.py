@@ -213,7 +213,7 @@ def conda_pkg_versions(pkg_list):
 
 def md5_check(file_path, md5_string):
     try:
-        logger.info('Checking RVDB md5 hash.')
+        logger.info('Checking md5 hash.')
         hashmd5 = hashlib.md5()
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
@@ -335,12 +335,14 @@ def decompress_rvdb(blastdb_name):
 
 
 def setup_genomes(host_name):
+    genome_id = 'GRCh38.p14'
     genome_source_table = {
         'human': {
-            'bt2_gname': 'grch38',
-            'arch_name': 'GCF_000001405.39_GRCh38.p13_genomic.fna.gz',
-            'file_name': 'GCF_000001405.39_GRCh38.p13_genomic.fna',
-            'source_url': 'https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz'
+            'bt2_gname': genome_id,
+            'arch_name': 'GCF_000001405.40_GRCh38.p14_genomic.fna.gz',
+            'file_name': 'GCF_000001405.40_GRCh38.p14_genomic.fna',
+            'source_url': 'https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.fna.gz',
+            'md5': 'c30471567037b2b2389d43c908c653e1'
         }
     }
     # TEMP return 0 for custom genome input
@@ -367,6 +369,11 @@ def setup_genomes(host_name):
                 check=True)
         else:
             logger.info('Genome archive exists.')
+        # check md5 hash
+        logger.info('Checking md5 hash of genome file')
+        if md5_check(Path("/app/genomes_arch/%s" % genome_source_table[host_name]['arch_name']),
+                        genome_source_table[host_name]['md5']) == -1:
+            return -1
         logger.info('Decompressing genome file')
         with open('/app/genomes/'+genome_source_table[host_name]['file_name'], "w") as f:
             subprocess.run(
@@ -385,7 +392,7 @@ def setup_genomes(host_name):
                 '--threads',
                 '6',
                 genome_source_table[host_name]['file_name'],
-                'grch38'
+                genome_id
             ],
             check=True,
             cwd='/app/genomes')

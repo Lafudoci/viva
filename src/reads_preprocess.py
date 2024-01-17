@@ -113,8 +113,8 @@ def remove_host(task):
         dehost_meta['genome'] = 'Dog (Dog10K_Boxer_Tasha, GCF_000002285.5)'
         genome_path = '/app/genomes/' + 'dog10k'
     elif task.remove_host == 'human':
-        dehost_meta['genome'] = 'Human (GRCh38.p13, GCF_000001405.39)'
-        genome_path = '/app/genomes/' + 'grch38'
+        dehost_meta['genome'] = 'Human (GRCh38.p14, GCF_000001405.40)'
+        genome_path = '/app/genomes/' + 'GRCh38.p14'
     elif task.remove_host == 'vero':
         dehost_meta['genome'] = 'Vero (Vero_WHO_p1.0, GCF_015252025.1)'
         genome_path = '/app/genomes/' +  'vero'
