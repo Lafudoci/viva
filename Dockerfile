@@ -7,16 +7,16 @@ RUN apt-get update \
     && apt-get install -y wget gzip git \
     && rm -rf /var/lib/apt/lists/*
 RUN wget \
-    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    https://repo.anaconda.com/miniconda/Miniconda3-py310_23.11.0-2-Linux-x86_64.sh \
     && mkdir /root/.conda \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh
+    && bash Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-py310_23.11.0-2-Linux-x86_64.sh
 RUN conda config --add channels defaults \
     && conda config --add channels bioconda \
     && conda config --add channels conda-forge \
     && conda config --set channel_priority flexible \
-    && conda update --all --yes
-RUN conda install --yes \
+    && conda update --all --yes \
+    && conda install --yes \
     python==3.10.13 \
     fastp==0.23.4 samtools==1.19 bcftools==1.19 \
     bowtie2==2.5.1 bwa==0.7.17 \
