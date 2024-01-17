@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.8-slim-buster
+FROM python:3.10.13-slim-bookworm
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
 ENV BLASTDB /app/blastdb
@@ -17,11 +17,11 @@ RUN conda config --add channels defaults \
     && conda config --set channel_priority flexible \
     && conda update --all --yes
 RUN conda install --yes \
-    python==3.8 \
-    fastp==0.20.1 samtools==1.12 bcftools==1.12 \
-    bowtie2==2.4.2 bwa==0.7.17 \
-    varscan==2.4.4 lofreq==2.1.5 \
-    spades==3.15.2 blast==2.11.0 \
+    python==3.10.13 \
+    fastp==0.23.4 samtools==1.19 bcftools==1.19 \
+    bowtie2==2.5.1 bwa==0.7.17 \
+    varscan==2.4.6 lofreq==2.1.5 \
+    spades==3.15.5 blast==2.15.0 \
     && conda clean -afy
 COPY ./src /app
 COPY ./.git /app
