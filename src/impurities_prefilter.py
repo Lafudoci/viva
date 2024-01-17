@@ -159,13 +159,13 @@ def remove_impurities(task):
         flagstat_run = subprocess.run(
             flagstat_cmd, cwd=aligner_cwd, capture_output=True)
         stats_text = flagstat_run.stdout.decode(encoding='utf-8')
-        stats_list = stats_text.split('\n')
-        utils.build_text_file(task.path.joinpath(
-            aligner_cwd, 'flagstat_impurities_%d.txt'%impurities_order), stats_text)
+        flagstat_file_path = task.path.joinpath(
+            aligner_cwd, 'flagstat_impurities_%d.txt'%impurities_order)
+        utils.build_text_file(flagstat_file_path, stats_text)
         total_reads = task.total_reads_after_fastp
-        mapped_reads = stats_list[4].split(' ')[0]
-        mapped_rate = Decimal(mapped_reads)/Decimal(total_reads)
-        impurities_remove_meta[impurities_order]['mapped_reads'] = mapped_reads
+        primary_mapped_reads = utils.primary_mapped_from_flagstat(flagstat_file_path)
+        mapped_rate = Decimal(primary_mapped_reads)/Decimal(total_reads)
+        impurities_remove_meta[impurities_order]['mapped_reads'] = primary_mapped_reads
         impurities_remove_meta[impurities_order]['remove_percentage'] = "%f%%" % (
             mapped_rate*Decimal('100'))
         utils.build_json_file(task.path.joinpath(

@@ -124,12 +124,12 @@ def align_flagstat(task, aligners):
             utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
             flagstat_run = subprocess.run(flagstat_cmd, cwd=aligner_cwd, capture_output=True)
             stats_text = flagstat_run.stdout.decode(encoding='utf-8')
-            stats_list = stats_text.split('\n')
-            utils.build_text_file(task.path.joinpath(aligner_cwd, 'flagstat_ref_%d.txt'%ref_order), stats_text)
-            mapped_reads = stats_list[4].split(' ')[0]
-            mapped_rate = Decimal(mapped_reads)/Decimal(task.total_reads_after_fastp)
+            flagstat_file_path = task.path.joinpath(aligner_cwd, 'flagstat_ref_%d.txt'%ref_order)
+            utils.build_text_file(flagstat_file_path, stats_text)
+            primary_mapped_reads = utils.primary_mapped_from_flagstat(flagstat_file_path)
+            mapped_rate = Decimal(primary_mapped_reads)/Decimal(task.total_reads_after_fastp)
             stats_dict['mapped_rate'][aligner][ref_order]= "%f%%" % (mapped_rate*Decimal('100'))
-            stats_dict['mapped_reads'][aligner][ref_order]= mapped_reads
+            stats_dict['mapped_reads'][aligner][ref_order]= primary_mapped_reads
     utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'flagstat.json'), stats_dict)
 
 

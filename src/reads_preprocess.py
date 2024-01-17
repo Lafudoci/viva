@@ -167,12 +167,12 @@ def remove_host(task):
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
     flagstat_run = subprocess.run(flagstat_cmd, cwd=host_remove_cwd, capture_output=True)
     stats_text = flagstat_run.stdout.decode(encoding='utf-8')
-    stats_list = stats_text.split('\n')
-    utils.build_text_file(task.path.joinpath(host_remove_cwd, 'flagstat.txt'), stats_text)
+    flagstat_file_path = task.path.joinpath(host_remove_cwd, 'flagstat.txt')
+    utils.build_text_file(flagstat_file_path, stats_text)
     total_reads = task.total_reads_after_fastp
-    mapped_reads = stats_list[4].split(' ')[0]
-    mapped_rate = Decimal(mapped_reads)/Decimal(total_reads)
-    dehost_meta['mapped_reads'] = mapped_reads
+    primary_mapped_reads = utils.primary_mapped_from_flagstat(flagstat_file_path)
+    mapped_rate = Decimal(primary_mapped_reads)/Decimal(total_reads)
+    dehost_meta['mapped_reads'] = primary_mapped_reads
     dehost_meta['remove_percentage'] = "%f%%" % (mapped_rate*Decimal('100'))
     utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
     # remove sam file to release disk space

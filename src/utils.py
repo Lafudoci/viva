@@ -392,3 +392,11 @@ def setup_genomes(host_name):
     except subprocess.CalledProcessError as e:
         logger.error('RVDB setup error: %s.' % str(e))
         return -1
+
+
+def primary_mapped_from_flagstat(file_path):
+    with open(file_path, 'r', encoding='UTF-8') as f:
+        for line in f.readlines():
+            if 'primary mapped' in line:
+                primary_mapped_reads = line.split(' ')[0]
+                return primary_mapped_reads
