@@ -8,3 +8,4 @@
 /src/blastdb_arch
 *.ini
 *.txt
+/venv

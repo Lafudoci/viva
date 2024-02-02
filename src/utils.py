@@ -7,6 +7,7 @@ import textwrap
 import time
 from decimal import Decimal
 from pathlib import Path
+from txt2pdf.core import txt2pdf
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -407,3 +408,14 @@ def primary_mapped_from_flagstat(file_path):
             if 'primary mapped' in line:
                 primary_mapped_reads = line.split(' ')[0]
                 return primary_mapped_reads
+            
+
+def md2pdf(pdf_path, md_str):
+    css_file = Path('/app/asset/github.css')
+    footer = Path('/app/asset/footer.html')
+    txt2pdf(
+        pdf_file_path=pdf_path,
+        md_content=md_str, 
+        css_file_path=css_file, 
+        # footer=footer
+    )
