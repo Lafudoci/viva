@@ -11,17 +11,14 @@ RUN wget \
     && mkdir /root/.conda \
     && bash Miniconda3-py310_23.11.0-2-Linux-x86_64.sh -b \
     && rm -f Miniconda3-py310_23.11.0-2-Linux-x86_64.sh
+COPY conda_requirements.txt .
 RUN conda config --add channels defaults \
     && conda config --add channels bioconda \
     && conda config --add channels conda-forge \
     && conda config --set channel_priority flexible \
     && conda update --all --yes \
     && conda install --yes \
-    python==3.10.13 \
-    fastp==0.23.4 samtools==1.19 bcftools==1.19 \
-    bowtie2==2.5.1 bwa==0.7.17 \
-    varscan==2.4.6 lofreq==2.1.5 \
-    spades==3.15.5 blast==2.15.0 \
+    --file conda_requirements.txt \
     && conda clean -afy
 COPY ./src /app
 COPY ./.git /app

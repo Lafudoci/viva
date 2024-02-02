@@ -7,5 +7,5 @@
 /src/genomes_arch
 /src/blastdb_arch
 *.ini
-*.txt
+# *.txt
 /venv

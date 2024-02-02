@@ -1,0 +1,11 @@
+python==3.10.13
+fastp==0.23.4
+samtools==1.19
+bcftools==1.19
+bowtie2==2.5.1
+bwa==0.7.17
+varscan==2.4.6
+lofreq==2.1.5
+spades==3.15.5
+blast==2.15.0
+mysql-connector-python==8.0.33
