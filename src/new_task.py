@@ -16,6 +16,7 @@ import variant_calling
 import report_generator
 import summary_generator
 import impurities_prefilter
+import db_connect
 
 
 logger = logging.getLogger(__name__)
@@ -251,6 +252,9 @@ def main(input_args):
         # report generator
         summary_generator.run(task)
         report_generator.run(task)
+
+        # uplaod report to remote db
+        db_connect.run(task)
 
         return task.id
 
