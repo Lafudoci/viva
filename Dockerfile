@@ -2,7 +2,7 @@
 FROM python:3.10.13-slim-bookworm
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
-ENV BLASTDB /app/blastdb
+ENV BLASTDB=/app/blastdb
 RUN apt-get update \
     && apt-get install -y wget gzip git \
     && rm -rf /var/lib/apt/lists/*
