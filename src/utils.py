@@ -228,10 +228,10 @@ def md5_check(file_path, md5_string):
 
 
 def setup_blastdb(blastdb_path, blastdb_name):
-    auto_rvdb_fasta_ver_list = ['U-RVDBv27.0.fasta', 'C-RVDBv27.0.fasta']
+    auto_rvdb_fasta_ver_list = ['U-RVDBv29.0.fasta', 'C-RVDBv29.0.fasta']
     auto_rvdb_fastagz_md5_dict = {
-        'C-RVDBv27.0.fasta.gz': '338bf30e810c309874835feff8e07701',
-        'U-RVDBv27.0.fasta.gz': 'd08d83e26ba465da4f3063309fd13857'
+        'C-RVDBv29.0.fasta.gz': 'deb369751ea32c723f640ee192688e48',
+        'U-RVDBv29.0.fasta.gz': 'e6352c74dc691a600e830bceca650c3a'
     }
     try:
         if sys_deps_check(['wget', 'gunzip', 'makeblastdb']) == -1:
