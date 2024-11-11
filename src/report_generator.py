@@ -192,11 +192,11 @@ def build_md_report(task):
             unmapped_filt = 'Hits filter: Min. length %s bp,  Min. identity %s %%.'%(task.unmapped_len_filter, task.unmapped_ident_filter)
             unmapped_hits = ''
             if s['unmapped_analysis']['highly_matched_result'] != []:
-                unmapped_hits = 'BLAST Hits:\n\n| Hits | Acc. | Description | Ident(%) | Query len.(bp) | Align len.(bp) | E-value |\n| ---- | ---- | ------- | -------- | ---------- | ---------- | ------- |\n'
+                unmapped_hits = 'BLAST Hits:\n\n| Contig ID | Hit acc. | Description | Ident(%) | Query len.(bp) | Qcov(%) | E-value |\n| - | - | - | - | - | - | - |\n'
                 hit_order = 1
                 for hit in s['unmapped_analysis']['highly_matched_result']:
-                    unmapped_hits += '| %d | %s | %s | %s | %s | %s | %s |\n'%(hit_order, hit['clean_sacc'], hit['clean_stitle'], hit['pident'], hit['qlen'], hit['length'], hit['evalue'])
-                    hit_order += 1
+                    contig_node_id = "%s_%s" % (hit['qseqid'].split("_")[0], hit['qseqid'].split("_")[1])
+                    unmapped_hits += '| %s | %s | %s | %s | %s | %s | %s |\n'%(contig_node_id, hit['clean_sacc'], hit['clean_stitle'], hit['pident'], hit['qlen'], hit['qcovs'], hit['evalue'])
                 unmapped_c += '\n\n'.join([unmapped_as, unmapped_db, unmapped_filt, unmapped_hits])
             else:
                 unmapped_hits = 'BLAST Hits: No significant result was reported.'

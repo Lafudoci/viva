@@ -56,7 +56,7 @@ def blast_assembled(task):
         '-out',
         blast_result_filename,
         '-outfmt',
-        '6 qseqid sacc pident qlen length evalue stitle bitscore',
+        '6 qseqid sacc pident qlen length evalue stitle bitscore qcovs',
         '-num_threads',
         task.threads,
         '-max_target_seqs',
@@ -145,6 +145,7 @@ def blast_hits_string_formater(task, hit):
         'evalue': hit[5],
         'stitle': hit[6],
         'bitscore': hit[7],
+        'qcovs': hit[8],
         'clean_sacc': clean_sacc,
         'clean_stitle': clean_stitle,
         'clean_stitle_org': clean_stitle_org
@@ -157,6 +158,7 @@ def run(task):
         if contigs != -1:
             if task.unmapped_blastdb != None:
                 highly_match_result_list = blast_assembled(task)
+            else:
                 logger.warning('unmapped_blastdb not set, skipping blast.')
         else:
             logger.warning('Contigs not found, skipping blast.')
