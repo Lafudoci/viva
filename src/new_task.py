@@ -95,6 +95,8 @@ def main(input_args):
     parser.add_argument(
         '--unmapped_blastdb', help="BLASTDB for reference prepare and unmapped reads assemble.", default=None)
     parser.add_argument(
+        '--unmapped_blastdb_extra_list', help="Extra custom BLASTDB list for unmapped reads assemble. Use a single space to seperate DB names.", default=None)
+    parser.add_argument(
         '--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
     parser.add_argument(
         '--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
@@ -151,6 +153,7 @@ def main(input_args):
         task.unmapped_assemble = args.unmapped_assemble
         task.unmapped_spades_mode = args.unmapped_spades_mode
         task.unmapped_blastdb = args.unmapped_blastdb
+        task.unmapped_blastdb_extra_list = args.unmapped_blastdb_extra_list
         task.unmapped_len_filter = args.unmapped_len_filter
         task.unmapped_ident_filter = args.unmapped_ident_filter
     else:
@@ -169,6 +172,7 @@ def main(input_args):
         task.unmapped_spades_mode = config['PRESET']['unmapped_spades_mode']
         task.blastdb_path = config['PRESET']['blastdb_path']
         task.unmapped_blastdb = config['PRESET']['unmapped_blastdb']
+        task.unmapped_blastdb_extra_list = config['PRESET']['unmapped_blastdb_extra_list']
         task.unmapped_len_filter = config['PRESET']['unmapped_len_filter']
         task.unmapped_ident_filter = config['PRESET']['unmapped_ident_filter']
         task.preset_id = config['VERSION']['preset_id']
@@ -194,6 +198,11 @@ def main(input_args):
         if utils.setup_blastdb(task.blastdb_path, task.unmapped_blastdb) == -1:
             logger.error('BlastDB setup error. Exiting pipeline.')
             sys.exit()
+        if task.unmapped_blastdb_extra_list != None:
+            for db in task.unmapped_blastdb_extra_list.split():
+                if utils.setup_blastdb(task.blastdb_path, db) == -1:
+                    logger.error('Extra BlastDB setup error. Exiting pipeline.')
+                    sys.exit()
         else:
             task.unmapped_assemble = True
 

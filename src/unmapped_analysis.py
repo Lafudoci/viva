@@ -1,6 +1,7 @@
 import logging
 import subprocess
 import sys
+import os
 from decimal import Decimal
 from pathlib import Path
 
@@ -46,55 +47,64 @@ def blast_assembled(task):
     logger.info('BLASTing unmapped reads assembled.')
     assembled_cwd = task.path.joinpath(task.id, 'unmapped_analysis', '%s_unmapped_spades_%s'%(task.id, task.unmapped_spades_mode))
     qeury_filename = 'contigs.fasta'
-    blast_result_filename = '%s_spades_%s.tsv'%(task.id, task.unmapped_spades_mode)
-    blast_cmd = [
-        'blastn',
-        '-db',
-        task.unmapped_blastdb,
-        '-query',
-        qeury_filename,
-        '-out',
-        blast_result_filename,
-        '-outfmt',
-        '6 qseqid sacc pident qlen length evalue stitle bitscore qcovs',
-        '-num_threads',
-        task.threads,
-        '-max_target_seqs',
-        '100',
-        '-max_hsps',
-        '1',
-        '-evalue',
-        '1e-15',
-    ]
-    logger.info('CMD: '+' '.join(blast_cmd))
-    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(blast_cmd))
-    cmd_run = subprocess.run(blast_cmd, cwd=assembled_cwd, capture_output=True)
-    print(cmd_run.stdout.decode(encoding='utf-8'))
-    print(cmd_run.stderr.decode(encoding='utf-8'))
+    if task.unmapped_blastdb_extra_list != None:
+        blastdbs = [task.unmapped_blastdb] + task.unmapped_blastdb_extra_list.split()
+    else:
+        blastdbs = [task.unmapped_blastdb]
     
-    # filter highly matched hits
-    logger.info('Filter highly matched hits')
-    blast_result_path = assembled_cwd.joinpath(blast_result_filename)
-    filtered_hits_list = []
-    with open(blast_result_path, 'r') as f:
-        for line in f.readlines():
-            hit = line.strip().split('\t')
-            if blast_hits_significant_filter(task, hit):
-                filtered_hits = blast_hits_string_formater(task, hit)
-                filtered_hits_list.append(filtered_hits)
+    highly_match_result_dict = {}
+    m_env = os.environ.copy()
+    m_env['BLASTDB'] = task.blastdb_path
+    for db in blastdbs:
+        blast_result_filename = '%s_spades_%s_%s.tsv'%(task.id, task.unmapped_spades_mode, db)
+        blast_cmd = [
+            'blastn',
+            '-db',
+            db,
+            '-query',
+            qeury_filename,
+            '-out',
+            blast_result_filename,
+            '-outfmt',
+            '6 qseqid sacc pident qlen length evalue stitle bitscore qcovs',
+            '-num_threads',
+            task.threads,
+            '-max_target_seqs',
+            '100',
+            '-max_hsps',
+            '1',
+            '-evalue',
+            '1e-6',
+        ]
+        logger.info('CMD: '+' '.join(blast_cmd))
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(blast_cmd))
+        cmd_run = subprocess.run(blast_cmd, cwd=assembled_cwd, capture_output=True, env=m_env)
+        print(cmd_run.stdout.decode(encoding='utf-8'))
+        print(cmd_run.stderr.decode(encoding='utf-8'))
     
-    highly_match_result_list = blast_hits_max1_bitscore_filter(task, filtered_hits_list)
+        # filter highly matched hits
+        logger.info('Filter highly matched hits')
+        blast_result_path = assembled_cwd.joinpath(blast_result_filename)
+        filtered_hits_list = []
+        hit = []
+        with open(blast_result_path, 'r') as f:
+            for line in f.readlines():
+                hit = line.strip().split('\t')
+                if blast_hits_significant_filter(task, hit):
+                    filtered_hits = blast_hits_string_formater(db, hit)
+                    filtered_hits_list.append(filtered_hits)
+    
+        highly_match_result_dict[db] = {
+            'BLASTdb_name': db,
+            'spades_mode': task.unmapped_spades_mode,
+            'highly_matched_result': blast_hits_max1_bitscore_filter(task, filtered_hits_list)
+        }
 
-    return highly_match_result_list
+    return highly_match_result_dict
 
-def build_unmapped_json(task, result_list):
-    unmapped_analysis = {
-        'spades_mode': task.unmapped_spades_mode,
-        'BLASTdb_name': task.unmapped_blastdb,
-        'highly_matched_result': result_list
-    }
+def build_unmapped_json(task, result_dict):
     unmapped_analysis_json_path = task.path.joinpath(task.id, 'unmapped_analysis', 'unmapped_analysis.json')
-    utils.build_json_file(unmapped_analysis_json_path, unmapped_analysis)
+    utils.build_json_file(unmapped_analysis_json_path, result_dict)
 
 
 def blast_hits_max1_bitscore_filter(task, hits_list):
@@ -123,8 +133,8 @@ def blast_hits_significant_filter(task, hit):
         return True
 
 
-def blast_hits_string_formater(task, hit):
-    if task.unmapped_blastdb.startswith(("U-RVDB","C-RVDB")):
+def blast_hits_string_formater(db, hit):
+    if db.startswith(("U-RVDB","C-RVDB")):
         hit_split_list = hit[6].split('|')
         clean_sacc = hit_split_list[2]
         clean_stitle = hit_split_list[3]
@@ -133,8 +143,8 @@ def blast_hits_string_formater(task, hit):
         else:
             clean_stitle_org = ''
     else:
-        clean_sacc = hit[1]
-        clean_stitle = hit[6]
+        clean_sacc = hit[1].replace('|', ' ')
+        clean_stitle = hit[6].replace('|', ' ')
         clean_stitle_org = ''
     return {
         'qseqid': hit[0],
@@ -154,12 +164,11 @@ def blast_hits_string_formater(task, hit):
 def run(task):
     if task.unmapped_assemble == True:
         contigs = run_de_novo(task)
-        highly_match_result_list = []
         if contigs != -1:
             if task.unmapped_blastdb != None:
-                highly_match_result_list = blast_assembled(task)
+                unmapped_results_list = blast_assembled(task)
             else:
                 logger.warning('unmapped_blastdb not set, skipping blast.')
         else:
             logger.warning('Contigs not found, skipping blast.')
-        build_unmapped_json(task, highly_match_result_list)
+        build_unmapped_json(task, unmapped_results_list)
