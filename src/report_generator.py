@@ -106,9 +106,10 @@ def build_md_report(task):
         for impurit_order in range(1, task.impurities_prefilter_num+1):
             impurit_m_c += '\n'.join([
                 '\n#### Impurities Prefilter #%d :%s'%(impurit_order, s['impurit_filter_meta']['seq_meta'][str(impurit_order)]['fasta_header_escape']),
-                '| Aligner | Overall mapped rate | Removed reads | ',
+                '| Aligner | Overall mapped rate | Primary mapped reads | ',
                 '| ------- | ------------------- | ------------- | ',
-                '| Bowtie2 | %s | %s |'%(s['impurit_filter_results'][str(impurit_order)]['remove_percentage'],s['impurit_filter_results'][str(impurit_order)]['mapped_reads']),
+                '| Bowtie2 | %s | %s |'%(s['impurit_filter_results'][str(impurit_order)]['bt2']['remove_percentage'],s['impurit_filter_results'][str(impurit_order)]['bt2']['mapped_reads']),
+                '| BWA MEM | %s | %s |'%(s['impurit_filter_results'][str(impurit_order)]['bwa']['remove_percentage'],s['impurit_filter_results'][str(impurit_order)]['bwa']['mapped_reads']),
             ])
     else:
         impurit_m_c = 'No impurities pre-filter was set'
