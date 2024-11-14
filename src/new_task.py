@@ -91,7 +91,7 @@ def main(input_args):
     parser.add_argument(
         '--blastdb_path', default=None)
     parser.add_argument(
-        '--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default=True)
+        '--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default='True')
     parser.add_argument(
         '--unmapped_blastdb', help="BLASTDB for reference prepare and unmapped reads assemble.", default=None)
     parser.add_argument(
@@ -157,6 +157,7 @@ def main(input_args):
         task.unmapped_len_filter = args.unmapped_len_filter
         task.unmapped_ident_filter = args.unmapped_ident_filter
     else:
+        # Parse all conf. as strings
         config = configparser.ConfigParser(allow_no_value=True)
         config.read(args.preset_path)
         task.ref = config['PRESET']['ref']
@@ -203,8 +204,7 @@ def main(input_args):
                 if utils.setup_blastdb(task.blastdb_path, db) == -1:
                     logger.error('Extra BlastDB setup error. Exiting pipeline.')
                     sys.exit()
-        else:
-            task.unmapped_assemble = True
+        task.unmapped_assemble = 'True'
 
     logger.info('Checking reference.')
     if task.ref != None:

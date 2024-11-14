@@ -162,13 +162,15 @@ def blast_hits_string_formater(db, hit):
     }
 
 def run(task):
-    if task.unmapped_assemble == True:
+    if task.unmapped_assemble == 'True':
         contigs = run_de_novo(task)
         if contigs != -1:
             if task.unmapped_blastdb != None:
                 unmapped_results_list = blast_assembled(task)
+                build_unmapped_json(task, unmapped_results_list)
             else:
                 logger.warning('unmapped_blastdb not set, skipping blast.')
         else:
             logger.warning('Contigs not found, skipping blast.')
-        build_unmapped_json(task, unmapped_results_list)
+    else:
+        logger.warning('unmapped_assemble not set, skipping assemble and blast.')
