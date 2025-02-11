@@ -91,6 +91,8 @@ def main(input_args):
     parser.add_argument(
         '--blastdb_path', default=None)
     parser.add_argument(
+        '--rvdb_anno_path', default=None)
+    parser.add_argument(
         '--unmapped_assemble', help="De novo Assemble the unmapped reads via metaSPAdes. ONLY apply to the first ref alignment.", default='True')
     parser.add_argument(
         '--unmapped_blastdb', help="BLASTDB for reference prepare and unmapped reads assemble.", default=None)
@@ -150,6 +152,7 @@ def main(input_args):
         task.vc_threshold = args.vc_threshold
         task.min_vc_score = args.min_vc_score
         task.blastdb_path = args.blastdb_path
+        task.rvdb_anno_path = args.rvdb_anno_path
         task.unmapped_assemble = args.unmapped_assemble
         task.unmapped_spades_mode = args.unmapped_spades_mode
         task.unmapped_blastdb = args.unmapped_blastdb
@@ -172,6 +175,7 @@ def main(input_args):
         task.unmapped_assemble = config['PRESET']['unmapped_assemble']
         task.unmapped_spades_mode = config['PRESET']['unmapped_spades_mode']
         task.blastdb_path = config['PRESET']['blastdb_path']
+        task.rvdb_anno_path = config['PRESET']['rvdb_anno_path']
         task.unmapped_blastdb = config['PRESET']['unmapped_blastdb']
         task.unmapped_blastdb_extra_list = config['PRESET']['unmapped_blastdb_extra_list']
         task.unmapped_len_filter = config['PRESET']['unmapped_len_filter']
@@ -193,6 +197,12 @@ def main(input_args):
         elif args.test == 'denovo':
             task.remove_host = 'human'
             task.ref = None
+        elif args.test == 'rvdb':
+            task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
+            task.blastdb_path = '/home/leftc/Documents/blastdb-test'
+            task.rvdb_anno_path = '/home/leftc/Documents/blastdb-test/RVDBv29_annotation_Aug2024.tab'
+            task.unmapped_blastdb = 'C-RVDBv29.0.fasta'
+
 
     if task.unmapped_blastdb != None:
         logger.info('Checking BlastDB.')
@@ -205,6 +215,11 @@ def main(input_args):
                     logger.error('Extra BlastDB setup error. Exiting pipeline.')
                     sys.exit()
         task.unmapped_assemble = 'True'
+    
+    if task.rvdb_anno_path != None:
+        if not Path(task.rvdb_anno_path).is_file():
+            logger.error('RVDB annotation file not found. Exiting pipeline.')
+            sys.exit()
 
     logger.info('Checking reference.')
     if task.ref != None:

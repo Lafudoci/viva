@@ -66,7 +66,7 @@ def blast_assembled(task):
             '-out',
             blast_result_filename,
             '-outfmt',
-            '6 qseqid sacc pident qlen length evalue stitle bitscore qcovs',
+            '6 qseqid sacc pident qlen length evalue stitle bitscore qcovs qstart qend sstart send',
             '-num_threads',
             task.threads,
             '-max_target_seqs',
@@ -82,17 +82,19 @@ def blast_assembled(task):
         print(cmd_run.stdout.decode(encoding='utf-8'))
         print(cmd_run.stderr.decode(encoding='utf-8'))
     
-        # filter highly matched hits
+        # filter highly matched hits and add annotation from RVDB
         logger.info('Filter highly matched hits')
         blast_result_path = assembled_cwd.joinpath(blast_result_filename)
+        annotation_dict = utils.load_rvdb_anno_tab(task.rvdb_anno_path)
         filtered_hits_list = []
         hit = []
         with open(blast_result_path, 'r') as f:
             for line in f.readlines():
                 hit = line.strip().split('\t')
                 if blast_hits_significant_filter(task, hit):
-                    filtered_hits = blast_hits_string_formater(db, hit)
-                    filtered_hits_list.append(filtered_hits)
+                    filtered_hit = blast_hits_string_formater(db, hit)
+                    filtered_hit = blast_hits_anno_finder(db, filtered_hit, annotation_dict)
+                    filtered_hits_list.append(filtered_hit)
     
         highly_match_result_dict[db] = {
             'BLASTdb_name': db,
@@ -156,10 +158,40 @@ def blast_hits_string_formater(db, hit):
         'stitle': hit[6],
         'bitscore': hit[7],
         'qcovs': hit[8],
+        'qstart': hit[9],
+        'qend': hit[10],
+        'sstart': hit[11],
+        'send': hit[12],
         'clean_sacc': clean_sacc,
         'clean_stitle': clean_stitle,
         'clean_stitle_org': clean_stitle_org
     }
+
+
+def blast_hits_anno_finder(db, hit, annotation):
+    hit['anno'] = ''
+    if db.startswith(("U-RVDB","C-RVDB")):
+        clean_sacc = hit.get('clean_sacc')
+        sstart = hit.get('sstart')
+        send = hit.get('send')
+        if clean_sacc and sstart is not None and send is not None:
+            if clean_sacc in annotation:
+                logger.info('Hit matches RVDB annotation.')
+                for anno_entry in annotation[clean_sacc]:
+                    anno_start = anno_entry['start']
+                    anno_end = anno_entry['end']
+                    category = anno_entry['category']
+                    # swap alignment direction to forward if it's not
+                    if sstart > send:
+                        sstart, send = send, sstart
+                    # Check if alignment overlaps annotation range
+                    overlap = not(int(send) < int(anno_start) or int(anno_end) < int(sstart))
+                    if overlap:
+                        hit['anno'] = category
+        else:
+            logger.warning('Hit result is not completed, skipping.')
+    return hit
+
 
 def run(task):
     if task.unmapped_assemble == 'True':

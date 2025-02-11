@@ -58,6 +58,31 @@ def build_text_file(file_path, text):
         f.write(text)
 
 
+def load_rvdb_anno_tab(file_path):
+    annotation_data = {}
+    try:
+        with open(file_path, 'r') as infile:
+            for line in infile:
+                accession, header_info, start_str, end_str, category = line.strip().split('\t')
+                try:
+                    start = int(start_str)
+                    end = int(end_str)
+                except ValueError:
+                    logger.warning("Skipping line due to invalid start/end values %s"%accession)
+                    continue
+
+                if accession not in annotation_data:
+                    annotation_data[accession] = []
+                annotation_data[accession].append({
+                    'start': start,
+                    'end': end,
+                    'category': category
+                })
+    except FileNotFoundError:
+        logger.error("Error: Annotation file not found")
+        return {}
+    return annotation_data
+
 def load_vcf_file(file_path):
     vcf_dict = {'comments': [], 'column_names': [], 'vc': []}
     with open(file_path, 'r') as f:
