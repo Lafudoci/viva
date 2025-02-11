@@ -98,7 +98,6 @@ def blast_assembled(task):
     
         highly_match_result_dict[db] = {
             'BLASTdb_name': db,
-            'spades_mode': task.unmapped_spades_mode,
             'highly_matched_result': blast_hits_max1_bitscore_filter(task, filtered_hits_list)
         }
 

@@ -34,7 +34,7 @@ def generate_summary_csv(batch_task_id, taks_id_list):
                 'vc lofreq counts of 1st ref': len(j['vc']['lofreq']['1']),
                 'vc varscan counts of 1st ref': len(j['vc']['varscan']['1']),
                 'vc applied counts of 1st ref': len(j['draft_meta']['1']['snv_list']),
-                'unmapped hits': len(j['unmapped_analysis']['highly_matched_result']),
+                'unmapped hits': str(j['unmapped_summary']),
                 'viva version': j['version']['viva'],
             }
 

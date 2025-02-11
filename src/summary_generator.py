@@ -77,9 +77,15 @@ def report_summary(task):
     s['vc'] = vc_parser(task)
     s['draft_meta'] = single_meta_parser(task, 'draft_genome', task.id + '_draft_summary.json').copy()
     if task.unmapped_blastdb != None:
+        unmapped_summary = {}
         s['unmapped_analysis'] = single_meta_parser(task, 'unmapped_analysis', 'unmapped_analysis.json')
+        for dbname, results in s['unmapped_analysis'].items():
+            unmapped_summary[dbname] = len(results.get('highly_matched_result'))
+        s['unmapped_summary'] = unmapped_summary
     else:
-        s['unmapped_analysis'] = {'spades_mode':task.unmapped_spades_mode, 'BLASTdb_name':'N/A','highly_matched_result':[]}
+        s['unmapped_summary'] = {}
+        s['unmapped_analysis'] = {}
+        s['unmapped_analysis']['N/A'] = {'BLASTdb_name':'N/A','highly_matched_result':[]}
     s['version'] = tool_version_caller(task)
     utils.build_json_file(
         task.path.joinpath(task.id, task.id + '_summary.json'),

@@ -41,7 +41,7 @@ def input_paths_check(file_path):
     if Path(file_path) != None and Path(file_path).is_file():
         return True
     else:
-        logger.info('Reference sequence file not found.')
+        logger.error('File not found at %s.'%file_path)
         return False
 
 
@@ -124,14 +124,18 @@ def main():
     if args.single_task:
         new_task.main(sys.argv[1:])
     elif args.task_sheet != None:
-        task_sheet_dict = {}
-        task_sheet_config = configparser.ConfigParser()
-        task_sheet_config.read(args.task_sheet)
-        for section in task_sheet_config.sections():
-            task_sheet_dict[section] = {}
-            for key, val in task_sheet_config.items(section):
-                task_sheet_dict[section][key] = val
-        batch_task_viva(task_sheet_dict)
+        if input_paths_check(args.task_sheet):
+            task_sheet_dict = {}
+            task_sheet_config = configparser.ConfigParser()
+            task_sheet_config.read(args.task_sheet)
+            for section in task_sheet_config.sections():
+                task_sheet_dict[section] = {}
+                for key, val in task_sheet_config.items(section):
+                    task_sheet_dict[section][key] = val
+            batch_task_viva(task_sheet_dict)
+        else:
+            logger.critical('Task sheet was not found.')
+            sys.exit(-1)
     else:
         logger.critical('Must provide a task sheet or use --single_task arg.')
         sys.exit(-1)
