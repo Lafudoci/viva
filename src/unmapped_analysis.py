@@ -201,7 +201,11 @@ def run(task):
                 build_unmapped_json(task, unmapped_results_list)
             else:
                 logger.warning('unmapped_blastdb not set, skipping blast.')
+                unmapped_results_list = {}
+                build_unmapped_json(task, unmapped_results_list)
         else:
             logger.warning('Contigs not found, skipping blast.')
+            unmapped_results_list = {}
+            build_unmapped_json(task, unmapped_results_list)
     else:
         logger.warning('unmapped_assemble not set, skipping assemble and blast.')
