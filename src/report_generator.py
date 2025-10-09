@@ -192,7 +192,7 @@ def build_md_report(task):
             unmapped_filt = 'Hits filter: Min. length %s bp,  Min. identity %s %%.'%(task.unmapped_len_filter, task.unmapped_ident_filter)
             unmapped_c += '\n\n'.join([unmapped_as, unmapped_filt])
             for db, result in s['unmapped_analysis'].items():
-                unmapped_db = '\n\n### BLAST database: %s'% db
+                unmapped_db = '\n\n### BLAST database: %s (date: %s)'% (result['BLASTdb_name'], result['BLASTdb_date'])
                 unmapped_hits = ''
                 if result['highly_matched_result'] != []:
                     unmapped_hits = '\n\n| Contig ID | Hit acc. | Description | Ident(%) | Query len.(bp) | Qcov(%) | E-value | Annotation |\

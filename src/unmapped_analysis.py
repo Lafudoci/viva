@@ -95,9 +95,33 @@ def blast_assembled(task):
                     filtered_hit = blast_hits_string_formater(db, hit)
                     filtered_hit = blast_hits_anno_finder(db, filtered_hit, annotation_dict)
                     filtered_hits_list.append(filtered_hit)
+
+        # Get the date information for the current BLAST database
+        db_date = "Unknown"
+        try:
+            info_cmd = f"blastdbcmd -db {db} -info | awk '/^Date:/ {{print $2, $3, $4}}'"
+
+            cmd_result = subprocess.run(
+                info_cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=True,
+                env=m_env
+            )
+            db_date = cmd_result.stdout.strip()
+            if not db_date:
+                db_date = "Date not found"
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to get info for BLAST DB '{db}'. Error: {e.stderr.strip()}")
+            db_date = "Error fetching date"
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while fetching DB info for '{db}': {e}")
+            db_date = "Error"
     
         highly_match_result_dict[db] = {
             'BLASTdb_name': db,
+            'BLASTdb_date': db_date,
             'highly_matched_result': blast_hits_max1_bitscore_filter(task, filtered_hits_list)
         }
 
