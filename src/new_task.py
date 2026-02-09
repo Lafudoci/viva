@@ -192,6 +192,7 @@ def main(input_args):
         task.ex_r2 = Path.cwd().joinpath('test_data', 'AdV_R2.fastq.gz')
         if args.test == 'ref':
             task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
+            task.remove_impurities = Path.cwd().joinpath('test_data', 'impure_test.fasta')
         elif args.test == 'multi_ref':
             task.ref = Path.cwd().joinpath('test_data', 'adv_multi_ref.fasta')
         elif args.test == 'denovo':
