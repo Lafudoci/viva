@@ -1,7 +1,7 @@
 /.vscode
 /tasks
 /md
-/__pycache__
+__pycache__
 /genomes
 /blastdb
 /src/genomes_arch
