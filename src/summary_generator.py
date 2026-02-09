@@ -65,11 +65,17 @@ def report_summary(task):
     if task.remove_impurities != None:
         s['impurit_filter_meta'] = single_meta_parser(task, 'impurities_prefilter', 'impurities_prefilter_meta.json')
         s['impurit_filter_results'] = single_meta_parser(task, 'impurities_prefilter', 'impurities_remove.json')
+        s['impurit_filter_coverage'] = single_meta_parser(task, 'impurities_prefilter', 'impurities_coverage.json')
     else:
         s['impurit_filter_meta'] = {}
         s['impurit_filter_results'] = {'1':{
             'bt2':{'mapped_reads':'N/A','remove_percentage':'N/A'},
             'bwa':{'mapped_reads':'N/A','remove_percentage':'N/A'}
+            }
+        }
+        s['impurit_filter_coverage'] = {'1':{
+            'bt2':{'coverage':'N/A'},
+            'bwa':{'coverage':'N/A'}
             }
         }
     s['aln'] = single_meta_parser(task, 'alignment', 'flagstat.json')

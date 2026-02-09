@@ -217,11 +217,47 @@ def remove_impurities(task):
             # os.remove(task.path.joinpath(aligner_cwd, sorted_bam))
 
 
+def impurities_coverage_stat(task):
+    cov_dict = {}
+    for impurities_order in range(1, task.impurities_prefilter_num+1):
+        cov_dict[impurities_order] = {}
+        for aligner in ('bt2', 'bwa'):
+            # Setup paths
+            if aligner == 'bt2':
+                aligner_cwd = task.path.joinpath(
+                    task.id, 'impurities_prefilter', "bt2_alignment")
+            else:
+                aligner_cwd = task.path.joinpath(
+                    task.id, 'impurities_prefilter', "bwa_alignment")
+
+            sorted_bam = 'impurity_%d_mapped.sorted.bam' % impurities_order
+
+            cov_dict[impurities_order][aligner] = {}
+            flagstat_cmd = ['samtools', 'coverage', sorted_bam]
+            logger.info('CMD: '+' '.join(flagstat_cmd))
+            utils.write_log_file(task.path.joinpath(task.id),
+                                 'CMD: '+' '.join(flagstat_cmd))
+            flagstat_run = subprocess.run(
+                flagstat_cmd, cwd=aligner_cwd, capture_output=True)
+            stats_text = flagstat_run.stdout.decode(encoding='utf-8')
+            if len(stats_text.split('\n')) > 1:
+                titles = stats_text.split('\n')[0].split('\t')
+                stats = stats_text.split('\n')[1].split('\t')
+                for i in range(len(titles)):
+                    cov_dict[impurities_order][aligner][titles[i]] = stats[i]
+            else:
+                logger.warning('Coverage stats empty for %s %s' %
+                               (aligner, sorted_bam))
+
+    utils.build_json_file(task.path.joinpath(
+        task.id, 'impurities_prefilter', 'impurities_coverage.json'), cov_dict)
+
 def run(task):
     if task.remove_impurities != None:
         logger.info('Running impurities pre-filter.')
         import_impurities_fasta(task)
         build_impurities_index(task)
         remove_impurities(task)
+        impurities_coverage_stat(task)
     else:
         logger.info('No impurities pre-filter.')
