@@ -175,7 +175,7 @@ def vc_parser(task):
 
 def tool_version_caller(task):
     version_dict = utils.conda_pkg_versions(task.conda_pkgs)
-    viva_commit_cmd = ['git', 'describe', '--always']
+    viva_commit_cmd = ['git', 'describe', '--always', '--tags']
     version_dict['viva'] = subprocess.run(
         viva_commit_cmd,
         capture_output=True).stdout.decode(encoding='utf-8').strip()
