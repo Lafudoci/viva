@@ -371,10 +371,71 @@ def setup_genomes(host_name):
         }
     }
     # TEMP return 0 for custom genome input
-    if genome_source_table.get(host_name) == None:
-        return 0
+    
     if sys_deps_check(['wget', 'gzip', 'bowtie2-inspect', 'bowtie2-build']) == -1:
         return -1
+
+    # Custom genome input
+    if genome_source_table.get(host_name) == None:
+        try:
+            # Check if index exists
+            if subprocess.run(['bowtie2-inspect', '--summary', host_name], cwd='/app/genomes', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+                return 0
+            
+            # Check if archive exists
+            # We assume user provides filename like 'genome.fna.gz' and puts it in /app/genomes_arch/
+            arch_path = Path("/app/genomes_arch").joinpath(host_name)
+            if not arch_path.is_file():
+                # Provide a more specific error message if it looks like a file but is missing
+                logger.error('Custom genome index not found and archive %s not found in /app/genomes_arch/.' % host_name)
+                return -1
+
+            logger.info('Preparing custom genome index for %s' % host_name)
+            Path.mkdir(Path("/app/genomes"), parents=True, exist_ok=True)
+            
+            # Decompress
+            temp_fasta_name = host_name
+            if host_name.endswith('.gz'):
+                temp_fasta_name = host_name[:-3]
+            
+            temp_fasta_path = Path("/app/genomes").joinpath(temp_fasta_name)
+            
+            logger.info('Decompressing genome file')
+            with open(temp_fasta_path, "w") as f:
+                subprocess.run(
+                    ['gunzip', '-c', host_name],
+                    check=True,
+                    cwd='/app/genomes_arch',
+                    stdout=f
+                )
+            
+            # Build Index
+            logger.info('Indexing genome file')
+            subprocess.run(
+                [
+                    'bowtie2-build',
+                    '--threads',
+                    '6',
+                    str(temp_fasta_path),
+                    host_name
+                ],
+                check=True,
+                cwd='/app/genomes'
+            )
+            
+            # Clean up temp fasta
+            if temp_fasta_path.exists():
+                os.remove(temp_fasta_path)
+                
+            return 0
+
+        except subprocess.CalledProcessError as e:
+            logger.error('Custom genome setup error: %s.' % str(e))
+            return -1
+        except Exception as e:
+            logger.error('Custom genome setup unexpected error: %s.' % str(e))
+            return -1
+
     try:
         if subprocess.run(['bowtie2-inspect', '--summary', genome_source_table[host_name]['bt2_gname']], cwd='/app/genomes').returncode == 0:
             return
