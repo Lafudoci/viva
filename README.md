@@ -1,6 +1,6 @@
 # VIVA 工具說明文件
 
-VIVA (Viral Variant Analysis) 是一個自動化流程分析工具，專門用於病毒變異點鑑定與未知序列分析。本文件詳細介紹 VIVA 工具的運作流程原理、Docker 映像檔的建立與使用說明、快速使用範例、各項參數的詳細用法，以及批次分析功能的使用教學。
+VIVA (Virus Integrity and Variant Analyzer) 是一個自動化流程分析工具，專門用於病毒變異點鑑定與未知序列分析。本文件詳細介紹 VIVA 工具的運作流程原理、Docker 映像檔的建立與使用說明、快速使用範例、各項參數的詳細用法，以及批次分析功能的使用教學。
 
 ## 1. VIVA 運作流程原理 (Operation Flow / Principles)
 
