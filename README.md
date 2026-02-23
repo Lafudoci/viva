@@ -197,3 +197,32 @@ sudo docker run -i --rm \
 ```
 
 批次運行時，系統將會建立一個具有 `batch_task_YYYYMMDDHHMM` 命名的序列清單狀態檔案記錄任務排程，並循序依每個樣本自動載入 `preset_path` 的參數，完成所有樣本的比對工作以及最終的匯總 CSV 報告產生 (`batch_task_report.py`)。
+
+---
+
+## 6. 任務狀態追蹤與資料庫管理 (Database Tracking & Management)
+
+VIVA 在執行時，會自動於 `tasks` 工作目錄下建立並維護一個輕量化 SQLite 關聯式資料庫 (`viva_results.db`)。這是獨立於 Markdown 與 CSV 報告外的資料儲存管道，用以「即時」追蹤任務進度並結構化儲存所有分析結果，以利未來快速篩選、跨樣本分析或是介接如 Streamlit, Metabase 等視覺化儀表板 (Dashboard)。
+
+### 資料庫架構與表格
+目前資料庫涵蓋了自任務啟動至完結的所有資料軌跡：
+1. **`Tasks` (任務主表)**：記錄基本資訊（開始與結束時間、套用的 Preset、狀態：`Running`, `Failed`, `Completed`）。
+2. **`QC_Metrics` (品管數據表)**：收納 FastP 及去除宿主後的各項序列品管數據。
+3. **`Alignment_Stats` (比對結果表)**：儲存目標病原體參考序列的 Mapped rate、Coverage、Mean Depth。
+4. **`Variants` (變異點表)**：紀錄被鑑定的高可信度精確變異點位 (SNVs / InDels) 資訊。
+
+> [!TIP]
+> 流程若因未知的系統錯誤中斷（或讀序缺失等原因），將會於資料庫即時更新為 `Failed` 並記錄例外訊息。若是成功完成決算，狀態將會轉為 `Completed` 並寫入所有的解析數據。
+
+### 預覽與查詢資料庫 (`read_db.py`)
+專案隨附了一支便利的查詢腳本，幫助您從終端機快速檢視該資料庫內某項任務的細部結果：
+
+```bash
+# 基本用法：使用預設路徑 (自動尋找當前或 tasks 目錄下的資料庫)
+python3 src/read_db.py
+
+# 參數用法：手動指定資料庫檔案路徑 (-d / --db_path)
+python3 src/read_db.py -d /home/ra5/viva/tasks/viva_results.db
+```
+
+執行後，腳本會列出依照時間排序的歷史任務清單並標記其狀態 (例如 <span style="color:green">Completed</span>, <span style="color:red">Failed</span> 等)。您只需輸入對應的編號，即可列印出該筆任務自 QC、Mapping 乃至前十筆 Variant 的預覽資訊。
