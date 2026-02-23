@@ -16,6 +16,7 @@ import variant_calling
 import report_generator
 import summary_generator
 import impurities_prefilter
+import db_manager
 
 
 logger = logging.getLogger(__name__)
@@ -260,22 +261,44 @@ def main(input_args):
             'Starting pipeline.'
         )
 
-        # main pipeline
-        reads_preprocess.run(task)
-        reference_prepare.run(task)
-        impurities_prefilter.run(task)
-        reads_alignment.run(task)
-        unmapped_analysis.run(task)
-        variant_calling.run(task)
-        logger.info('Pipeline finished.')
-        utils.write_log_file(
-            task.path.joinpath(task.id),
-            'Pipeline finished.'
+        db = db_manager.VIVADatabase()
+        start_date = time.strftime("%Y-%m-%d %H:%M", time.localtime())
+        db.create_task(
+            task_id=task.id, 
+            task_name=task.name, 
+            start_date=start_date, 
+            preset_id=getattr(task, 'preset_id', None),
+            task_note=task.task_note,
+            product=task.sample_product_name,
+            lot=task.sample_product_lot,
+            seq_date=task.sample_sequencing_date
         )
 
-        # report generator
-        summary_generator.run(task)
-        report_generator.run(task)
+        try:
+            # main pipeline
+            reads_preprocess.run(task)
+            reference_prepare.run(task)
+            impurities_prefilter.run(task)
+            reads_alignment.run(task)
+            unmapped_analysis.run(task)
+            variant_calling.run(task)
+            logger.info('Pipeline finished.')
+            utils.write_log_file(
+                task.path.joinpath(task.id),
+                'Pipeline finished.'
+            )
+
+            # report generator
+            summary_generator.run(task)
+            report_generator.run(task)
+            
+            # DB finalizer triggers in summary_generator, we just mark completed here after safe wrap.
+            db.update_task_status(task.id, 'Completed')
+            
+        except Exception as e:
+            logger.error(f'Pipeline error: {e}')
+            db.update_task_status(task.id, 'Failed', error_log=str(e))
+            raise e
 
         return task.id
 

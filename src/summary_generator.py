@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import utils
+import db_manager
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -97,6 +98,13 @@ def report_summary(task):
         task.path.joinpath(task.id, task.id + '_summary.json'),
         s
     )
+    
+    # Save the parsed information into the task tracker database
+    try:
+        db = db_manager.VIVADatabase()
+        db.save_final_summary(task.id, s)
+    except Exception as e:
+        logger.error(f"Failed to record final summary to database: {e}")
 
 
 def single_meta_parser(task, folder_name, file_name):
