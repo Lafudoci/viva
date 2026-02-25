@@ -6,7 +6,8 @@ from pathlib import Path
 import sys
 
 # 將 src 目錄加入 sys.path 以便匯入 db_manager
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(project_root, 'src'))
 import db_manager
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -94,11 +95,21 @@ def main():
     parser = argparse.ArgumentParser(description="批次將先前已完成的 VIVA 分析結果目錄匯入 local SQLite 資料庫(viva_results.db)")
     parser.add_argument('task_dirs', nargs='+', help="一個或多個已完成分析的任務目錄路徑。支援使用萬用字元 (如 /path/to/tasks/*)")
     parser.add_argument('-d', '--db_path', type=str, default=None, help="手動指定 viva_results.db 資料庫路徑 (預設為當前執行目錄下的 tasks/viva_results.db)")
+    parser.add_argument('--rebuild', action='store_true', help="如果設定此選項，匯入前會先刪除舊的資料庫檔案重建 Schema")
     
     args = parser.parse_args()
     
+    # 決定資料庫路徑
+    db_path = args.db_path
+    if db_path is None:
+        db_path = os.path.join(os.getcwd(), 'tasks', 'viva_results.db')
+        
+    if args.rebuild and os.path.exists(db_path):
+        logger.info(f"選項 --rebuild 已啟用，刪除舊資料庫: {db_path}")
+        os.remove(db_path)
+    
     # 初始化資料庫連線
-    db = db_manager.VIVADatabase(db_path=args.db_path)
+    db = db_manager.VIVADatabase(db_path=db_path)
     logger.info(f"使用資料庫路徑: {db.db_path}")
     
     success_count = 0
