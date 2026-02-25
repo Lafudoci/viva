@@ -41,7 +41,9 @@ class VIVADatabase:
                 task_note TEXT,
                 product_name TEXT,
                 product_lot TEXT,
-                seq_date TEXT
+                seq_date TEXT,
+                viva_version TEXT,
+                preset_version TEXT
             )
         ''')
 
@@ -55,6 +57,8 @@ class VIVADatabase:
                 fastp_after_reads INTEGER,
                 fastp_after_q30 REAL,
                 duplication_rate REAL,
+                mean_length_r1 INTEGER,
+                mean_length_r2 INTEGER,
                 remove_host_name TEXT,
                 remove_host_reads INTEGER,
                 remove_host_pct REAL,
@@ -90,6 +94,30 @@ class VIVADatabase:
                 caller TEXT, -- 'lofreq', 'varscan'
                 bt2_af TEXT,
                 bwa_af TEXT,
+                FOREIGN KEY(task_id) REFERENCES Tasks(task_id)
+            )
+        ''')
+
+        # 5. 雜質過濾數據表 (Impurities_Stats)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Impurities_Stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id TEXT,
+                impurity_name TEXT,
+                aligner TEXT,
+                mapped_reads INTEGER,
+                coverage REAL,
+                FOREIGN KEY(task_id) REFERENCES Tasks(task_id)
+            )
+        ''')
+
+        # 6. BLAST 結果數據表 (BLAST_Results)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS BLAST_Results (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id TEXT,
+                db_name TEXT,
+                hit_count INTEGER,
                 FOREIGN KEY(task_id) REFERENCES Tasks(task_id)
             )
         ''')
@@ -147,11 +175,14 @@ class VIVADatabase:
             cursor = conn.cursor()
             
             # 1. Update task general info that might be missing
+            viva_version = s_dict.get('version', {}).get('viva')
+            preset_version = s_dict.get('preset', {}).get('version')
+            
             cursor.execute('''
                 UPDATE Tasks 
-                SET finish_date=? 
+                SET finish_date=?, viva_version=?, preset_version=?
                 WHERE task_id=?
-            ''', (s_dict.get('finish_date'), task_id))
+            ''', (s_dict.get('finish_date'), viva_version, preset_version, task_id))
 
             # 2. Insert QC Metrics
             r_meta = s_dict.get('reads_meta', {}).get('reads_file_meta', {}).get('file_name', {})
@@ -161,13 +192,15 @@ class VIVADatabase:
             cursor.execute('''
                 INSERT OR REPLACE INTO QC_Metrics
                 (task_id, reads_r1_name, reads_r2_name, fastp_before_reads, fastp_after_reads, 
-                fastp_after_q30, duplication_rate, remove_host_name, remove_host_reads, remove_host_pct)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                fastp_after_q30, duplication_rate, mean_length_r1, mean_length_r2,
+                remove_host_name, remove_host_reads, remove_host_pct)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 task_id,
                 r_meta.get('r1'), r_meta.get('r2'),
                 f_abs.get('before_total_reads'), f_abs.get('after_total_reads'),
                 f_abs.get('after_total_q30'), f_abs.get('duplication_rate'),
+                f_abs.get('after_r1_length'), f_abs.get('after_r2_length'),
                 rm_host.get('genome'), rm_host.get('mapped_reads'), rm_host.get('remove_percentage')
             ))
             
@@ -218,6 +251,61 @@ class VIVADatabase:
                             VALUES (?, ?, ?, ?, ?, 'varscan', ?, ?)
                         ''', (task_id, order, pos, ref, alt, bt2_af, bwa_af))
                         
+            # 5. Insert Impurities Stats
+            im_meta = s_dict.get('impurit_filter_meta', {}).get('seq_meta', {})
+            im_results = s_dict.get('impurit_filter_results', {})
+            im_cov = s_dict.get('impurit_filter_coverage', {})
+            
+            for o_str, meta in im_meta.items():
+                imp_name = meta.get('fasta_header_escape') or meta.get('fasta_header')
+                for aligner in ['bt2', 'bwa']:
+                    # some times the aligner keys are 'bowtie2' instead of 'bt2' in some places, 
+                    # but looking at summary.json it uses 'bt2' and 'bwa' for impurities.
+                    m_reads = im_results.get(o_str, {}).get(aligner, {}).get('mapped_reads')
+                    cov_pct = im_cov.get(o_str, {}).get(aligner, {}).get('coverage')
+                    
+                    if m_reads is not None and m_reads != "N/A":
+                        # Convert tool 'bt2' to 'bowtie2' to match alignment stats, or leave as 'bt2'
+                        aligner_name = 'bowtie2' if aligner == 'bt2' else 'bwa'
+                        cursor.execute('''
+                            INSERT INTO Impurities_Stats
+                            (task_id, impurity_name, aligner, mapped_reads, coverage)
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (task_id, imp_name, aligner_name, int(m_reads), float(cov_pct) if cov_pct else None))
+                        
+            # 6. Insert BLAST Results
+            unmapped = s_dict.get('unmapped_analysis', {})
+            for contig_name, blast_info in unmapped.items():
+                if contig_name == "N/A":
+                    continue
+                db_name = blast_info.get('BLASTdb_name')
+                if not db_name or db_name == "N/A":
+                    continue
+                
+                # Check if this db_name is already in our temp dict to count hits
+                # In summary.json, unmapped_analysis is keyed by contig name (e.g. "NODE_1_...").
+                # Let's count hits per db_name.
+                pass
+            
+            # Since unmapped_analysis has { "NODE_1...": {"BLASTdb_name": "nt", ...}, ... }
+            # Let's aggregate hit count per db_name for this sample
+            blast_counts = {}
+            unmapped = s_dict.get('unmapped_analysis', {})
+            for contig_name, blast_info in unmapped.items():
+                if contig_name == "N/A":
+                    continue
+                db_name = blast_info.get('BLASTdb_name')
+                if not db_name or db_name == "N/A":
+                    continue
+                blast_counts[db_name] = blast_counts.get(db_name, 0) + 1
+                
+            for db_name, hit_count in blast_counts.items():
+                cursor.execute('''
+                    INSERT INTO BLAST_Results
+                    (task_id, db_name, hit_count)
+                    VALUES (?, ?, ?)
+                ''', (task_id, db_name, hit_count))
+
             conn.commit()
         except sqlite3.Error as e:
             logger.error(f"DB Error (save_final_summary): {e}")
