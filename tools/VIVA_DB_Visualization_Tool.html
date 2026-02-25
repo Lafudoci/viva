@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
         :root {
-            --sidebar-width: 320px;
+            --sidebar-width: 380px;
         }
 
         body {
@@ -37,6 +37,8 @@
 
         .sidebar {
             width: var(--sidebar-width);
+            min-width: 200px;
+            max-width: 600px;
             background: white;
             border-right: 1px solid #ddd;
             display: flex;
@@ -44,10 +46,162 @@
             flex-shrink: 0;
         }
 
+        /* Resize handle */
+        .sidebar-resizer {
+            width: 5px;
+            cursor: col-resize;
+            background: transparent;
+            flex-shrink: 0;
+            transition: background 0.2s;
+            position: relative;
+            z-index: 100;
+        }
+
+        .sidebar-resizer:hover,
+        .sidebar-resizer.active {
+            background: #3498db;
+        }
+
         .sidebar-header {
-            padding: 15px;
+            padding: 12px;
             border-bottom: 1px solid #eee;
             background: #f8f9fa;
+        }
+
+        /* Filter panel */
+        .filter-panel {
+            border-bottom: 1px solid #eee;
+            background: #fafbfc;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .filter-panel.open {
+            max-height: 600px;
+            padding: 10px 12px;
+            overflow-y: auto;
+        }
+
+        .filter-toggle-btn {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            border: 1px solid #3498db;
+            background: white;
+            color: #3498db;
+            transition: all 0.15s;
+        }
+
+        .filter-toggle-btn:hover,
+        .filter-toggle-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .filter-rule {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 6px;
+            flex-wrap: nowrap;
+        }
+
+        .filter-rule select {
+            font-size: 0.72rem;
+            padding: 2px 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background: white;
+        }
+
+        .filter-rule input[type="text"] {
+            flex: 1;
+            font-size: 0.72rem;
+            padding: 2px 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            min-width: 60px;
+        }
+
+        .filter-rule .remove-rule-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .filter-rule .remove-rule-btn:hover {
+            color: #c0392b;
+        }
+
+        .filter-section-label {
+            font-size: 0.7rem;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 4px;
+            margin-top: 6px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .filter-actions button {
+            font-size: 0.7rem;
+            padding: 3px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .filter-logic-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            margin-bottom: 6px;
+        }
+
+        .filter-logic-toggle label {
+            cursor: pointer;
+            padding: 1px 6px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            transition: all 0.15s;
+        }
+
+        .filter-logic-toggle input[type="radio"] {
+            display: none;
+        }
+
+        .filter-logic-toggle input[type="radio"]:checked+label {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .version-filter-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .version-filter-row select,
+        .version-filter-row input {
+            font-size: 0.72rem;
+            padding: 2px 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .version-filter-row input {
+            width: 70px;
         }
 
         .sample-list {
@@ -68,6 +222,10 @@
 
         .sample-item:hover {
             background: #f8f9fa;
+        }
+
+        .sample-item.filtered-out {
+            display: none;
         }
 
         .sample-info {
@@ -198,8 +356,8 @@
             border-radius: 6px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
             padding: 12px;
-            min-width: 360px;
-            max-height: 300px;
+            min-width: 400px;
+            max-height: 350px;
             overflow-y: auto;
         }
 
@@ -214,12 +372,24 @@
         }
 
         .history-item {
-            padding: 4px 0;
+            padding: 6px 8px;
             border-bottom: 1px solid #f5f5f5;
             font-size: 0.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+
+        .history-item:hover {
+            background: #eaf2ff;
+        }
+
+        .history-item.selected {
+            background: #d4edff;
+            border: 1px solid #3498db;
         }
 
         .history-item .badge-latest {
@@ -232,6 +402,14 @@
 
         .history-item .badge-old {
             background: #95a5a6;
+            color: white;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.6rem;
+        }
+
+        .history-item .badge-selected {
+            background: #3498db;
             color: white;
             padding: 1px 5px;
             border-radius: 3px;
@@ -270,6 +448,57 @@
             border-radius: 4px;
             font-size: 0.7rem;
         }
+
+        /* Prevent text selection during resize */
+        body.resizing {
+            user-select: none;
+            cursor: col-resize;
+        }
+
+        .filter-active-count {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            text-align: center;
+            line-height: 16px;
+            font-size: 0.6rem;
+            margin-left: 4px;
+        }
+
+        /* DB info bar */
+        .db-info-bar {
+            display: none;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #ddd;
+            padding: 5px 20px;
+            font-size: 0.72rem;
+            flex-shrink: 0;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .db-info-bar.show {
+            display: flex;
+        }
+
+        .db-info-bar .info-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .db-info-bar .info-label {
+            color: #95a5a6;
+        }
+
+        .db-info-bar .info-value {
+            color: #ecf0f1;
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -284,28 +513,28 @@
 
     <div class="top-navbar">
         <div class="row align-items-center">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <h6 class="mb-0">NGS 分析報告對照工具 <span class="db-badge">DB版</span></h6>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <input type="file" id="fileInput" class="form-control form-control-sm" accept=".db,.sqlite,.sqlite3">
             </div>
-            <div class="col-md-3">
-                <input type="text" id="searchInput" class="form-control form-control-sm"
-                    placeholder="搜尋 Task Name 或 Note...">
-            </div>
-            <div class="col-md-3 text-end">
+            <div class="col-md-4 text-end">
                 <button onclick="exportAllToCSV()" class="btn btn-sm btn-success">匯出全數據 CSV</button>
             </div>
         </div>
     </div>
 
+    <div class="db-info-bar" id="dbInfoBar"></div>
+
     <div class="main-wrapper">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <h6>樣本管理 (依 Task Name 分群)</h6>
-                    <div class="btn-group">
+                    <h6 class="mb-0">樣本管理</h6>
+                    <div class="d-flex gap-1 align-items-center">
+                        <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFilterPanel()">⚙
+                            篩選</button>
                         <button class="btn btn-xs btn-outline-primary" style="font-size: 9px"
                             onclick="toggleAllSamples(true)">全選</button>
                         <button class="btn btn-xs btn-outline-secondary" style="font-size: 9px"
@@ -314,8 +543,46 @@
                 </div>
                 <small class="text-muted" id="sampleCount">載入: 0 組 / 0 筆</small>
             </div>
+
+            <!-- Advanced Filter Panel -->
+            <div class="filter-panel" id="filterPanel">
+                <div class="filter-section-label">關鍵字篩選規則</div>
+                <div class="filter-logic-toggle">
+                    <span>多條包含規則之間:</span>
+                    <input type="radio" name="filterLogic" id="logicOr" value="or" checked>
+                    <label for="logicOr">聯集 (OR)</label>
+                    <input type="radio" name="filterLogic" id="logicAnd" value="and">
+                    <label for="logicAnd">交集 (AND)</label>
+                </div>
+                <div id="filterRulesContainer"></div>
+                <button class="btn btn-sm btn-outline-secondary" style="font-size:0.68rem; padding:1px 8px;"
+                    onclick="addFilterRule()">+ 新增條件</button>
+
+                <div class="filter-section-label">VIVA 版本篩選</div>
+                <div class="version-filter-row">
+                    <select id="versionOp">
+                        <option value="">不篩選</option>
+                        <option value="eq">=</option>
+                        <option value="gte">≥</option>
+                        <option value="gt">></option>
+                        <option value="lte">≤</option>
+                        <option value="lt">
+                            << /option>
+                    </select>
+                    <input type="text" id="versionValue" placeholder="例: 1.12">
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn-primary btn-sm" onclick="applyFilters()">套用篩選</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">清除全部</button>
+                </div>
+            </div>
+
             <div class="sample-list" id="sampleSelector"></div>
         </div>
+
+        <!-- Resize Handle -->
+        <div class="sidebar-resizer" id="sidebarResizer"></div>
 
         <div class="content-area" id="tablesContainer">
             <div class="text-center text-muted mt-5">請選擇資料庫檔案 (.db / .sqlite)</div>
@@ -327,9 +594,15 @@
 
     <script>
         // --- Global State ---
-        let allGroups = [];         // Array of { groupName, latestData, runs: [{task_id, start_date, viva_version, ...}] }
-        let allDataMap = {};        // task_id -> parsed data row (for CSV export convenience)
+        let allGroups = [];         // Array of { groupName, latestData, activeData, activeTaskId, runs: [{task_id, start_date, viva_version, ...}] }
+        let allRunDataMap = {};     // task_id -> parsed data row (for ALL runs, not just latest)
         let selectedGroups = new Set();
+        let filteredGroups = null;  // null = no filter active; Set of groupNames when active
+        let dbInstance = null;      // Keep reference for history switching
+
+        // Filter state
+        let filterRules = [];       // [{field, mode, value}]
+        let filterRuleIdCounter = 0;
 
         const CATEGORIES = [
             { id: 'meta', name: '分析基本資訊 (Meta)', keys: ['Task Name', 'Task ID', 'Task Note', 'Finish Time', 'Preset ID', 'Preset Version', 'Viva Version', 'Runs'] },
@@ -343,7 +616,6 @@
         ];
 
         document.getElementById('fileInput').addEventListener('change', handleFile);
-        document.getElementById('searchInput').addEventListener('input', renderAll);
 
         // Close history popover when clicking elsewhere
         document.addEventListener('click', function (e) {
@@ -352,7 +624,253 @@
             }
         });
 
-        // --- Main entry: load .db file ---
+        // ==========================================
+        // Sidebar Resizer
+        // ==========================================
+        (function initResizer() {
+            const resizer = document.getElementById('sidebarResizer');
+            const sidebar = document.getElementById('sidebar');
+            let startX, startWidth;
+
+            resizer.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                startX = e.clientX;
+                startWidth = sidebar.getBoundingClientRect().width;
+                resizer.classList.add('active');
+                document.body.classList.add('resizing');
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                let newWidth = startWidth + (e.clientX - startX);
+                newWidth = Math.max(200, Math.min(600, newWidth));
+                document.documentElement.style.setProperty('--sidebar-width', newWidth + 'px');
+                sidebar.style.width = newWidth + 'px';
+            }
+
+            function onMouseUp() {
+                resizer.classList.remove('active');
+                document.body.classList.remove('resizing');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+        })();
+
+        // ==========================================
+        // Filter Panel
+        // ==========================================
+        function toggleFilterPanel() {
+            const panel = document.getElementById('filterPanel');
+            const btn = document.getElementById('filterToggleBtn');
+            panel.classList.toggle('open');
+            btn.classList.toggle('active');
+            // Add initial rule if empty
+            if (panel.classList.contains('open') && filterRules.length === 0) {
+                addFilterRule();
+            }
+        }
+
+        function addFilterRule() {
+            const id = ++filterRuleIdCounter;
+            filterRules.push({ id, field: 'all', mode: 'include', value: '' });
+            renderFilterRules();
+        }
+
+        function removeFilterRule(id) {
+            filterRules = filterRules.filter(r => r.id !== id);
+            renderFilterRules();
+        }
+
+        function renderFilterRules() {
+            const container = document.getElementById('filterRulesContainer');
+            container.innerHTML = filterRules.map(r => `
+                <div class="filter-rule" data-rule-id="${r.id}">
+                    <select onchange="updateFilterRule(${r.id}, 'field', this.value)">
+                        <option value="all" ${r.field === 'all' ? 'selected' : ''}>All</option>
+                        <option value="task_name" ${r.field === 'task_name' ? 'selected' : ''}>Task Name</option>
+                        <option value="task_note" ${r.field === 'task_note' ? 'selected' : ''}>Task Note</option>
+                        <option value="task_id" ${r.field === 'task_id' ? 'selected' : ''}>Task ID</option>
+                    </select>
+                    <select onchange="updateFilterRule(${r.id}, 'mode', this.value)">
+                        <option value="include" ${r.mode === 'include' ? 'selected' : ''}>包含</option>
+                        <option value="exclude" ${r.mode === 'exclude' ? 'selected' : ''}>排除</option>
+                    </select>
+                    <input type="text" value="${escapeHtml(r.value)}" placeholder="關鍵字..."
+                        oninput="updateFilterRule(${r.id}, 'value', this.value)"
+                        onkeydown="if(event.key==='Enter') applyFilters()">
+                    <button class="remove-rule-btn" onclick="removeFilterRule(${r.id})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function updateFilterRule(id, key, value) {
+            const rule = filterRules.find(r => r.id === id);
+            if (rule) rule[key] = value;
+        }
+
+        function compareVersions(v1, v2) {
+            // Semver-like comparison: split by '.', compare each part numerically
+            const p1 = String(v1).split('.').map(Number);
+            const p2 = String(v2).split('.').map(Number);
+            const len = Math.max(p1.length, p2.length);
+            for (let i = 0; i < len; i++) {
+                const a = p1[i] || 0;
+                const b = p2[i] || 0;
+                if (a < b) return -1;
+                if (a > b) return 1;
+            }
+            return 0;
+        }
+
+        function applyFilters() {
+            const includeRules = filterRules.filter(r => r.mode === 'include' && r.value.trim());
+            const excludeRules = filterRules.filter(r => r.mode === 'exclude' && r.value.trim());
+            const logic = document.querySelector('input[name="filterLogic"]:checked').value; // 'or' or 'and'
+
+            const versionOp = document.getElementById('versionOp').value;
+            const versionVal = document.getElementById('versionValue').value.trim();
+
+            const hasAnyFilter = includeRules.length > 0 || excludeRules.length > 0 || (versionOp && versionVal);
+
+            if (!hasAnyFilter) {
+                filteredGroups = null;
+                renderSampleSelector();
+                renderAll();
+                updateFilterBadge();
+                return;
+            }
+
+            filteredGroups = new Set();
+
+            allGroups.forEach(g => {
+                const d = g.activeData || g.latestData;
+
+                // Check keyword rules
+                const matchesRule = (rule) => {
+                    const keyword = rule.value.trim().toLowerCase();
+                    if (!keyword) return false;
+                    if (rule.field === 'all') {
+                        return (d['Task Name'] || '').toLowerCase().includes(keyword)
+                            || (d['Task Note'] || '').toLowerCase().includes(keyword)
+                            || (d['Task ID'] || '').toLowerCase().includes(keyword);
+                    } else if (rule.field === 'task_name') {
+                        return (d['Task Name'] || '').toLowerCase().includes(keyword);
+                    } else if (rule.field === 'task_note') {
+                        return (d['Task Note'] || '').toLowerCase().includes(keyword);
+                    } else if (rule.field === 'task_id') {
+                        return (d['Task ID'] || '').toLowerCase().includes(keyword);
+                    }
+                    return false;
+                };
+
+                // Include check
+                let passInclude = true;
+                if (includeRules.length > 0) {
+                    if (logic === 'or') {
+                        passInclude = includeRules.some(matchesRule);
+                    } else {
+                        passInclude = includeRules.every(matchesRule);
+                    }
+                }
+
+                // Exclude check (AND: any match => exclude)
+                let passExclude = true;
+                if (excludeRules.length > 0) {
+                    passExclude = !excludeRules.some(matchesRule);
+                }
+
+                // Version check
+                let passVersion = true;
+                if (versionOp && versionVal) {
+                    const taskVersion = d['Viva Version'];
+                    if (!taskVersion || taskVersion === 'N/A') {
+                        passVersion = false;
+                    } else {
+                        // Strip leading 'v' if present
+                        const tv = taskVersion.replace(/^v/i, '');
+                        const fv = versionVal.replace(/^v/i, '');
+                        const cmp = compareVersions(tv, fv);
+                        if (versionOp === 'eq') passVersion = cmp === 0;
+                        else if (versionOp === 'gte') passVersion = cmp >= 0;
+                        else if (versionOp === 'gt') passVersion = cmp > 0;
+                        else if (versionOp === 'lte') passVersion = cmp <= 0;
+                        else if (versionOp === 'lt') passVersion = cmp < 0;
+                    }
+                }
+
+                if (passInclude && passExclude && passVersion) {
+                    filteredGroups.add(g.groupName);
+                }
+            });
+
+            renderSampleSelector();
+            renderAll();
+            updateFilterBadge();
+        }
+
+        function clearFilters() {
+            filterRules = [];
+            filterRuleIdCounter = 0;
+            document.getElementById('versionOp').value = '';
+            document.getElementById('versionValue').value = '';
+            document.querySelector('#logicOr').checked = true;
+            filteredGroups = null;
+            addFilterRule();
+            renderSampleSelector();
+            renderAll();
+            updateFilterBadge();
+        }
+
+        function updateFilterBadge() {
+            const btn = document.getElementById('filterToggleBtn');
+            const activeCount = filterRules.filter(r => r.value.trim()).length
+                + (document.getElementById('versionOp').value && document.getElementById('versionValue').value.trim() ? 1 : 0);
+            if (filteredGroups !== null && activeCount > 0) {
+                btn.innerHTML = `⚙ 篩選 <span class="filter-active-count">${activeCount}</span>`;
+            } else {
+                btn.innerHTML = '⚙ 篩選';
+            }
+        }
+
+        // ==========================================
+        // DB Info Bar
+        // ==========================================
+        function showDbInfo(fileName) {
+            const bar = document.getElementById('dbInfoBar');
+            const totalRuns = Object.keys(allRunDataMap).length;
+            const totalGroups = allGroups.length;
+
+            // Collect all finish times and VIVA versions
+            let allDates = [];
+            let vivaVersions = new Set();
+            allGroups.forEach(g => {
+                g.runs.forEach(r => {
+                    if (r.finish_date && r.finish_date !== 'N/A') allDates.push(r.finish_date);
+                    else if (r.start_date && r.start_date !== 'N/A') allDates.push(r.start_date);
+                    if (r.viva_version && r.viva_version !== 'N/A') vivaVersions.add(r.viva_version);
+                });
+            });
+
+            allDates.sort();
+            const earliest = allDates.length > 0 ? allDates[0] : 'N/A';
+            const latest = allDates.length > 0 ? allDates[allDates.length - 1] : 'N/A';
+            const versions = vivaVersions.size > 0 ? Array.from(vivaVersions).sort().join(', ') : 'N/A';
+
+            bar.innerHTML = `
+                <span class="info-item"><span class="info-label">📁 檔案:</span> <span class="info-value">${escapeHtml(fileName)}</span></span>
+                <span class="info-item"><span class="info-label">📊 樣本組/筆數:</span> <span class="info-value">${totalGroups} 組 / ${totalRuns} 筆</span></span>
+                <span class="info-item"><span class="info-label">📅 最早任務:</span> <span class="info-value">${escapeHtml(earliest)}</span></span>
+                <span class="info-item"><span class="info-label">📅 最新任務:</span> <span class="info-value">${escapeHtml(latest)}</span></span>
+                <span class="info-item"><span class="info-label">🏷️ VIVA 版本:</span> <span class="info-value">${escapeHtml(versions)}</span></span>
+            `;
+            bar.classList.add('show');
+        }
+
+        // ==========================================
+        // Main entry: load .db file
+        // ==========================================
         async function handleFile(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -371,7 +889,8 @@
                 parseDatabase(db);
                 db.close();
 
-                document.getElementById('sampleCount').innerText = `已載入: ${allGroups.length} 組 / ${Object.keys(allDataMap).length} 筆`;
+                document.getElementById('sampleCount').innerText = `已載入: ${allGroups.length} 組 / ${Object.keys(allRunDataMap).length} 筆`;
+                showDbInfo(file.name);
                 renderSampleSelector();
                 renderAll();
             } catch (err) {
@@ -385,18 +904,19 @@
         // --- Parse SQLite database into structured data ---
         function parseDatabase(db) {
             allGroups = [];
-            allDataMap = {};
+            allRunDataMap = {};
             selectedGroups.clear();
+            filteredGroups = null;
 
             // 1. Get all completed tasks
             const tasks = queryAll(db, `
-        SELECT task_id, task_name, start_date, finish_date, status,
-               preset_id, task_note, product_name, product_lot, seq_date,
-               viva_version, preset_version
-        FROM Tasks
-        WHERE status = 'Completed'
-        ORDER BY start_date DESC
-    `);
+                SELECT task_id, task_name, start_date, finish_date, status,
+                       preset_id, task_note, product_name, product_lot, seq_date,
+                       viva_version, preset_version
+                FROM Tasks
+                WHERE status = 'Completed'
+                ORDER BY start_date DESC
+            `);
 
             if (tasks.length === 0) {
                 alert('資料庫中沒有已完成的任務。');
@@ -410,7 +930,7 @@
 
             // 3. Get Alignment Stats
             const alnRows = queryAll(db, `SELECT * FROM Alignment_Stats`);
-            const alnMap = {};  // task_id -> [{...}]
+            const alnMap = {};
             alnRows.forEach(r => {
                 if (!alnMap[r.task_id]) alnMap[r.task_id] = [];
                 alnMap[r.task_id].push(r);
@@ -432,16 +952,21 @@
                 blastMap[r.task_id].push(r);
             });
 
-            // 6. Derive group name (task prefix) from task_id by stripping trailing _YYYYMMDDHHMM timestamp
+            // 6. Derive group name from task_id
             function deriveTaskPrefix(taskId) {
-                // task_id format: {task_name}_{YYYYMMDDHHMM} (12-digit timestamp after last underscore)
                 const match = taskId.match(/^(.+)_(\d{12})$/);
                 if (match) return match[1];
-                return taskId; // fallback: use full task_id if no timestamp found
+                return taskId;
             }
 
+            // Build data rows for ALL completed tasks
+            tasks.forEach(t => {
+                const data = buildDataRow(t, qcMap[t.task_id], alnMap[t.task_id], impMap[t.task_id], blastMap[t.task_id]);
+                allRunDataMap[t.task_id] = data;
+            });
+
             // Group tasks by derived prefix
-            const groupMap = {};  // prefix -> [task rows]
+            const groupMap = {};
             tasks.forEach(t => {
                 const groupKey = deriveTaskPrefix(t.task_id);
                 if (!groupMap[groupKey]) groupMap[groupKey] = [];
@@ -453,7 +978,7 @@
                 taskList.sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
                 const latestTask = taskList[0];
                 const latestTaskId = latestTask.task_id;
-                const data = buildDataRow(latestTask, qcMap[latestTaskId], alnMap[latestTaskId], impMap[latestTaskId], blastMap[latestTaskId]);
+                const data = allRunDataMap[latestTaskId];
 
                 // Override Task Name with the derived prefix
                 data['Task Name'] = groupName;
@@ -470,9 +995,24 @@
                     isLatest: t.task_id === latestTaskId
                 }));
 
-                allGroups.push({ groupName, latestData: data, runs });
-                allDataMap[latestTaskId] = data;
+                allGroups.push({
+                    groupName,
+                    latestData: data,
+                    activeData: data,           // Currently displayed data (can be switched via history)
+                    activeTaskId: latestTaskId,  // Currently active task_id
+                    runs
+                });
                 selectedGroups.add(groupName);
+            }
+
+            // Also set Task Name for non-latest runs
+            for (const [groupName, taskList] of Object.entries(groupMap)) {
+                taskList.forEach(t => {
+                    if (allRunDataMap[t.task_id]) {
+                        allRunDataMap[t.task_id]['Task Name'] = groupName;
+                        allRunDataMap[t.task_id]['Runs'] = taskList.length;
+                    }
+                });
             }
 
             // Sort groups alphabetically
@@ -562,31 +1102,43 @@
             return results;
         }
 
-        // --- Render sidebar ---
+        // ==========================================
+        // Render sidebar
+        // ==========================================
         function renderSampleSelector() {
             const container = document.getElementById('sampleSelector');
             container.innerHTML = allGroups.map(g => {
-                const d = g.latestData;
+                const d = g.activeData || g.latestData;
+                const isVisible = filteredGroups === null || filteredGroups.has(g.groupName);
                 const runsBadge = g.runs.length > 1
                     ? `<span class="run-count-badge" onclick="showHistory(event, '${escapeHtml(g.groupName)}')" title="點擊查看歷史紀錄">${g.runs.length} 次</span>`
                     : '';
                 const versionBadge = d['Viva Version'] !== 'N/A'
                     ? `<span class="version-badge">${d['Viva Version']}</span>`
                     : '';
+                const activeNote = g.activeTaskId !== g.runs[0]?.task_id
+                    ? `<br><span style="color:#e67e22; font-size:0.63rem">▸ 已切換: ${escapeHtml(g.activeTaskId)}</span>`
+                    : '';
                 return `
-            <div class="sample-item">
-                <input type="checkbox" checked onchange="toggleSample('${escapeHtml(g.groupName)}')">
-                <div class="sample-info">
-                    <strong>${escapeHtml(g.groupName)}</strong>${versionBadge}${runsBadge}<br>
-                    <span style="color:#888">${escapeHtml(d['Task Note'])}</span><br>
-                    <span style="color:#aaa; font-size:0.65rem">最新: ${escapeHtml(d['Task ID'])}</span>
+                <div class="sample-item ${isVisible ? '' : 'filtered-out'}" data-group="${escapeHtml(g.groupName)}">
+                    <input type="checkbox" ${selectedGroups.has(g.groupName) ? 'checked' : ''} onchange="toggleSample('${escapeHtml(g.groupName)}')">
+                    <div class="sample-info">
+                        <strong>${escapeHtml(g.groupName)}</strong>${versionBadge}${runsBadge}<br>
+                        <span style="color:#888">${escapeHtml(d['Task Note'])}</span><br>
+                        <span style="color:#aaa; font-size:0.65rem">使用中: ${escapeHtml(g.activeTaskId || d['Task ID'])}</span>${activeNote}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
             }).join('');
+
+            // Update count
+            const visibleCount = filteredGroups === null ? allGroups.length : filteredGroups.size;
+            document.getElementById('sampleCount').innerText = `已載入: ${allGroups.length} 組 / ${Object.keys(allRunDataMap).length} 筆 | 顯示: ${visibleCount} 組`;
         }
 
-        // --- Show history popover for a group ---
+        // ==========================================
+        // History popover: now selectable
+        // ==========================================
         function showHistory(event, groupName) {
             event.stopPropagation();
             const popover = document.getElementById('historyPopover');
@@ -594,25 +1146,54 @@
             if (!group) return;
 
             const rect = event.target.getBoundingClientRect();
-            popover.style.top = (rect.top + window.scrollY) + 'px';
+            popover.style.top = (rect.top) + 'px';
             popover.style.left = (rect.right + 10) + 'px';
             popover.style.position = 'fixed';
 
             popover.innerHTML = `
-        <h6>「${escapeHtml(groupName)}」分析歷史 (${group.runs.length} 次)</h6>
-        ${group.runs.map(r => `
-            <div class="history-item">
-                <div>
-                    <span class="${r.isLatest ? 'badge-latest' : 'badge-old'}">${r.isLatest ? '最新' : '舊版'}</span>
-                    <strong>${escapeHtml(r.task_id)}</strong>
-                </div>
-                <div style="text-align:right; font-size:0.68rem; color:#888;">
-                    VIVA ${r.viva_version} | ${r.start_date || 'N/A'}
-                </div>
-            </div>
-        `).join('')}
-    `;
+                <h6>「${escapeHtml(groupName)}」分析歷史 (${group.runs.length} 次)</h6>
+                <div style="font-size:0.68rem; color:#888; margin-bottom:8px;">點擊可切換顯示的資料</div>
+                ${group.runs.map(r => {
+                const isActive = r.task_id === group.activeTaskId;
+                const badgeClass = isActive ? 'badge-selected' : (r.isLatest ? 'badge-latest' : 'badge-old');
+                const badgeText = isActive ? '使用中' : (r.isLatest ? '最新' : '舊版');
+                return `
+                    <div class="history-item ${isActive ? 'selected' : ''}"
+                         onclick="selectHistoryRun('${escapeHtml(groupName)}', '${escapeHtml(r.task_id)}')">
+                        <div>
+                            <span class="${badgeClass}">${badgeText}</span>
+                            <strong>${escapeHtml(r.task_id)}</strong>
+                        </div>
+                        <div style="text-align:right; font-size:0.68rem; color:#888;">
+                            VIVA ${r.viva_version} | ${r.start_date || 'N/A'}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+            `;
             popover.classList.add('show');
+        }
+
+        function selectHistoryRun(groupName, taskId) {
+            const group = allGroups.find(g => g.groupName === groupName);
+            if (!group) return;
+
+            const data = allRunDataMap[taskId];
+            if (!data) {
+                alert('找不到該筆資料，可能尚未快取。');
+                return;
+            }
+
+            // Switch active data
+            group.activeData = data;
+            group.activeTaskId = taskId;
+
+            // Close popover
+            document.getElementById('historyPopover').classList.remove('show');
+
+            // Re-render
+            renderSampleSelector();
+            renderAll();
         }
 
         function toggleSample(groupName) {
@@ -623,8 +1204,20 @@
 
         function toggleAllSamples(checked) {
             selectedGroups.clear();
-            if (checked) allGroups.forEach(g => selectedGroups.add(g.groupName));
-            document.querySelectorAll('#sampleSelector input[type=checkbox]').forEach(el => el.checked = checked);
+            if (checked) {
+                allGroups.forEach(g => {
+                    // Only select visible groups (respecting filter)
+                    if (filteredGroups === null || filteredGroups.has(g.groupName)) {
+                        selectedGroups.add(g.groupName);
+                    }
+                });
+            }
+            document.querySelectorAll('#sampleSelector input[type=checkbox]').forEach(el => {
+                const item = el.closest('.sample-item');
+                if (item && !item.classList.contains('filtered-out')) {
+                    el.checked = checked;
+                }
+            });
             renderAll();
         }
 
@@ -643,19 +1236,17 @@
             return dk;
         }
 
-        // --- Main render ---
+        // ==========================================
+        // Main render
+        // ==========================================
         function renderAll() {
             const container = document.getElementById('tablesContainer');
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
             const displayData = allGroups.filter(g => {
                 if (!selectedGroups.has(g.groupName)) return false;
-                if (!searchTerm) return true;
-                const d = g.latestData;
-                return Object.values(d).some(value =>
-                    String(value).toLowerCase().includes(searchTerm)
-                );
-            }).map(g => g.latestData);
+                if (filteredGroups !== null && !filteredGroups.has(g.groupName)) return false;
+                return true;
+            }).map(g => g.activeData || g.latestData);
 
             if (displayData.length === 0) {
                 container.innerHTML = '<div class="text-center p-5 text-muted">無顯示資料</div>';
@@ -694,12 +1285,12 @@
                 if (cols.length <= 1 && cat.id !== 'meta' && cat.id !== 'qc') return '';
 
                 return `
-            <div class="section-card">
-                <div class="table-title"><h6>${cat.name}</h6></div>
-                <div class="table-container">
-                    <table class="table table-sm table-bordered mb-0">
-                        <thead><tr>${cols.map(c => `<th>${formatHeader(c)}</th>`).join('')}</tr></thead>
-                        <tbody>${displayData.map(row => `<tr>${cols.map(c => {
+                <div class="section-card">
+                    <div class="table-title"><h6>${cat.name}</h6></div>
+                    <div class="table-container">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead><tr>${cols.map(c => `<th>${formatHeader(c)}</th>`).join('')}</tr></thead>
+                            <tbody>${displayData.map(row => `<tr>${cols.map(c => {
                     const val = row[c] !== undefined ? row[c] : '<span class="empty-cell">-</span>';
                     let cls = '';
                     if (c.includes('RPM')) cls = 'rpm-val';
@@ -707,10 +1298,10 @@
                     else cls = 'count-val';
                     return `<td class="${cls}">${val}</td>`;
                 }).join('')}</tr>`).join('')}</tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
             }).join('');
         }
 
@@ -729,12 +1320,11 @@
         // --- CSV Export ---
         function exportAllToCSV() {
             let csv = "\uFEFF"; // BOM for Excel
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const displayData = allGroups.filter(g => {
                 if (!selectedGroups.has(g.groupName)) return false;
-                if (!searchTerm) return true;
-                return Object.values(g.latestData).some(v => String(v).toLowerCase().includes(searchTerm));
-            }).map(g => g.latestData);
+                if (filteredGroups !== null && !filteredGroups.has(g.groupName)) return false;
+                return true;
+            }).map(g => g.activeData || g.latestData);
 
             // Recompute dynamic keys for CSV based on displayed data
             const csvDK = computeDynamicKeys(displayData);
