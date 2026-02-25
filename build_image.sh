@@ -22,7 +22,7 @@ if [ -z "$LATEST_TAG" ]; then
 fi
 
 FULL_IMAGE="${IMAGE_NAME}:${LATEST_TAG}"
-OUTPUT_FILE="${OUTPUT_DIR}/${IMAGE_NAME}_${LATEST_TAG}.tar"
+OUTPUT_FILE="${OUTPUT_DIR}/${IMAGE_NAME}-${LATEST_TAG}.tar"
 
 echo "========================================"
 echo "  VIVA Docker Image 自動建置"
