@@ -15,7 +15,7 @@ def report_summary(task):
     logger.info('Generating summary.')
     s = {}
     log_abs = log_parser(task)
-    s['task_name'] = task.id.split('_')[:-1][0]
+    s['task_name'] = '_'.join(task.id.split('_')[:-1])
     s['task_id'] = task.id
     s['task_note'] = task.task_note
     start_t = datetime.utcfromtimestamp(int(log_abs['start_timestamp']))+ timedelta(hours=8)
