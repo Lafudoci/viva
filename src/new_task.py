@@ -86,6 +86,12 @@ def main(input_args):
     parser.add_argument(
         '--unmapped_spades_mode', default='meta')
     parser.add_argument(
+        '--unmapped_bbnorm', help="Enable bbnorm.sh normalization before unmapped reads assemble.", default='False')
+    parser.add_argument(
+        '--unmapped_bbnorm_target', help="Target coverage for bbnorm.sh.", default='30')
+    parser.add_argument(
+        '--unmapped_bbnorm_min', help="Min coverage for bbnorm.sh.", default='2')
+    parser.add_argument(
         '--min_vc_score', default=1)
     parser.add_argument(
         '--vc_threshold', default='0.7')
@@ -123,7 +129,7 @@ def main(input_args):
         'fastp', 'samtools', 'bcftools', 'htslib',
         'bowtie2', 'bwa',
         'varscan', 'lofreq',
-        'spades', 'blast'
+        'spades', 'blast', 'bbmap'
     ]
     check_deps(task)
     task.path = Path.cwd().joinpath('tasks')
@@ -156,6 +162,9 @@ def main(input_args):
         task.rvdb_anno_path = args.rvdb_anno_path
         task.unmapped_assemble = args.unmapped_assemble
         task.unmapped_spades_mode = args.unmapped_spades_mode
+        task.unmapped_bbnorm = args.unmapped_bbnorm
+        task.unmapped_bbnorm_target = args.unmapped_bbnorm_target
+        task.unmapped_bbnorm_min = args.unmapped_bbnorm_min
         task.unmapped_blastdb = args.unmapped_blastdb
         task.unmapped_blastdb_extra_list = args.unmapped_blastdb_extra_list
         task.unmapped_len_filter = args.unmapped_len_filter
@@ -175,6 +184,9 @@ def main(input_args):
         task.min_vc_score = config['PRESET']['min_vc_score']
         task.unmapped_assemble = config['PRESET']['unmapped_assemble']
         task.unmapped_spades_mode = config['PRESET']['unmapped_spades_mode']
+        task.unmapped_bbnorm = config['PRESET'].get('unmapped_bbnorm', 'False')
+        task.unmapped_bbnorm_target = config['PRESET'].get('unmapped_bbnorm_target', '30')
+        task.unmapped_bbnorm_min = config['PRESET'].get('unmapped_bbnorm_min', '2')
         task.blastdb_path = config['PRESET']['blastdb_path']
         task.rvdb_anno_path = config['PRESET']['rvdb_anno_path']
         task.unmapped_blastdb = config['PRESET']['unmapped_blastdb']

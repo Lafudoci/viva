@@ -21,6 +21,30 @@ def run_de_novo(task):
     r1 = str(task.path.joinpath(bwa_aligner_cwd, task.id+'_ref_1_unmapped_R1.fastq.gz'))
     r2 = str(task.path.joinpath(bwa_aligner_cwd, task.id+'_ref_1_unmapped_R2.fastq.gz'))
     
+    if getattr(task, 'unmapped_bbnorm', 'False') == 'True':
+        logger.info('Running bbnorm.sh normalization.')
+        norm_r1 = str(task.path.joinpath(unmapped_assembly_cwd, task.id+'_ref_1_unmapped_norm_R1.fastq.gz'))
+        norm_r2 = str(task.path.joinpath(unmapped_assembly_cwd, task.id+'_ref_1_unmapped_norm_R2.fastq.gz'))
+        target = getattr(task, 'unmapped_bbnorm_target', '30')
+        min_cov = getattr(task, 'unmapped_bbnorm_min', '2')
+        bbnorm_cmd = [
+            'bbnorm.sh',
+            'in=' + r1,
+            'in2=' + r2,
+            'out=' + norm_r1,
+            'out2=' + norm_r2,
+            'target=' + str(target),
+            'min=' + str(min_cov)
+        ]
+        logger.info('CMD: '+' '.join(bbnorm_cmd))
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(bbnorm_cmd))
+        cmd_run = subprocess.run(bbnorm_cmd, cwd=unmapped_assembly_cwd, capture_output=True)
+        print(cmd_run.stdout.decode(encoding='utf-8'))
+        print(cmd_run.stderr.decode(encoding='utf-8'))
+        
+        r1 = norm_r1
+        r2 = norm_r2
+
     assemble_cmd = [
         'spades.py',
         '-t', task.threads,
