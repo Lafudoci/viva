@@ -35,7 +35,7 @@ VIVA 主要的分析流程如下（依執行先後順序）：
 
 ```bash
 # 1. 開啟終端機並切換到 VIVA 專案原始碼根目錄
-cd /home/leftc/Google\ Drive/GitHub-GD/viva  # 視您的實際存放位置而定
+cd /path/to/viva  # 視您的實際存放位置而定
 
 # 2. 利用原始碼目錄中的 Dockerfile 建置 Docker Image
 #    參數 -t 用以標記產生的 Image 名稱及版號
@@ -50,7 +50,7 @@ sudo docker build -t viva:v1.11.1 .
 
 ```bash
 # 切換到您的分析工作目錄 (包含任務輸出與相關參考檔案的目錄)
-cd /home/ra5/viva
+cd /path/to/viva
 
 # 以 Docker Container 啟動分析任務
 sudo docker run -i --rm \
@@ -61,17 +61,17 @@ sudo docker run -i --rm \
   viva:v1.11.1 \
   --single_task \
   --prefix TFDA-MPXV-20250918 \
-  --ref "/home/ra5/ref-fasta/MPXV/OR030941.1.fasta" \
+  --ref "$HOME/ref-fasta/MPXV/OR030941.1.fasta" \
   --remove_host GCA_023783515.1_ASM2378351v1.1 \
-  --blastdb_path /home/ra5/bioapp/blastdb \
-  --rvdb_anno_path /home/ra5/bioapp/blastdb/RVDBv30_AnnotationList_Jun2025.tab \
+  --blastdb_path $HOME/bioapp/blastdb \
+  --rvdb_anno_path $HOME/bioapp/blastdb/RVDBv30_AnnotationList_Jun2025.tab \
   --unmapped_blastdb "U-RVDBv30.0.fasta" \
   --unmapped_blastdb_extra_list "core_nt nt_prok nt_others 16S_ribosomal_RNA" \
   --unmapped_len_filter 100 \
   --min_vc_score 4 \
   --threads 20 \
-  --ex_r1 /home/ra5/NGS-reads/20250918-RSV-MPXV/MPV_S3_L001_R1_001.fastq.gz \
-  --ex_r2 /home/ra5/NGS-reads/20250918-RSV-MPXV/MPV_S3_L001_R2_001.fastq.gz \
+  --ex_r1 $HOME/NGS-reads/20250918-RSV-MPXV/MPV_S3_L001_R1_001.fastq.gz \
+  --ex_r2 $HOME/NGS-reads/20250918-RSV-MPXV/MPV_S3_L001_R2_001.fastq.gz \
   --task_note "署內培養 MPXV 分析 (去除宿主基因體序列)"
 ```
 
@@ -93,7 +93,7 @@ sudo docker run -i --rm \
 ### II. 目標讀序定位參數 (Reference & Filtration)
 | 參數 | 說明 | 舉例 |
 | --- | --- | --- |
-| `--ref` | 分析欲比對之參考序列 (Reference FASTA file) 路徑。若無提供則自動切換為 De novo 分析模式。 | `--ref /home/ref/RSV.fasta` |
+| `--ref` | 分析欲比對之參考序列 (Reference FASTA file) 路徑。若無提供則自動切換為 De novo 分析模式。 | `--ref $HOME/ref/RSV.fasta` |
 | `--remove_host` | 指定並移除特定的宿主序列以提升分析效能。可使用內建字詞 (`human`, `dog`, `vero`, `chicken`, `rhesus_monkey`)，或提供位於 `/app/genomes/` 下的自訂基因體名稱。 | `--remove_host human`<br>`--remove_host GCA_023783515.1` |
 | `--remove_impurities` | 進階雜訊去除功能；提供不純物序列之參考 FASTA 檔，用來過濾對應的讀序。 | `--remove_impurities /data/noise.fasta` |
 | `--alns` | 若有提供參考序列，可選擇讀序定位軟體，多重選擇時以逗號隔開 (預設為 `bowtie2,bwa`)。 | `--alns bwa` |
@@ -108,12 +108,12 @@ sudo docker run -i --rm \
 | 參數 | 說明 | 舉例 |
 | --- | --- | --- |
 | `--unmapped_assemble` | 設定是否針對未定位序列利用 metaSPAdes 進行組裝 (預設為 `True`)。 | `--unmapped_assemble True` |
-| `--blastdb_path` | 主機上自建之 BLAST 資料庫存放目錄。 | `--blastdb_path /home/bioapp/blastdb` |
+| `--blastdb_path` | 主機上自建之 BLAST 資料庫存放目錄。 | `--blastdb_path $HOME/bioapp/blastdb` |
 | `--unmapped_blastdb` | 定義針對未定位的組裝 sequences 或 reads 優先進行比對的專用 BLAST 資料庫，檔名須存在於 `--blastdb_path` 目錄下。 | `--unmapped_blastdb "U-RVDBv30.0.fasta"` |
 | `--unmapped_blastdb_extra_list`| 若需比對多個資料庫，可提供額外之資料庫名稱字串(各名稱以空格隔開)，系統將循序進行比對查詢。 | `--unmapped_blastdb_extra_list "core_nt nt_prok"` |
 | `--unmapped_len_filter` | BLAST 比對後，過濾掉長度低於此閾值的序列結果 (預設 `500` bp)。 | `--unmapped_len_filter 100` |
 | `--unmapped_ident_filter`| BLAST 比對後，過濾掉同源性 (Identity) 低於此百分比的序列結果 (預設 `95`%)。 | `--unmapped_ident_filter 90` |
-| `--rvdb_anno_path` | 使用 RVDB 資料庫時，給定實體註解的 `.tab` 檔案來輔助擷取完整的生物分類註解並呈現在報告中。 | `--rvdb_anno_path /home/.../RVDBv30.tab` |
+| `--rvdb_anno_path` | 使用 RVDB 資料庫時，給定實體註解的 `.tab` 檔案來輔助擷取完整的生物分類註解並呈現在報告中。 | `--rvdb_anno_path $HOME/path/to/RVDBv30.tab` |
 
 ### V. 變異點分析擷取條件 (Variant Calling)
 | 參數 | 說明 | 舉例 |
@@ -146,13 +146,13 @@ sudo docker run -i --rm \
 [Task_Group_1]
 # 第一組批次任務設定
 # 指定包含欲分析之樣本 ID 清單的文字檔路徑 (每行一個 ID)
-samples_list_filepath = /home/ra5/viva/batches/group1_samples.txt
+samples_list_filepath = $HOME/viva/batches/group1_samples.txt
 
 # 指定記載樣本路徑與 metadata 的總表 .ini 路徑
-read_meta_path = /home/ra5/viva/batches/all_reads_meta.ini
+read_meta_path = $HOME/viva/batches/all_reads_meta.ini
 
 # 指定此批次任務統一掛載的分析設定檔 (Preset Profiler)
-preset_path = /home/ra5/viva/presets/mpxv_default.ini
+preset_path = $HOME/viva/presets/mpxv_default.ini
 
 # 批次任務註記，會一併反應在報告上的註解區
 batch_tasks_note = "Group 1 MPXV Routine Analysis"
@@ -160,9 +160,9 @@ batch_tasks_note = "Group 1 MPXV Routine Analysis"
 
 [Task_Group_2]
 # 第二組批次任務設定
-samples_list_filepath = /home/ra5/viva/batches/group2_samples.txt
-read_meta_path = /home/ra5/viva/batches/all_reads_meta.ini
-preset_path = /home/ra5/viva/presets/rsv_default.ini
+samples_list_filepath = $HOME/viva/batches/group2_samples.txt
+read_meta_path = $HOME/viva/batches/all_reads_meta.ini
+preset_path = $HOME/viva/presets/rsv_default.ini
 batch_tasks_note = "Group 2 RSV Routine Analysis"
 ```
 
@@ -176,8 +176,8 @@ product = MPXV
 lot = 20250918-01
 seq_date = 2025-09-18
 reads_note = NA
-ex_r1 = /home/ra5/NGS-reads/20250918-RSV-MPXV/Sample_001_R1_001.fastq.gz
-ex_r2 = /home/ra5/NGS-reads/20250918-RSV-MPXV/Sample_001_R2_001.fastq.gz
+ex_r1 = $HOME/NGS-reads/20250918-RSV-MPXV/Sample_001_R1_001.fastq.gz
+ex_r2 = $HOME/NGS-reads/20250918-RSV-MPXV/Sample_001_R2_001.fastq.gz
 ```
 
 ### 執行批次分析指令
@@ -185,7 +185,7 @@ ex_r2 = /home/ra5/NGS-reads/20250918-RSV-MPXV/Sample_001_R2_001.fastq.gz
 當設定檔皆部署完畢後，在**工作目錄**下同樣地透過 Docker 執行，但使用 `--task_sheet` 取代 `--single_task` 參數：
 
 ```bash
-cd /home/ra5/viva
+cd /path/to/viva
 
 sudo docker run -i --rm \
   -v $(pwd)/tasks:/app/tasks \
@@ -193,7 +193,7 @@ sudo docker run -i --rm \
   -v $(pwd)/blastdb:/app/blastdb \
   -v /home:/home \
   viva:v1.11.1 \
-  --task_sheet /home/ra5/viva/batches/batch_tasks.ini
+  --task_sheet $HOME/viva/batches/batch_tasks.ini
 ```
 
 批次運行時，系統將會建立一個具有 `batch_task_YYYYMMDDHHMM` 命名的序列清單狀態檔案記錄任務排程，並循序依每個樣本自動載入 `preset_path` 的參數，完成所有樣本的比對工作以及最終的匯總 CSV 報告產生 (`batch_task_report.py`)。
@@ -230,7 +230,7 @@ VIVA 在執行時，會自動於 `tasks` 工作目錄下建立並維護一個輕
 python3 tools/read_db.py
 
 # 參數用法：手動指定資料庫檔案路徑 (-d / --db_path)
-python3 tools/read_db.py -d /home/ra5/viva/tasks/viva_results.db
+python3 tools/read_db.py -d $HOME/viva/tasks/viva_results.db
 ```
 
 執行後，腳本會列出依照時間排序的歷史任務清單並標記其狀態 (例如 <span style="color:green">Completed</span>, <span style="color:red">Failed</span> 等)。您只需輸入對應的編號，即可列印出該筆任務自 QC、Mapping 乃至前十筆 Variant 的預覽資訊。

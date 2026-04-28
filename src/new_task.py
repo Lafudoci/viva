@@ -213,8 +213,9 @@ def main(input_args):
             task.ref = None
         elif args.test == 'rvdb':
             task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
-            task.blastdb_path = '/home/leftc/bioapp/blastdb'
-            task.rvdb_anno_path = '/home/leftc/bioapp/blastdb/RVDBv29_annotation_Aug2024.tab'
+            home_dir = os.path.expanduser('~')
+            task.blastdb_path = os.path.join(home_dir, 'bioapp/blastdb')
+            task.rvdb_anno_path = os.path.join(home_dir, 'bioapp/blastdb/RVDBv29_annotation_Aug2024.tab')
             task.unmapped_blastdb = 'C-RVDBv29.0.fasta'
 
 
