@@ -8,5 +8,5 @@ varscan==2.4.6
 lofreq==2.1.5
 spades==3.15.5
 blast==2.15.0
-bbmap==39.81
+bbmap==39.01
 mysql-connector-python==8.0.33
