@@ -253,7 +253,32 @@ def _build_task_from_params(task_dir, params, args=None):
     # 只有當使用者明確在命令列輸入該參數時才覆蓋（避免被 argparse 預設值蓋掉）
     if args:
         import sys
+        # 優先處理 preset_path，因為它會帶入多個參數
+        if '--preset_path' in sys.argv:
+            task.preset_path = args.preset_path
+            if task.preset_path and Path(task.preset_path).is_file():
+                logger.info('Retry Override：套用 Preset 檔案 %s' % task.preset_path)
+                try:
+                    config = configparser.ConfigParser(allow_no_value=True)
+                    config.read(task.preset_path)
+                    # 從 PRESET 節區覆蓋參數
+                    if 'PRESET' in config:
+                        for p_key in config['PRESET']:
+                            if p_key in task_keys:
+                                p_val = config['PRESET'][p_key]
+                                if p_key == 'alns':
+                                    p_val = p_val.split(',')
+                                setattr(task, p_key, p_val)
+                    # 載入版本資訊
+                    if 'VERSION' in config:
+                        task.preset_id = config['VERSION'].get('preset_id')
+                        task.preset_version = config['VERSION'].get('version')
+                except Exception as e:
+                    logger.error('Retry Override：載入 Preset 失敗：%s' % e)
+
+        # 處理其餘 CLI 個別參數覆蓋（優先級最高，可蓋過 Preset）
         for k in task_keys:
+            if k == 'preset_path': continue # 已處理
             cli_flag = '--' + k
             if cli_flag in sys.argv:
                 new_val = getattr(args, k)
