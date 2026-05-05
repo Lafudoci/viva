@@ -17,6 +17,7 @@ import report_generator
 import summary_generator
 import impurities_prefilter
 import db_manager
+import cleanup
 
 
 logger = logging.getLogger(__name__)
@@ -121,6 +122,8 @@ def main(input_args):
         '--sample_sequencing_date', help="Sample sequencing date. Anotation purpose only.", default=None)
     parser.add_argument(
         '--sample_note', help="Sample note. Anotation purpose only.", default=None)
+    parser.add_argument(
+        '--auto_cleanup', help="Automatically clean up intermediate files after pipeline finished.", default='True')
     args, unknown = parser.parse_known_args(input_args)
 
     task = Task()
@@ -169,6 +172,7 @@ def main(input_args):
         task.unmapped_blastdb_extra_list = args.unmapped_blastdb_extra_list
         task.unmapped_len_filter = args.unmapped_len_filter
         task.unmapped_ident_filter = args.unmapped_ident_filter
+        task.auto_cleanup = args.auto_cleanup
     else:
         # Parse all conf. as strings
         config = configparser.ConfigParser(allow_no_value=True)
@@ -193,6 +197,7 @@ def main(input_args):
         task.unmapped_blastdb_extra_list = config['PRESET']['unmapped_blastdb_extra_list']
         task.unmapped_len_filter = config['PRESET']['unmapped_len_filter']
         task.unmapped_ident_filter = config['PRESET']['unmapped_ident_filter']
+        task.auto_cleanup = config['PRESET'].get('auto_cleanup', 'True')
         task.preset_id = config['VERSION']['preset_id']
         task.preset_version = config['VERSION']['version']
         task.preset_last_rev_date = config['VERSION']['last_rev_date']
@@ -274,6 +279,7 @@ def main(input_args):
             'Starting pipeline.'
         )
 
+
         db = db_manager.VIVADatabase()
         start_date = time.strftime("%Y-%m-%d %H:%M", time.localtime())
         db.create_task(
@@ -307,6 +313,20 @@ def main(input_args):
             
             # DB finalizer triggers in summary_generator, we just mark completed here after safe wrap.
             db.update_task_status(task.id, 'Completed')
+
+            # Auto cleanup
+            if task.auto_cleanup == 'True':
+                logger.info('Starting auto cleanup.')
+                utils.write_log_file(
+                    task.path.joinpath(task.id),
+                    'Starting auto cleanup.'
+                )
+                cleanup.cleanup_task(task.path.joinpath(task.id), force=True)
+                logger.info('Auto cleanup finished.')
+                utils.write_log_file(
+                    task.path.joinpath(task.id),
+                    'Auto cleanup finished.'
+                )
             
         except Exception as e:
             logger.error(f'Pipeline error: {e}')
