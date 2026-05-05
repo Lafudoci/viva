@@ -2,6 +2,7 @@ import logging
 import subprocess
 import sys
 import os
+import shutil
 from decimal import Decimal
 from pathlib import Path
 
@@ -58,8 +59,56 @@ def run_de_novo(task):
     logger.info('CMD: '+' '.join(assemble_cmd))
     utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(assemble_cmd))
     cmd_run = subprocess.run(assemble_cmd, cwd=unmapped_assembly_cwd, capture_output=True)
-    print(cmd_run.stdout.decode(encoding='utf-8'))
-    print(cmd_run.stderr.decode(encoding='utf-8'))
+    stdout_msg = cmd_run.stdout.decode(encoding='utf-8')
+    stderr_msg = cmd_run.stderr.decode(encoding='utf-8')
+    print(stdout_msg)
+    print(stderr_msg)
+
+    if cmd_run.returncode != 0:
+        # Retry Phase 1: Half threads (to handle Race Conditions and moderate OOM)
+        retry_threads = str(max(1, int(task.threads) // 2))
+        logger.warning(f'SPAdes failed (Exit code: {cmd_run.returncode}). Retry Phase 1: reducing threads to {retry_threads}...')
+        
+        # Preserve log before deletion
+        failed_log = Path(unmapped_assembly_cwd, output_folder_name, 'spades.log')
+        if failed_log.is_file():
+            shutil.copy(failed_log, Path(unmapped_assembly_cwd, f'{output_folder_name}_failed_1.log'))
+        
+        shutil.rmtree(Path(unmapped_assembly_cwd, output_folder_name), ignore_errors=True)
+        
+        retry_cmd = assemble_cmd[:]
+        try:
+            t_idx = retry_cmd.index('-t')
+            retry_cmd[t_idx+1] = retry_threads
+        except (ValueError, IndexError):
+            pass
+        
+        logger.info('Retry Phase 1 CMD: '+' '.join(retry_cmd))
+        utils.write_log_file(task.path.joinpath(task.id), 'Retry Phase 1 CMD: '+' '.join(retry_cmd))
+        cmd_run = subprocess.run(retry_cmd, cwd=unmapped_assembly_cwd, capture_output=True)
+        stdout_msg = cmd_run.stdout.decode(encoding='utf-8')
+        stderr_msg = cmd_run.stderr.decode(encoding='utf-8')
+        print(stdout_msg)
+        print(stderr_msg)
+        
+        # Final Retry Phase 2: --only-assembler (to bypass all Error Correction bugs/limits)
+        if cmd_run.returncode != 0:
+            logger.warning(f'SPAdes failed again (Exit code: {cmd_run.returncode}). Final Retry Phase 2: using --only-assembler...')
+            
+            # Preserve log before second deletion
+            failed_log = Path(unmapped_assembly_cwd, output_folder_name, 'spades.log')
+            if failed_log.is_file():
+                shutil.copy(failed_log, Path(unmapped_assembly_cwd, f'{output_folder_name}_failed_2.log'))
+            
+            shutil.rmtree(Path(unmapped_assembly_cwd, output_folder_name), ignore_errors=True)
+            
+            final_cmd = assemble_cmd + ['--only-assembler']
+            logger.info('Retry Phase 2 CMD: '+' '.join(final_cmd))
+            utils.write_log_file(task.path.joinpath(task.id), 'Retry Phase 2 CMD: '+' '.join(final_cmd))
+            cmd_run = subprocess.run(final_cmd, cwd=unmapped_assembly_cwd, capture_output=True)
+            print(cmd_run.stdout.decode(encoding='utf-8'))
+            print(cmd_run.stderr.decode(encoding='utf-8'))
+
     # check if assemble result exists
     contigs_path = Path(unmapped_assembly_cwd, output_folder_name, 'contigs.fasta')
     if contigs_path.is_file() != True:
