@@ -242,33 +242,45 @@ def blast_hits_anno_finder(db, hit, annotation):
 
 def run(task, is_retry=False):
     if task.unmapped_assemble == 'True':
-        # retry 時檢查 contigs.fasta 與 unmapped_analysis.json 是否都存在
-        if is_retry:
-            output_folder_name = '%s_unmapped_spades_%s' % (task.id, task.unmapped_spades_mode)
-            contigs_path = task.path.joinpath(
-                task.id, 'unmapped_analysis', output_folder_name, 'contigs.fasta')
-            json_path = task.path.joinpath(
-                task.id, 'unmapped_analysis', 'unmapped_analysis.json')
-            if contigs_path.is_file() and json_path.is_file():
-                logger.info('[RETRY] unmapped_analysis：contigs.fasta 與 unmapped_analysis.json 已存在，跳過此步驟。')
+        output_folder_name = '%s_unmapped_spades_%s' % (task.id, task.unmapped_spades_mode)
+        unmapped_analysis_cwd = task.path.joinpath(task.id, 'unmapped_analysis')
+        contigs_path = unmapped_analysis_cwd.joinpath(output_folder_name, 'contigs.fasta')
+        json_path = unmapped_analysis_cwd.joinpath('unmapped_analysis.json')
+
+        # 第一階段：檢查組裝產出 (contigs.fasta)
+        if not contigs_path.is_file():
+            if run_de_novo(task) == -1:
+                logger.error('SPAdes 組裝失敗，跳過 BLAST 分析。')
+                build_unmapped_json(task, {})
                 return
-            else:
-                if not contigs_path.is_file():
-                    logger.info('[RETRY] unmapped_analysis：未找到 contigs.fasta，重新執行此步驟。')
-                if not json_path.is_file():
-                    logger.info('[RETRY] unmapped_analysis：未找到 unmapped_analysis.json，重新執行此步驟。')
-        contigs = run_de_novo(task)
-        if contigs != -1:
-            if task.unmapped_blastdb != None:
+        else:
+            logger.info('已找到 contigs.fasta，跳過 SPAdes 組裝。')
+
+        # 第二階段：檢查 BLAST 產出 (tsv) 與分析結果 (json)
+        blastdbs = ([task.unmapped_blastdb] + task.unmapped_blastdb_extra_list.split()
+                    if task.unmapped_blastdb_extra_list else [task.unmapped_blastdb])
+        blastdbs = [db for db in blastdbs if db]
+        
+        assembled_cwd = unmapped_analysis_cwd.joinpath(output_folder_name)
+        all_tsv_exist = True
+        for db in blastdbs:
+            tsv_path = assembled_cwd.joinpath('%s_spades_%s_%s.tsv' % (task.id, task.unmapped_spades_mode, db))
+            if not tsv_path.is_file():
+                all_tsv_exist = False
+                logger.info('缺失 BLAST 結果：%s' % tsv_path.name)
+                break
+        
+        # 如果 tsv 缺失、json 缺失或內容無效，則重新執行 BLAST
+        need_blast = not all_tsv_exist or not json_path.is_file() or json_path.stat().st_size <= 10
+        
+        if need_blast:
+            if task.unmapped_blastdb is not None:
                 unmapped_results_list = blast_assembled(task)
                 build_unmapped_json(task, unmapped_results_list)
             else:
-                logger.warning('unmapped_blastdb not set, skipping blast.')
-                unmapped_results_list = {}
-                build_unmapped_json(task, unmapped_results_list)
+                logger.warning('未設定 unmapped_blastdb，跳過 BLAST。')
+                build_unmapped_json(task, {})
         else:
-            logger.warning('Contigs not found, skipping blast.')
-            unmapped_results_list = {}
-            build_unmapped_json(task, unmapped_results_list)
+            logger.info('unmapped_analysis 所有產出 (contigs, tsv, json) 已存在，跳過此步驟。')
     else:
-        logger.warning('unmapped_assemble not set, skipping assemble and blast.')
+        logger.warning('unmapped_assemble 未設定為 True，跳過此步驟。')

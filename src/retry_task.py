@@ -137,25 +137,34 @@ def _parse_params_from_cmd(log_lines, params):
             detected.append('bwa')
         params['alns'] = ','.join(detected) if detected else 'bowtie2,bwa'
 
+    # 收集所有 blastn 指令以提取 DB 清單
+    blast_cmds = [c for c in cmd_lines if 'blastn' in c]
+    all_dbs = []
+    for bc in blast_cmds:
+        db_match = re.search(r'-db\s+(\S+)', bc)
+        if db_match and db_match.group(1) not in all_dbs:
+            all_dbs.append(db_match.group(1))
+    
+    if all_dbs:
+        if params.get('unmapped_blastdb') is None:
+            params['unmapped_blastdb'] = all_dbs[0]
+        if params.get('unmapped_blastdb_extra_list') is None and len(all_dbs) > 1:
+            params['unmapped_blastdb_extra_list'] = ' '.join(all_dbs[1:])
+
     # spades_mem
-    if not params.get('spades_mem'):
+    if params.get('spades_mem') is None:
         m = re.search(r'spades\.py\b.*?\s-m\s+(\d+)', _find('spades.py'))
         params['spades_mem'] = m.group(1) if m else '22'
 
     # unmapped_spades_mode（從輸出目錄名稱或 -- 參數）
-    if not params.get('unmapped_spades_mode'):
+    if params.get('unmapped_spades_mode') is None:
         uc = _find('unmapped_spades')
         m = re.search(r'unmapped_spades_(\w+)', uc) or \
             re.search(r'spades\.py\b.*?--(metaviral|meta|rnaviral|corona)\b', uc)
         params['unmapped_spades_mode'] = m.group(1) if m else 'meta'
 
-    # unmapped_blastdb
-    if not params.get('unmapped_blastdb'):
-        m = re.search(r'blastn\b.*?\s-db\s+(\S+)', _find('blastn'))
-        params['unmapped_blastdb'] = m.group(1) if m else None
-
     # unmapped_assemble
-    if not params.get('unmapped_assemble'):
+    if params.get('unmapped_assemble') is None:
         params['unmapped_assemble'] = 'True' if any('unmapped_spades' in c for c in cmd_lines) else 'False'
 
     # 無法從 log 推算的參數，填預設值並警告
@@ -164,8 +173,7 @@ def _parse_params_from_cmd(log_lines, params):
         'unmapped_bbnorm': 'False', 'unmapped_bbnorm_target': '30', 'unmapped_bbnorm_min': '2',
         'unmapped_len_filter': '500', 'unmapped_ident_filter': '95',
         'blastdb_path': None, 'rvdb_anno_path': None,
-        'unmapped_blastdb_extra_list': None, 'remove_impurities': None,
-        'preset_path': None,
+        'remove_impurities': None, 'preset_path': None,
     }
     # 使用 is None 判斷，避免 'False'、'0' 等 falsy 值被預設值錯誤覆寫
     missing_keys = [k for k, v in _defaults.items() if params.get(k) is None]
@@ -213,8 +221,8 @@ def recover_params(task_dir):
 # Task 物件重建
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_task_from_params(task_dir, params):
-    """從 params dict 建立並回傳 task 物件。需從 new_task 匯入 Task 類別。"""
+def _build_task_from_params(task_dir, params, args=None):
+    """從 params dict 建立並回傳 task 物件。若有 CLI args 則進行覆蓋。"""
     from new_task import Task
 
     task = Task()
@@ -222,41 +230,48 @@ def _build_task_from_params(task_dir, params):
     task.path = task_dir.parent
     task.name = '_'.join(task.id.split('_')[:-1])
 
-    task.ex_r1 = params.get('ex_r1')
-    task.ex_r2 = params.get('ex_r2')
-    task.ref   = params.get('ref')
-    task.threads              = params.get('threads', '6')
-    task.alns                 = params.get('alns', 'bowtie2,bwa').split(',')
-    task.global_trimming      = params.get('global_trimming', '0')
-    task.remove_host          = params.get('remove_host')
-    task.remove_impurities    = params.get('remove_impurities')
-    task.spades_mem           = params.get('spades_mem', '22')
-    task.spades_mode          = params.get('spades_mode', 'metaviral')
-    task.unmapped_spades_mode = params.get('unmapped_spades_mode', 'meta')
-    task.unmapped_bbnorm        = params.get('unmapped_bbnorm', 'False')
-    task.unmapped_bbnorm_target = params.get('unmapped_bbnorm_target', '30')
-    task.unmapped_bbnorm_min    = params.get('unmapped_bbnorm_min', '2')
-    task.vc_threshold           = params.get('vc_threshold', '0.7')
-    task.min_vc_score           = params.get('min_vc_score', '1')
-    task.blastdb_path           = params.get('blastdb_path')
-    task.rvdb_anno_path         = params.get('rvdb_anno_path')
-    task.unmapped_assemble      = params.get('unmapped_assemble', 'True')
-    task.unmapped_blastdb       = params.get('unmapped_blastdb')
-    task.unmapped_blastdb_extra_list = params.get('unmapped_blastdb_extra_list')
-    task.unmapped_len_filter    = params.get('unmapped_len_filter', '500')
-    task.unmapped_ident_filter  = params.get('unmapped_ident_filter', '95')
-    task.preset_path            = params.get('preset_path')
-    task.task_note              = params.get('task_note')
-    task.sample_product_name    = params.get('sample_product_name')
-    task.sample_product_lot     = params.get('sample_product_lot')
-    task.sample_sequencing_date = params.get('sample_sequencing_date')
-    task.sample_note            = params.get('sample_note')
+    # 基礎參數集
+    task_keys = [
+        'ex_r1', 'ex_r2', 'ref', 'threads', 'alns', 'global_trimming', 
+        'remove_host', 'remove_impurities', 'spades_mem', 'spades_mode', 
+        'unmapped_spades_mode', 'unmapped_bbnorm', 'unmapped_bbnorm_target', 
+        'unmapped_bbnorm_min', 'vc_threshold', 'min_vc_score', 'blastdb_path', 
+        'rvdb_anno_path', 'unmapped_assemble', 'unmapped_blastdb', 
+        'unmapped_blastdb_extra_list', 'unmapped_len_filter', 'unmapped_ident_filter', 
+        'preset_path', 'task_note', 'sample_product_name', 'sample_product_lot', 
+        'sample_sequencing_date', 'sample_note'
+    ]
+
+    # 先從恢復的 params 填入
+    for k in task_keys:
+        val = params.get(k)
+        if k == 'alns' and isinstance(val, str):
+            val = val.split(',')
+        setattr(task, k, val)
+
+    # 處理 CLI Override
+    # 只有當使用者明確在命令列輸入該參數時才覆蓋（避免被 argparse 預設值蓋掉）
+    if args:
+        import sys
+        for k in task_keys:
+            cli_flag = '--' + k
+            if cli_flag in sys.argv:
+                new_val = getattr(args, k)
+                if k == 'alns' and isinstance(new_val, str):
+                    new_val = new_val.split(',')
+                setattr(task, k, new_val)
+                logger.info('Retry Override：%s -> %s' % (cli_flag, new_val))
 
     # 狀態欄位預設值
     task.ref_num = 0
     task.impurities_prefilter_num = 0
     task.total_reads_after_fastp  = 0
-    task.with_ref = task.ref not in (None, 'None')
+    task.with_ref = task.ref not in (None, 'None', '')
+    
+    # 強制轉型部分欄位為字串（對齊 new_task 行為）
+    for s_key in ['threads', 'global_trimming', 'spades_mem', 'vc_threshold', 'unmapped_len_filter', 'unmapped_ident_filter']:
+        if getattr(task, s_key) is not None:
+            setattr(task, s_key, str(getattr(task, s_key)))
 
     # 恢復 preset 版本資訊（若 preset 仍可存取）
     if task.preset_path and task.preset_path not in (None, 'None'):
@@ -287,7 +302,7 @@ def _build_task_from_params(task_dir, params):
 # 主入口
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run(task_dir_path):
+def run(task_dir_path, args=None):
     """
     retry 模式主入口。
     於原 task 目錄內重新執行缺失的分析步驟，固定重新產製報告。
@@ -299,7 +314,7 @@ def run(task_dir_path):
 
     # ── 恢復參數並建立 task 物件 ──────────────────────────────────────────
     params = recover_params(task_dir)
-    task   = _build_task_from_params(task_dir, params)
+    task   = _build_task_from_params(task_dir, params, args)
 
     # ── 從 fastp.json 恢復 total_reads_after_fastp ───────────────────────
     fastp_json = task.path.joinpath(task.id, 'reads', 'fastp.json')

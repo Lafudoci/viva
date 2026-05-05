@@ -126,7 +126,7 @@ def main():
     args, unknown = parser.parse_known_args()
     if args.retry is not None:
         logger.info('Retry 模式：%s' % args.retry)
-        retry_task_module.run(args.retry)
+        retry_task_module.run(args.retry, args)
     elif args.single_task:
         new_task.main(sys.argv[1:])
     elif args.task_sheet != None:
