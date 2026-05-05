@@ -235,7 +235,16 @@ def build_draft_genome_seq(task):
     utils.build_json_file(draft_cwd.joinpath('%s_draft_summary.json'%task.id), draft_genome_summary)
 
 
-def run(task):
+def run(task, is_retry=False):
+    # retry 時若 draft_summary.json 已存在則跳過此步驟
+    if is_retry:
+        draft_json = task.path.joinpath(
+            task.id, 'draft_genome', task.id + '_draft_summary.json')
+        if draft_json.is_file():
+            logger.info('[RETRY] variant_calling：已找到 %s，跳過此步驟。' % draft_json.name)
+            return
+        else:
+            logger.info('[RETRY] variant_calling：未找到 draft_summary.json，重新執行此步驟。')
     variant_calling_lofreq(task)
     variant_calling_varscan2(task)
     build_vc_summary_json(task)

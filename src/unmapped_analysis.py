@@ -240,8 +240,23 @@ def blast_hits_anno_finder(db, hit, annotation):
     return hit
 
 
-def run(task):
+def run(task, is_retry=False):
     if task.unmapped_assemble == 'True':
+        # retry 時檢查 contigs.fasta 與 unmapped_analysis.json 是否都存在
+        if is_retry:
+            output_folder_name = '%s_unmapped_spades_%s' % (task.id, task.unmapped_spades_mode)
+            contigs_path = task.path.joinpath(
+                task.id, 'unmapped_analysis', output_folder_name, 'contigs.fasta')
+            json_path = task.path.joinpath(
+                task.id, 'unmapped_analysis', 'unmapped_analysis.json')
+            if contigs_path.is_file() and json_path.is_file():
+                logger.info('[RETRY] unmapped_analysis：contigs.fasta 與 unmapped_analysis.json 已存在，跳過此步驟。')
+                return
+            else:
+                if not contigs_path.is_file():
+                    logger.info('[RETRY] unmapped_analysis：未找到 contigs.fasta，重新執行此步驟。')
+                if not json_path.is_file():
+                    logger.info('[RETRY] unmapped_analysis：未找到 unmapped_analysis.json，重新執行此步驟。')
         contigs = run_de_novo(task)
         if contigs != -1:
             if task.unmapped_blastdb != None:

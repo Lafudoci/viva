@@ -170,8 +170,26 @@ def align_disp(task, aligner):
     elif aligner == 'bwa':
         align_bwa(task)
 
-def run(task):
+def run(task, is_retry=False):
     aligners = task.alns
+    # retry 時檢查所有 aligner x ref 的 BAM 是否都存在
+    if is_retry:
+        all_bam_exist = True
+        for aligner in aligners:
+            for ref_order in range(1, task.ref_num + 1):
+                bam_path = task.path.joinpath(
+                    task.id, 'alignment', aligner,
+                    '%s_ref_%d.sorted.bam' % (task.id, ref_order)
+                )
+                if not bam_path.is_file():
+                    all_bam_exist = False
+                    logger.info('[RETRY] reads_alignment：缺少 %s，重新執行此步驟。' % bam_path.name)
+                    break
+            if not all_bam_exist:
+                break
+        if all_bam_exist:
+            logger.info('[RETRY] reads_alignment：所有 BAM 檔案已存在，跳過此步驟。')
+            return
     for aligner in aligners:
         ref_index(task, aligner)
         align_disp(task, aligner)

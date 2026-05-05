@@ -1,5 +1,6 @@
 import argparse
 import configparser
+import json
 import logging
 import os
 import subprocess
@@ -278,6 +279,42 @@ def main(input_args):
             task.path.joinpath(task.id),
             'Starting pipeline.'
         )
+        # 記錄啟動參數，供日後 retry 恢復使用
+        params_to_log = {
+            'ex_r1': str(task.ex_r1),
+            'ex_r2': str(task.ex_r2),
+            'ref': str(task.ref) if task.ref else None,
+            'threads': task.threads,
+            'alns': ','.join(task.alns),
+            'global_trimming': task.global_trimming,
+            'remove_host': task.remove_host,
+            'remove_impurities': str(task.remove_impurities) if task.remove_impurities else None,
+            'spades_mem': task.spades_mem,
+            'spades_mode': task.spades_mode,
+            'unmapped_spades_mode': task.unmapped_spades_mode,
+            'unmapped_bbnorm': task.unmapped_bbnorm,
+            'unmapped_bbnorm_target': task.unmapped_bbnorm_target,
+            'unmapped_bbnorm_min': task.unmapped_bbnorm_min,
+            'vc_threshold': task.vc_threshold,
+            'min_vc_score': str(task.min_vc_score),
+            'blastdb_path': task.blastdb_path,
+            'rvdb_anno_path': task.rvdb_anno_path,
+            'unmapped_assemble': task.unmapped_assemble,
+            'unmapped_blastdb': task.unmapped_blastdb,
+            'unmapped_blastdb_extra_list': task.unmapped_blastdb_extra_list,
+            'unmapped_len_filter': task.unmapped_len_filter,
+            'unmapped_ident_filter': task.unmapped_ident_filter,
+            'preset_path': task.preset_path,
+            'task_note': task.task_note,
+            'sample_product_name': task.sample_product_name,
+            'sample_product_lot': task.sample_product_lot,
+            'sample_sequencing_date': task.sample_sequencing_date,
+            'sample_note': task.sample_note,
+        }
+        utils.write_log_file(
+            task.path.joinpath(task.id),
+            '[PARAMS] ' + json.dumps(params_to_log, ensure_ascii=False)
+        )
 
 
         db = db_manager.VIVADatabase()
@@ -340,6 +377,13 @@ def main(input_args):
         sys.exit()
 
 
+def retry_task(task_dir_path):
+    """轉接至 retry_task 模組（保留向後相容）。"""
+    import retry_task as _retry
+    return _retry.run(task_dir_path)
+
+
 if __name__ == "__main__":
     import sys
     main(sys.argv[1:])
+

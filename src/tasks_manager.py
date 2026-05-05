@@ -10,6 +10,7 @@ from pathlib import Path
 import new_task
 import utils
 import batch_task_report
+import retry_task as retry_task_module
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -120,8 +121,13 @@ def main():
         '--single_task', help="Run single task.", action='store_true')
     parser.add_argument(
         '--task_sheet', help="Task sheet filename to run with.", default=None)
+    parser.add_argument(
+        '--retry', help="指定 task 目錄路徑，重新執行缺失的分析步驟並重新產製報告。", default=None)
     args, unknown = parser.parse_known_args()
-    if args.single_task:
+    if args.retry is not None:
+        logger.info('Retry 模式：%s' % args.retry)
+        retry_task_module.run(args.retry)
+    elif args.single_task:
         new_task.main(sys.argv[1:])
     elif args.task_sheet != None:
         if input_paths_check(args.task_sheet):
@@ -137,7 +143,7 @@ def main():
             logger.critical('Task sheet was not found.')
             sys.exit(-1)
     else:
-        logger.critical('Must provide a task sheet or use --single_task arg.')
+        logger.critical('Must provide a task sheet, --single_task, or --retry arg.')
         sys.exit(-1)
 
 

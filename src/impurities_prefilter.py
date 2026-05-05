@@ -252,8 +252,20 @@ def impurities_coverage_stat(task):
     utils.build_json_file(task.path.joinpath(
         task.id, 'impurities_prefilter', 'impurities_coverage.json'), cov_dict)
 
-def run(task):
+def run(task, is_retry=False):
     if task.remove_impurities != None:
+        # retry 時若 impurities_remove.json 已存在則跳過此步驟
+        if is_retry:
+            remove_json = task.path.joinpath(task.id, 'impurities_prefilter', 'impurities_remove.json')
+            if remove_json.is_file():
+                logger.info('[RETRY] impurities_prefilter：已找到 impurities_remove.json，跳過此步驟。')
+                meta_json = task.path.joinpath(task.id, 'impurities_prefilter', 'impurities_prefilter_meta.json')
+                if meta_json.is_file():
+                    meta = utils.load_json_file(meta_json)
+                    task.impurities_prefilter_num = int(meta.get('impurities_num', 0))
+                return
+            else:
+                logger.info('[RETRY] impurities_prefilter：未找到 impurities_remove.json，重新執行此步驟。')
         logger.info('Running impurities pre-filter.')
         import_impurities_fasta(task)
         build_impurities_index(task)

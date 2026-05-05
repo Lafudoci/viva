@@ -136,7 +136,19 @@ def ref_import(task):
     utils.build_json_file(imported_ref_meta_path, meta_dict)
 
 
-def run(task):
+def run(task, is_retry=False):
+    # retry 時若 ref.json 已存在則跳過此步驟
+    if is_retry:
+        ref_json_path = task.path.joinpath(task.id, 'reference', task.id + '_ref.json')
+        if ref_json_path.is_file():
+            logger.info('[RETRY] reference_prepare：已找到 %s，跳過此步驟。' % ref_json_path.name)
+            import utils as _u
+            meta = _u.load_json_file(ref_json_path)
+            task.ref_num = int(meta.get('ref_num', 1))
+            task.with_ref = (meta.get('ref_from_user', 'Yes') == 'Yes')
+            return
+        else:
+            logger.info('[RETRY] reference_prepare：未找到 ref.json，重新執行此步驟。')
     if task.with_ref:
         ref_import(task)
     else:
