@@ -59,7 +59,7 @@ def check_deps(task):
         logger.critical('Conda pkg depency check fail.')
         sys.exit(100)
 
-def main(input_args):
+def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--ex_r1', help="Read-R1.")
@@ -125,6 +125,11 @@ def main(input_args):
         '--sample_note', help="Sample note. Anotation purpose only.", default=None)
     parser.add_argument(
         '--auto_cleanup', help="Automatically clean up intermediate files after pipeline finished.", default='True')
+    return parser
+
+
+def main(input_args):
+    parser = get_parser()
     args, unknown = parser.parse_known_args(input_args)
 
     task = Task()

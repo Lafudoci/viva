@@ -116,13 +116,16 @@ def batch_task_viva(task_sheet_dict):
         logger.info('Batch VIVA was finished. Task done: %s/%s'%(len(finished_task_id_list), queue_length))
 
 def main():
-    parser = argparse.ArgumentParser()
+    # 繼承 new_task 的所有參數定義
+    parser = new_task.get_parser()
+    # 新增 tasks_manager 專屬參數
     parser.add_argument(
         '--single_task', help="Run single task.", action='store_true')
     parser.add_argument(
         '--task_sheet', help="Task sheet filename to run with.", default=None)
     parser.add_argument(
         '--retry', help="指定 task 目錄路徑，重新執行缺失的分析步驟並重新產製報告。", default=None)
+    
     args, unknown = parser.parse_known_args()
     if args.retry is not None:
         logger.info('Retry 模式：%s' % args.retry)
