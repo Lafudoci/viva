@@ -102,12 +102,18 @@ sudo docker run -i --rm \
 | 參數 | 說明 | 舉例 |
 | --- | --- | --- |
 | `--threads` | 限定此任務分配能使用的最大 CPU 執行緒數目 (預設為 `6`)。 | `--threads 20` |
-| `--spades_mem` | 限制 `spades` de novo Assemble 與 unmapped Assemble 所佔用的最大記憶體容量 (以 GB 為單位，預設為 `22`)，以避免主機資源耗竭。 | `--spades_mem 32` |
+| `--spades_mem` | 限制 `spades` de novo Assemble 與 unmapped Assemble 所佔用的最大記憶體容量 (以 GB 為單位，預設為 `22`)。 | `--spades_mem 32` |
+| `--spades_mode` | 設定 `spades` 的組裝模式，適用於參考序列與 unmapped 組裝 (預設為 `metaviral`)。 | `--spades_mode rna` |
+| `--auto_cleanup` | 任務成功結束後是否自動呼叫 `cleanup.py` 清理中間暫存檔案 (預設為 `True`)。 | `--auto_cleanup False` |
 
 ### IV. 組裝與 BLAST 未定位序列參數
 | 參數 | 說明 | 舉例 |
 | --- | --- | --- |
 | `--unmapped_assemble` | 設定是否針對未定位序列利用 metaSPAdes 進行組裝 (預設為 `True`)。 | `--unmapped_assemble True` |
+| `--unmapped_spades_mode` | 未定位序列組裝時所使用的 `spades` 模式 (預設為 `meta`)。 | `--unmapped_spades_mode metaviral` |
+| `--unmapped_bbnorm` | 設定是否在未定位序列組裝前，利用 `bbnorm.sh` 進行讀序標規化 (Normalization) 處理 (預設為 `False`)。 | `--unmapped_bbnorm True` |
+| `--unmapped_bbnorm_target` | `bbnorm.sh` 的目標覆蓋深度 (Target Coverage, 預設 `30`)。 | `--unmapped_bbnorm_target 50` |
+| `--unmapped_bbnorm_min` | `bbnorm.sh` 的最低覆蓋深度門檻 (Min Coverage, 預設 `2`)。 | `--unmapped_bbnorm_min 5` |
 | `--blastdb_path` | 主機上自建之 BLAST 資料庫存放目錄。 | `--blastdb_path $HOME/bioapp/blastdb` |
 | `--unmapped_blastdb` | 定義針對未定位的組裝 sequences 或 reads 優先進行比對的專用 BLAST 資料庫，檔名須存在於 `--blastdb_path` 目錄下。 | `--unmapped_blastdb "U-RVDBv30.0.fasta"` |
 | `--unmapped_blastdb_extra_list`| 若需比對多個資料庫，可提供額外之資料庫名稱字串(各名稱以空格隔開)，系統將循序進行比對查詢。 | `--unmapped_blastdb_extra_list "core_nt nt_prok"` |
