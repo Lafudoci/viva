@@ -19,6 +19,7 @@ import impurities_prefilter
 import cleanup
 import db_manager
 import e2e_verifier
+from mock_generator import MockDataGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -125,7 +126,10 @@ def get_parser():
         '--sample_note', help="Sample note. Anotation purpose only.", default=None)
     parser.add_argument(
         '--auto_cleanup', help="Automatically clean up intermediate files after pipeline finished.", default='True')
-
+    parser.add_argument(
+        '--total_reads', help="Total reads for E2E in silico test simulation.", default=100000)
+    parser.add_argument(
+        '--task_id', help="Manually specify task ID.", default=None)
     return parser
 
 
@@ -211,59 +215,79 @@ def fix_permissions(path):
         logger.debug(f"Permission fix skipped for {path}: {e}")
 
 
-def run_e2e_tests(input_args):
-    """執行全量端到端測試並彙總報告"""
-    test_types = ['ref', 'multi_ref', 'rvdb']
-    all_results = []
-    summary_lines = ["# VIVA E2E Test Suite Report\n"]
+def run_e2e_tests(input_args, task_path):
+    """執行新一代 In Silico 端到端測試"""
+    import e2e_test_runner
+    logger.info("===== Starting New In Silico E2E Test =====")
     
-    for t_type in test_types:
-        logger.info(f"===== Starting E2E Sub-test: {t_type} =====")
-        # 複製參數並替換 --test 值
-        sub_args = []
-        skip_next = False
-        for i, arg in enumerate(input_args):
-            if skip_next:
-                skip_next = False
-                continue
-            if arg == '--test':
-                sub_args.append('--test')
-                sub_args.append(t_type)
-                skip_next = True
-            else:
-                sub_args.append(arg)
+    parser = get_parser()
+    args, _ = parser.parse_known_args(input_args)
+    
+    # 建立任務 ID 與目錄
+    task_name = args.prefix if args.prefix != 'newtask' else 'e2e_test'
+    task_id = "%s_%s" % (task_name, time.strftime("%Y%m%d%H%M%S", time.localtime()))
+    task_dir = task_path / task_id
+    task_dir.mkdir(parents=True, exist_ok=True)
+    
+    logger.info(f"E2E mode: Generating mock reads in {task_dir}")
+    
+    preset_info = {
+        "ref": args.ref or str(Path.cwd() / "test_data" / "AC_000008.1.fasta"),
+        "host": args.remove_host,
+        "impurities": args.remove_impurities
+    }
+    
+    # 建構綜合場景
+    gen = MockDataGenerator(task_dir)
+    s_config = {"target": {"path": preset_info["ref"], "ratio": 0.5}}
+    if preset_info["host"]:
+        host_path = e2e_test_runner.get_host_path(preset_info["host"])
+        if host_path:
+            s_config["host"] = {"path": host_path, "ratio": 0.4}
+            s_config["target"]["ratio"] = 0.5
+    if preset_info["impurities"]:
+        s_config["contaminants"] = [{"path": preset_info["impurities"], "ratio": 0.1, "name": "Impurity"}]
+    
+    r1, r2 = gen.generate_scenario(s_config, total_reads=int(args.total_reads))
+    
+    # 準備執行參數，覆蓋原本的 reads 路徑
+    new_args = input_args.copy()
+    # 移除 --test e2e 避免遞迴，直接進入正常執行模式
+    if '--test' in new_args:
+        idx = new_args.index('--test')
+        new_args.pop(idx)
+        new_args.pop(idx)
         
-        if '--test' not in sub_args:
-            sub_args.extend(['--test', t_type])
-            
+    new_args.extend([
+        "--prefix", task_name,
+        "--task_id", task_id,
+        "--ex_r1", str(r1),
+        "--ex_r2", str(r2),
+        "--ref", preset_info["ref"],
+        "--auto_cleanup", "False"
+    ])
+    
+    # 執行主流程
+    actual_task_id = main(new_args)
+    
+    # 驗證
+    if actual_task_id:
         try:
-            task_id = main(sub_args)
-            if task_id:
-                # main 內部現在會自動調用驗證，我們在這裡抓取結果
-                # 這裡為了彙總，我們手動再驗一遍獲取 md
-                _, md = e2e_verifier.run_verification(
-                    task_id, 
-                    Path.cwd().joinpath('tasks'),
-                    Path.cwd().joinpath('test_data', 'expected_results.json')
-                )
-                summary_lines.append(md)
-            else:
-                summary_lines.append(f"### Test Results for {t_type}\n**Overall Status: ⚠️ SKIPPED**\nReason: Test requirement not met (e.g. missing BLASTDB)\n")
-            summary_lines.append("\n---\n")
-        except Exception as e:
-            logger.error(f"E2E Sub-test {t_type} failed: {e}")
-            summary_lines.append(f"### Test Results for {t_type}\n**Overall Status: ❌ CRITICAL FAILURE**\nError: {e}\n")
-            summary_lines.append("\n---\n")
-
-    report_path = Path.cwd().joinpath('tasks', 'e2e_test_report.md')
-    with open(report_path, 'w') as f:
-        f.write('\n'.join(summary_lines))
+            expected_gt = task_dir / "ground_truth.json"
+            report, md = e2e_verifier.run_verification(actual_task_id, task_path, str(expected_gt))
+            with open(task_path.joinpath(actual_task_id, 'verification_report.md'), 'w') as f:
+                f.write(md)
+            logger.info(f"E2E Verification finished for {actual_task_id}")
+        finally:
+            # 確保 E2E 驗證完後，根據原始設定執行清理與權限修復
+            if str(args.auto_cleanup).lower() == 'true':
+                import cleanup
+                logger.info("E2E post-verification cleanup starting...")
+                cleanup.cleanup_task(task_path / actual_task_id, force=True)
+            
+            fix_permissions(task_path / actual_task_id)
     
-    fix_permissions(report_path)
-    fix_permissions(Path.cwd().joinpath('tasks'))
-    
-    logger.info(f"E2E Test Suite finished. Report saved to {report_path}")
-    print(f"\nE2E Test Suite Report generated at: {report_path}")
+    return actual_task_id
 
 
 def main(input_args):
@@ -349,7 +373,7 @@ def main(input_args):
         task.preset_note = config['VERSION']['note']
 
     if args.test == 'e2e':
-        run_e2e_tests(input_args)
+        run_e2e_tests(input_args, task.path)
         return
 
     if args.test != None:
@@ -461,12 +485,23 @@ def main(input_args):
             logger.error('Impurities source file not found. Exiting pipeline.')
             sys.exit()
 
-    logger.info('Checking reads files.')
+    # E2E 測試模式：由 run_e2e_tests 接管
+    if args.test == 'e2e':
+        run_e2e_tests(input_args, task.path)
+        return
+
     if check_reads_file(task) != -1:
-        task.id = "%s_%s" % (task.name, time.strftime(
-            "%Y%m%d%H%M%S", time.localtime()))
+        if args.task_id:
+            task.id = args.task_id
+        else:
+            task.id = "%s_%s" % (task.name, time.strftime(
+                "%Y%m%d%H%M%S", time.localtime()))
+        
+        # 如果目錄已存在（例如 E2E 模式），則不重複建立
+        if not task.path.joinpath(task.id).exists():
+            Path.mkdir(task.path.joinpath(task.id), parents=True)
+        
         logger.info('Creating new task %s.' % task.id)
-        Path.mkdir(task.path.joinpath(task.id), parents=True)
         logger.info('Starting pipeline.')
         utils.write_log_file(
             task.path.joinpath(task.id),
@@ -509,7 +544,7 @@ def main(input_args):
             db.update_task_status(task.id, 'Completed')
 
             # Auto cleanup
-            if task.auto_cleanup == 'True':
+            if str(task.auto_cleanup).lower() == 'true':
                 logger.info('Starting auto cleanup.')
                 utils.write_log_file(
                     task.path.joinpath(task.id),
@@ -526,24 +561,24 @@ def main(input_args):
             logger.error(f'Pipeline error: {e}')
             db.update_task_status(task.id, 'Failed', error_log=str(e))
             raise e
+        finally:
+            # 測試模式下自動執行驗證 (如果是 e2e 模式會由外層接管，這裡處理其他測試)
+            if args.test != None and args.test != 'e2e':
+                logger.info("Test mode detected, performing auto-verification.")
+                expected_json = getattr(task, 'expected_json', Path.cwd().joinpath('test_data', 'expected_results.json'))
+                report, md = e2e_verifier.run_verification(task.id, task.path, expected_json)
+                with open(task.path.joinpath(task.id, 'verification_report.md'), 'w') as f:
+                    f.write(md)
+                if not report['passed']:
+                    logger.error("Verification failed!")
+                else:
+                    logger.info("Verification passed.")
 
-        # 測試模式下自動執行驗證
-        if args.test != None:
-            logger.info("Test mode detected, performing auto-verification.")
-            expected_json = Path.cwd().joinpath('test_data', 'expected_results.json')
-            report, md = e2e_verifier.run_verification(task.id, task.path, expected_json)
-            # 將驗證結果寫入任務目錄
-            with open(task.path.joinpath(task.id, 'verification_report.md'), 'w') as f:
-                f.write(md)
-            if not report['passed']:
-                logger.error("Verification failed!")
-            else:
-                logger.info("Verification passed.")
-
-        # 權限修復
-        fix_permissions(task.path.joinpath(task.id))
-        if task.blastdb_path:
-            fix_permissions(task.blastdb_path)
+            # 權限修復
+            if task.id:
+                fix_permissions(task.path.joinpath(task.id))
+            if task.blastdb_path:
+                fix_permissions(task.blastdb_path)
 
         return task.id
 

@@ -206,7 +206,46 @@ sudo docker run -i --rm \
 
 ---
 
-## 6. 任務狀態追蹤與資料庫管理 (Database Tracking & Management)
+## 6. 端到端 (E2E) 測試與驗證 (E2E Testing & Verification)
+
+VIVA 內建了 In Silico 模擬與驗證功能，可用於開發測試、流程校準或環境驗證。此模式會自動生成模擬讀序 (Mock Reads)，執行完整的分析流程，並將結果與預期的真實數據 (Ground Truth) 進行一致性比對。
+
+### 執行方式
+
+在執行指令中加入 `--test e2e` 參數即可啟動。
+
+```bash
+sudo docker run -i --rm \
+  -v $(pwd)/tasks:/app/tasks \
+  -v $(pwd)/genomes:/app/genomes \
+  -v $(pwd)/blastdb:/app/blastdb \
+  -v /home:/home \
+  viva-test \
+  --single_task \
+  --test e2e \
+  --prefix e2e_verification
+```
+
+### 模擬場景配置
+系統會根據輸入參數自動調整模擬讀序的比例：
+- **預設場景**：50% 目標病原體序列，50% 隨機序列 (Noise)。
+- **包含宿主**：若指定 `--remove_host`，則自動配置 50% 目標序列、40% 宿主序列、10% 隨機序列。
+- **包含不純物**：若指定 `--remove_impurities`，則會加入額外 10% 的不純物序列。
+
+### 測試產出與驗證項
+1. **驗證報告 (`verification_report.md`)**：存放在任務目錄下，總結各項指標是否通過。
+2. **一致性檢查 (Consistency Check)**：
+    - **Target Mapping Rate**：確認目標序列的比對率是否符合模擬比例（誤差容許範圍 ±5%）。
+    - **Host Removal Efficiency**：確認宿主過濾率是否達到 90% 以上。
+3. **基準數據 (`ground_truth.json`)**：詳細記錄模擬時的讀序來源分佈，方便追溯。
+
+### 相關參數
+- `--total_reads`：設定模擬生成的總讀序數（預設 `100,000`）。
+- `--auto_cleanup`：預設為 `True`。在 E2E 模式下，系統會確保在驗證完成並產出報告後才執行清理動作。
+
+---
+
+## 7. 任務狀態追蹤與資料庫管理 (Database Tracking & Management)
 
 VIVA 在執行時，會自動於 `tasks` 工作目錄下建立並維護一個輕量化 SQLite 關聯式資料庫 (`viva_results.db`)。這是獨立於 Markdown 與 CSV 報告外的資料儲存管道，用以「即時」追蹤任務進度並結構化儲存所有分析結果，以利未來快速篩選、跨樣本分析或是介接如 Streamlit, Metabase 等視覺化儀表板 (Dashboard)。
 
@@ -224,7 +263,7 @@ VIVA 在執行時，會自動於 `tasks` 工作目錄下建立並維護一個輕
 
 ---
 
-## 7. 輔助工具集 (Tools)
+## 8. 輔助工具集 (Tools)
 
 專案的 `tools/` 目錄收納了獨立於主分析流程外的輔助腳本與工具，用以查詢、匯入及視覺化資料庫中的結果。
 

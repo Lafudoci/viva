@@ -86,6 +86,12 @@ class E2EVerifier:
             # 根據任務名稱前綴尋找對應的期望值 (例如 test_run)
             # 因為 task_id 包含時間戳，我們取前綴
             task_prefix = '_'.join(self.task_id.split('_')[:-1])
+            
+            # 判斷是否為 ground_truth.json (in silico 產出的)
+            if "sources" in expected_data and "total_reads" in expected_data:
+                self._check_ground_truth_consistency(expected_data, current_data)
+                return
+
             expected = expected_data.get(task_prefix)
             
             if not expected:
@@ -130,6 +136,56 @@ class E2EVerifier:
                 "item": "Consistency Check Execution",
                 "status": "FAIL",
                 "detail": str(e)
+            })
+
+    def _check_ground_truth_consistency(self, gt, current):
+        """比對模擬產生的 Ground Truth 與實際執行結果"""
+        # 1. Target Mapping Rate
+        if "target" in gt["sources"]:
+            exp_ratio = gt["sources"]["target"]["ratio"] * 100
+            # summary['aln']['mapped_rate']['bowtie2']['1'] -> "99.85 %"
+            curr_rate_str = current.get('aln', {}).get('mapped_rate', {}).get('bowtie2', {}).get('1', '0 %')
+            curr_rate = float(curr_rate_str.replace('%', '').strip())
+            
+            # 容許誤差 5% (模擬過程中的隨機性以及去宿主/過濾的影響)
+            passed = abs(curr_rate - exp_ratio) < 5.0
+            self.results['consistency'].append({
+                "item": "Target Mapping Rate (BT2)",
+                "status": "PASS" if passed else "FAIL",
+                "detail": f"Expected: ~{exp_ratio:.2f}%, Found: {curr_rate}%"
+            })
+
+        # 2. Host Removal Efficiency
+        if "host" in gt["sources"]:
+            host_reads = gt["sources"]["host"]["expected_reads"]
+            removed_reads = current.get('remove_genome', {}).get('mapped_reads', 0)
+            # 檢查是否至少移除了 90% 的模擬宿主讀序
+            efficiency = (removed_reads / host_reads) * 100 if host_reads > 0 else 100
+            passed = efficiency > 90.0
+            self.results['consistency'].append({
+                "item": "Host Removal Efficiency",
+                "status": "PASS" if passed else "FAIL",
+                "detail": f"Removed: {removed_reads}/{host_reads} ({efficiency:.2f}%)"
+            })
+
+        # 3. Non-targeted Discovery (BLAST)
+        contaminants = [s for s in gt["sources"] if s.startswith("contaminant_")]
+        if contaminants:
+            unmapped_hits = current.get('unmapped_analysis', {})
+            # 只要有找到任何一個模擬的污染物關鍵字在 BLAST 結果中
+            found_count = 0
+            for c_name in contaminants:
+                clean_name = c_name.replace("contaminant_", "")
+                for contig in unmapped_hits:
+                    if clean_name.lower() in str(unmapped_hits[contig]).lower():
+                        found_count += 1
+                        break
+            
+            passed = found_count > 0
+            self.results['consistency'].append({
+                "item": "Non-targeted Discovery",
+                "status": "PASS" if passed else "FAIL",
+                "detail": f"Found {found_count}/{len(contaminants)} simulated contaminants"
             })
 
     def get_markdown_summary(self):
