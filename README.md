@@ -89,6 +89,7 @@ sudo docker run -i --rm \
 | `--prefix` | 此單次任務的總命名前綴，決定最終分析資料夾或檔案名稱。 | `--prefix TestSample001` |
 | `--ex_r1` | 外部 R1 讀序的檔案絕對路徑 (支援 `fastq.gz` 格式)。 | `--ex_r1 /data/sample_R1.fastq.gz` |
 | `--ex_r2` | 外部 R2 讀序的檔案絕對路徑。 | `--ex_r2 /data/sample_R2.fastq.gz` |
+| `--task_id` | 手動指定任務 ID。若不提供，系統將根據 `--prefix` 與時間戳記自動產生。 | `--task_id MyTask_001` |
 
 ### II. 目標讀序定位參數 (Reference & Filtration)
 | 參數 | 說明 | 舉例 |
@@ -240,8 +241,15 @@ sudo docker run -i --rm \
 3. **基準數據 (`ground_truth.json`)**：詳細記錄模擬時的讀序來源分佈，方便追溯。
 
 ### 相關參數
-- `--total_reads`：設定模擬生成的總讀序數（預設 `100,000`）。
-- `--auto_cleanup`：預設為 `True`。在 E2E 模式下，系統會確保在驗證完成並產出報告後才執行清理動作。
+- `--test e2e`：(必要) 啟動端到端 In Silico 測試模式。
+- `--total_reads`：設定模擬生成的總讀序數（預設 `100,000`）。系統會根據此總數依比例分配目標序列、宿主序列與隨機序列。
+- `--prefix`：設定測試任務的命名前綴 (預設為 `e2e_test`)。
+- `--ref`：(選擇性) 指定測試所使用的目標參考序列。若未指定，系統將使用預設的腺病毒 (AdV) 序列。
+- `--remove_host`：(選擇性) 指定測試中欲加入的宿主序列。若提供，則模擬讀序中會包含約 40% 的該宿主序列。
+- `--remove_impurities`：(選擇性) 指定測試中欲加入的不純物序列。若提供，則會加入約 10% 的該不純物序列。
+- `--preset_path`：(選擇性) 載入指定的 `.ini` 設定檔。在 E2E 模式下，系統會從設定檔中讀取參考序列、宿主及不純物路徑作為模擬來源。
+- `--auto_cleanup`：預設為 `True`。在 E2E 模式下，系統會確保在驗證完成並產出 `verification_report.md` 後，才根據此參數決定是否執行清理動作。
+- `--task_id`：手動指定測試任務 ID。
 
 ---
 

@@ -231,10 +231,23 @@ def run_e2e_tests(input_args, task_path):
     
     logger.info(f"E2E mode: Generating mock reads in {task_dir}")
     
+    # 優先從命令列讀取，若無則嘗試從 preset 讀取，最後才使用預設值
+    p_ref = args.ref
+    p_host = args.remove_host
+    p_imp = args.remove_impurities
+
+    if args.preset_path:
+        config = configparser.ConfigParser(allow_no_value=True)
+        config.read(args.preset_path)
+        if 'PRESET' in config:
+            p_ref = p_ref or config.get('PRESET', 'ref', fallback=None)
+            p_host = p_host or config.get('PRESET', 'remove_host', fallback=None)
+            p_imp = p_imp or config.get('PRESET', 'remove_impurities', fallback=None)
+
     preset_info = {
-        "ref": args.ref or str(Path.cwd() / "test_data" / "AC_000008.1.fasta"),
-        "host": args.remove_host,
-        "impurities": args.remove_impurities
+        "ref": p_ref or str(Path.cwd() / "test_data" / "AC_000008.1.fasta"),
+        "host": p_host,
+        "impurities": p_imp
     }
     
     # 建構綜合場景
