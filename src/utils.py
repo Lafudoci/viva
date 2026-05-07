@@ -253,71 +253,77 @@ def md5_check(file_path, md5_string):
 
 
 def setup_blastdb(blastdb_path, blastdb_name):
-    auto_rvdb_fasta_ver_list = ['U-RVDBv29.0.fasta', 'C-RVDBv29.0.fasta']
+    if blastdb_name == None:
+        return -1
+    
+    # 只要是 RVDB 格式都支援自動設定
+    is_rvdb = blastdb_name.startswith('U-RVDB') or blastdb_name.startswith('C-RVDB')
+    
     auto_rvdb_fastagz_md5_dict = {
         'C-RVDBv29.0.fasta.gz': 'deb369751ea32c723f640ee192688e48',
         'U-RVDBv29.0.fasta.gz': 'e6352c74dc691a600e830bceca650c3a'
     }
+    
     try:
         if sys_deps_check(['wget', 'gunzip', 'makeblastdb']) == -1:
             return -1
-        if blastdb_path != None:
-            # use coustom blastdb
-            # copy n modify BLASDB env
-            m_env = os.environ.copy()
+            
+        m_env = os.environ.copy()
+        if blastdb_path:
             m_env['BLASTDB'] = blastdb_path
-            if subprocess.run(['blastdbcmd', '-db', blastdb_name, '-info'], env=m_env).returncode == 0:
-                logger.info('blastdb %s at %s exists.' %
-                            (blastdb_name, blastdb_path))
-                return
-            else:
-                logger.info('blastdb %s at %s not found.' %
-                            (blastdb_name, blastdb_path))
-                return -1
         else:
-            # check built-in app/blastdb
-            if subprocess.run(['blastdbcmd', '-db', blastdb_name, '-info']).returncode == 0:
-                logger.info('blastdb %s at app/blastdb exists.' %
-                            (blastdb_name))
-                return
-            else:
-                logger.info('blastdb %s at app/blastdb not found.' %
-                            (blastdb_name))
-                # if use rvdb then go setup, else then exit
-                if blastdb_name in auto_rvdb_fasta_ver_list:
-                    if Path("/app/blastdb_arch/%s.gz" % blastdb_name).is_file():
-                        logger.info('blastdb archive gz exists.')
-                    else:
-                        download_rvdb(blastdb_name)
-                    # check md5 hash
-                    if md5_check(Path("/app/blastdb_arch/%s.gz" % blastdb_name),
-                                 auto_rvdb_fastagz_md5_dict[blastdb_name+'.gz']) == -1:
-                        return -1
-                    # decompress
-                    decompress_rvdb(blastdb_name)
-                    # build blastdb
-                    Path.mkdir(Path("/app/blastdb"),
-                               parents=True, exist_ok=True)
-                    logger.info('Building blastdb')
-                    subprocess.run(
-                        [
-                            'makeblastdb',
-                            '-in',
-                            blastdb_name,
-                            '-blastdb_version',
-                            '5',
-                            '-title',
-                            'Reference Viral DataBase (%s)' % blastdb_name,
-                            '-dbtype',
-                            'nucl'
-                        ],
-                        check=True,
-                        cwd='/app/blastdb')
-                else:
-                    logger.error('%s not found in app/blastdb' % blastdb_name)
+            m_env['BLASTDB'] = "/app/blastdb:" + m_env.get('BLASTDB', '')
+
+        # 1. 檢查是否已經建立索引
+        if subprocess.run(['blastdbcmd', '-db', blastdb_name, '-info'], env=m_env, capture_output=True).returncode == 0:
+            logger.info(f'blastdb {blastdb_name} is ready and indexed.')
+            return
+            
+        # 2. 如果沒索引，嘗試尋找原始檔進行建立
+        search_dir = Path(blastdb_path) if blastdb_path else Path("/app/blastdb")
+        fasta_file = search_dir / blastdb_name
+        gz_file = search_dir / (blastdb_name + '.gz')
+        
+        # 如果是預設路徑且檔案不存在，嘗試處理 RVDB 下載
+        if not blastdb_path and not fasta_file.exists() and not gz_file.exists():
+            if is_rvdb:
+                arch_gz = Path("/app/blastdb_arch") / (blastdb_name + ".gz")
+                if not arch_gz.is_file():
+                    download_rvdb(blastdb_name)
+                
+                expected_md5 = auto_rvdb_fastagz_md5_dict.get(blastdb_name + '.gz')
+                if expected_md5 and md5_check(arch_gz, expected_md5) == -1:
                     return -1
-    except subprocess.CalledProcessError as e:
-        logger.error('blastdb setup error: %s.' % str(e))
+                
+                Path.mkdir(search_dir, parents=True, exist_ok=True)
+                with open(fasta_file, 'w') as f:
+                    subprocess.run(['gunzip', '-c', str(arch_gz)], stdout=f)
+            else:
+                logger.error(f"BLASTDB {blastdb_name} not found in {search_dir}")
+                return -1
+        
+        # 如果只有 .gz，先解壓
+        if not fasta_file.exists() and gz_file.exists():
+            logger.info(f"Decompressing {gz_file}...")
+            # 解壓到當前目錄
+            subprocess.run(['gunzip', '-k', str(gz_file)], check=True)
+            
+        # 建立索引
+        if fasta_file.exists():
+            logger.info(f"Building index for {blastdb_name}...")
+            subprocess.run([
+                'makeblastdb', '-in', str(fasta_file),
+                '-dbtype', 'nucl',
+                '-out', str(search_dir / blastdb_name),
+                '-blastdb_version', '5'
+            ], check=True)
+            return
+        else:
+            logger.error(f"Cannot find fasta file to build index for {blastdb_name}")
+            return -1
+
+    except Exception as e:
+        logger.error(f'Error setting up blastdb: {e}')
         return -1
 
 

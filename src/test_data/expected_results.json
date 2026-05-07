@@ -1,0 +1,18 @@
+{
+    "test_ref": {
+        "mapping_rate_bt2": 99.85,
+        "variant_count": 0
+    },
+    "test_multi_ref": {
+        "mapping_rate_bt2": 99.85,
+        "variant_count": 0
+    },
+    "test_rvdb": {
+        "mapping_rate_bt2": 99.85,
+        "variant_count": 0
+    },
+    "test_run": {
+        "mapping_rate_bt2": 99.85,
+        "variant_count": 0
+    }
+}

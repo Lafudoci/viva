@@ -16,8 +16,9 @@ import variant_calling
 import report_generator
 import summary_generator
 import impurities_prefilter
-import db_manager
 import cleanup
+import db_manager
+import e2e_verifier
 
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ def check_ref_file(task):
 
 
 def check_deps(task):
-    sys_deps = ['wget', 'git', 'apt', 'conda', 'python', 'gzip', 'makeblastdb']
+    sys_deps = ['wget', 'git', 'apt', 'conda', 'python3', 'gzip', 'makeblastdb']
     if utils.sys_deps_check(sys_deps) == -1:
         logger.critical('System depency check fail.')
         sys.exit(100)
@@ -58,7 +59,7 @@ def check_deps(task):
         logger.critical('Conda pkg depency check fail.')
         sys.exit(100)
 
-def main(input_args):
+def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--ex_r1', help="Read-R1.")
@@ -124,6 +125,149 @@ def main(input_args):
         '--sample_note', help="Sample note. Anotation purpose only.", default=None)
     parser.add_argument(
         '--auto_cleanup', help="Automatically clean up intermediate files after pipeline finished.", default='True')
+
+    return parser
+
+
+def get_latest_rvdb_files(blastdb_path):
+    """偵測 blastdb_path 中版號最高的 RVDB 檔案"""
+    import re
+    if not blastdb_path:
+        return None, None, None
+    
+    p = Path(blastdb_path)
+    if not p.is_dir():
+        return None, None, None
+    
+    # 搜尋 [U|C]-RVDBvXX.0.fasta (包含 .gz)
+    fasta_pattern = re.compile(r'([UC])-RVDBv(\d+)\.0\.fasta(?:\.gz)?$')
+    # 搜尋包含 RVDBvXX 且有 annotation 字樣的 .tab 檔案
+    anno_pattern = re.compile(r'.*RVDBv(\d+).*[Aa]nnotation.*\.tab')
+    
+    max_ver = -1
+    best_fasta = None
+    
+    # 優先權：版號大 > U-RVDB > C-RVDB
+    # 先找出最高版號
+    for f in p.glob('*RVDBv*.0.fasta*'):
+        match = fasta_pattern.match(f.name)
+        if match:
+            ver = int(match.group(2))
+            if ver > max_ver:
+                max_ver = ver
+    
+    if max_ver != -1:
+        # 在最高版號中挑選 U (優先) 或 C，且必須符合正則表達式（排除 .nhr 等）
+        for f in p.glob(f'*RVDBv{max_ver}.0.fasta*'):
+            if fasta_pattern.match(f.name):
+                if f.name.startswith('U-'):
+                    best_fasta = f.name
+                    break
+                elif f.name.startswith('C-'):
+                    best_fasta = f.name
+        
+        if best_fasta:
+            # 檔名處理：如果是 .gz，回傳解壓後的名稱供 blastdbcmd 使用
+            clean_fasta_name = best_fasta.replace('.gz', '')
+            
+            # 尋找對應版號的 annotation
+            best_anno = None
+            for f in p.glob(f'*RVDBv{max_ver}*[Aa]nnotation*.tab*'):
+                best_anno = str(f.absolute())
+                break
+            
+            # 尋找額外的 C-RVDB (若目前是 U)
+            best_extra = None
+            if best_fasta.startswith('U-'):
+                c_rvdb_name = f'C-RVDBv{max_ver}.0.fasta'
+                if (p / c_rvdb_name).exists() or (p / (c_rvdb_name + '.gz')).exists():
+                    best_extra = c_rvdb_name
+                
+            return clean_fasta_name, best_anno, best_extra
+    
+    return None, None, None
+
+
+def fix_permissions(path):
+    """將路徑下的所有檔案權限改回與父目錄一致 (解決 Docker root 權限問題)"""
+    import os
+    import subprocess
+    try:
+        # 嘗試從 /app/tasks 或傳入路徑的父目錄獲取宿主機使用者的 UID/GID
+        target_path = Path(path)
+        if not target_path.exists():
+            return
+            
+        base_dir = '/app/tasks' if os.path.exists('/app/tasks') else str(target_path.parent)
+        stat_info = os.stat(base_dir)
+        uid = stat_info.st_uid
+        gid = stat_info.st_gid
+        
+        # 只有在目前是 root 的情況下才需要改權限
+        if os.getuid() == 0:
+            subprocess.run(['chown', '-R', f'{uid}:{gid}', str(target_path)], check=True)
+            logger.info(f"Fixed permissions for {target_path} to {uid}:{gid}")
+    except Exception as e:
+        logger.debug(f"Permission fix skipped for {path}: {e}")
+
+
+def run_e2e_tests(input_args):
+    """執行全量端到端測試並彙總報告"""
+    test_types = ['ref', 'multi_ref', 'rvdb']
+    all_results = []
+    summary_lines = ["# VIVA E2E Test Suite Report\n"]
+    
+    for t_type in test_types:
+        logger.info(f"===== Starting E2E Sub-test: {t_type} =====")
+        # 複製參數並替換 --test 值
+        sub_args = []
+        skip_next = False
+        for i, arg in enumerate(input_args):
+            if skip_next:
+                skip_next = False
+                continue
+            if arg == '--test':
+                sub_args.append('--test')
+                sub_args.append(t_type)
+                skip_next = True
+            else:
+                sub_args.append(arg)
+        
+        if '--test' not in sub_args:
+            sub_args.extend(['--test', t_type])
+            
+        try:
+            task_id = main(sub_args)
+            if task_id:
+                # main 內部現在會自動調用驗證，我們在這裡抓取結果
+                # 這裡為了彙總，我們手動再驗一遍獲取 md
+                _, md = e2e_verifier.run_verification(
+                    task_id, 
+                    Path.cwd().joinpath('tasks'),
+                    Path.cwd().joinpath('test_data', 'expected_results.json')
+                )
+                summary_lines.append(md)
+            else:
+                summary_lines.append(f"### Test Results for {t_type}\n**Overall Status: ⚠️ SKIPPED**\nReason: Test requirement not met (e.g. missing BLASTDB)\n")
+            summary_lines.append("\n---\n")
+        except Exception as e:
+            logger.error(f"E2E Sub-test {t_type} failed: {e}")
+            summary_lines.append(f"### Test Results for {t_type}\n**Overall Status: ❌ CRITICAL FAILURE**\nError: {e}\n")
+            summary_lines.append("\n---\n")
+
+    report_path = Path.cwd().joinpath('tasks', 'e2e_test_report.md')
+    with open(report_path, 'w') as f:
+        f.write('\n'.join(summary_lines))
+    
+    fix_permissions(report_path)
+    fix_permissions(Path.cwd().joinpath('tasks'))
+    
+    logger.info(f"E2E Test Suite finished. Report saved to {report_path}")
+    print(f"\nE2E Test Suite Report generated at: {report_path}")
+
+
+def main(input_args):
+    parser = get_parser()
     args, unknown = parser.parse_known_args(input_args)
 
     task = Task()
@@ -204,24 +348,70 @@ def main(input_args):
         task.preset_author = config['VERSION']['author']
         task.preset_note = config['VERSION']['note']
 
+    if args.test == 'e2e':
+        run_e2e_tests(input_args)
+        return
+
     if args.test != None:
         task.name = 'test_run'
         task.ex_r1 = Path.cwd().joinpath('test_data', 'AdV_R1.fastq.gz')
         task.ex_r2 = Path.cwd().joinpath('test_data', 'AdV_R2.fastq.gz')
         if args.test == 'ref':
+            task.name = 'test_ref'
             task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
             task.remove_impurities = Path.cwd().joinpath('test_data', 'impure_test.fasta')
         elif args.test == 'multi_ref':
+            task.name = 'test_multi_ref'
             task.ref = Path.cwd().joinpath('test_data', 'adv_multi_ref.fasta')
         elif args.test == 'denovo':
+            task.name = 'test_denovo'
             task.remove_host = 'human'
             task.ref = None
+            
+            # De novo mode requires a BLASTDB to pick a reference.
+            import glob
+            search_paths = ['/app/blastdb', os.path.expanduser('~/bioapp/blastdb')]
+            search_paths.extend(glob.glob('/home/*/bioapp/blastdb'))
+            
+            found_db = False
+            for sp in search_paths:
+                fasta, anno, extra = get_latest_rvdb_files(sp)
+                if fasta:
+                    task.blastdb_path = sp
+                    task.unmapped_blastdb = fasta
+                    task.rvdb_anno_path = anno
+                    logger.info(f"Detected latest RVDB version for denovo test at {sp}: {fasta}")
+                    found_db = True
+                    break
+            
+            if not found_db:
+                logger.warning("No BLASTDB found for denovo test. Skipping this test.")
+                return None
+                
         elif args.test == 'rvdb':
+            task.name = 'test_rvdb'
             task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
-            home_dir = os.path.expanduser('~')
-            task.blastdb_path = os.path.join(home_dir, 'bioapp/blastdb')
-            task.rvdb_anno_path = os.path.join(home_dir, 'bioapp/blastdb/RVDBv29_annotation_Aug2024.tab')
-            task.unmapped_blastdb = 'C-RVDBv29.0.fasta'
+            
+            # 自動偵測最新版 RVDB
+            import glob
+            search_paths = ['/app/blastdb', os.path.expanduser('~/bioapp/blastdb')]
+            search_paths.extend(glob.glob('/home/*/bioapp/blastdb'))
+            
+            found_db = False
+            for sp in search_paths:
+                fasta, anno, extra = get_latest_rvdb_files(sp)
+                if fasta:
+                    task.blastdb_path = sp
+                    task.unmapped_blastdb = fasta
+                    task.rvdb_anno_path = anno
+                    task.unmapped_blastdb_extra_list = f"{extra} core_nt" if extra else "core_nt"
+                    logger.info(f"Detected latest RVDB version at {sp}: {fasta}")
+                    found_db = True
+                    break
+            
+            if not found_db:
+                logger.warning("No BLASTDB found for rvdb test. Skipping this test.")
+                return None
 
 
     if task.unmapped_blastdb != None:
@@ -252,9 +442,13 @@ def main(input_args):
         logger.info('Input reference not provided. Will go de novo')
 
     if task.with_ref == False:
-        logger.info('Checking BlastDB.')
-        if utils.setup_blastdb(task.blastdb_path, task.unmapped_blastdb) == -1:
-            logger.error('BlastDB setup error. Exiting pipeline.')
+        if task.unmapped_blastdb != None:
+            logger.info('Checking BlastDB.')
+            if utils.setup_blastdb(task.blastdb_path, task.unmapped_blastdb) == -1:
+                logger.error('BlastDB setup error. Exiting pipeline.')
+                sys.exit()
+        else:
+            logger.critical('BLASTDB is required for de novo mode. Please provide --unmapped_blastdb.')
             sys.exit()
 
     if task.remove_host != None:
@@ -270,7 +464,7 @@ def main(input_args):
     logger.info('Checking reads files.')
     if check_reads_file(task) != -1:
         task.id = "%s_%s" % (task.name, time.strftime(
-            "%Y%m%d%H%M", time.localtime()))
+            "%Y%m%d%H%M%S", time.localtime()))
         logger.info('Creating new task %s.' % task.id)
         Path.mkdir(task.path.joinpath(task.id), parents=True)
         logger.info('Starting pipeline.')
@@ -332,6 +526,24 @@ def main(input_args):
             logger.error(f'Pipeline error: {e}')
             db.update_task_status(task.id, 'Failed', error_log=str(e))
             raise e
+
+        # 測試模式下自動執行驗證
+        if args.test != None:
+            logger.info("Test mode detected, performing auto-verification.")
+            expected_json = Path.cwd().joinpath('test_data', 'expected_results.json')
+            report, md = e2e_verifier.run_verification(task.id, task.path, expected_json)
+            # 將驗證結果寫入任務目錄
+            with open(task.path.joinpath(task.id, 'verification_report.md'), 'w') as f:
+                f.write(md)
+            if not report['passed']:
+                logger.error("Verification failed!")
+            else:
+                logger.info("Verification passed.")
+
+        # 權限修復
+        fix_permissions(task.path.joinpath(task.id))
+        if task.blastdb_path:
+            fix_permissions(task.blastdb_path)
 
         return task.id
 
