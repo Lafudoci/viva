@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BLAST 結果交叉比對工具 v3.1</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        
+        /* 自定義 Tooltip */
+        .has-tooltip {
+            position: relative; /* 讓絕對定位的偽元素以此為基準 */
+            cursor: help;
+        }
+        .has-tooltip:hover::after {
+            content: attr(data-annotation);
+            position: absolute;
+            bottom: 100%; /* 顯示在上方 */
+            left: 0;
+            background-color: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: pre-wrap; /* 允許換行 */
+            z-index: 9999; /* 確保最上層 */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            min-width: 250px;
+            max-width: 400px;
+            text-align: left;
+            line-height: 1.5;
+            pointer-events: none; /* 防止遮擋滑鼠事件 */
+            margin-bottom: 5px; /* 與文字保持一點距離 */
+        }
+        /* 增加一個小箭頭 */
+        .has-tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 20px;
+            margin-bottom: -5px; /* 微調位置 */
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+            z-index: 9999;
+        }
+
+        /* 表格樣式 */
+        th, td { vertical-align: middle; font-size: 0.85rem; }
+        
+        /* 描述文字寬度限制 (內層) */
+        .desc-text {
+            max-width: 450px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            display: block;
+        }
+        
+        /* 狀態顏色 (應用於儲存格 Cell) */
+        .cell-annot { background-color: #fee2e2 !important; } /* 紅色 (Annotation) */
+        .cell-non-viral { background-color: #ffedd5 !important; } /* 橘色 (非病毒) */
+        
+        /* 狀態顏色 (應用於整列 Row - 作為底層背景) */
+        .match-row { background-color: #d1fae5; } /* 綠色 (Accession 一致) */
+        
+        /* 連結樣式 */
+        .acc-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .acc-link:hover {
+            text-decoration: underline;
+            color: #1d4ed8;
+        }
+
+        .sidebar { min-width: 340px; max-width: 340px; height: 100vh; overflow-y: auto; }
+        .main-content { height: 100vh; overflow-y: auto; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- 左側控制面板 -->
+    <aside class="sidebar bg-white shadow-lg p-5 flex flex-col gap-4 z-10 border-r">
+        <div class="mb-1">
+            <h1 class="text-xl font-bold text-gray-800">BLAST 結果交叉比對 <span class="text-xs bg-slate-800 text-white px-1 rounded">v3.1</span></h1>
+        </div>
+
+        <!-- 1. 輸入報告 -->
+        <div class="border rounded p-4 bg-gray-50">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="bg-slate-800 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">1</span>
+                <h2 class="font-bold text-gray-700">輸入報告</h2>
+            </div>
+            <label class="block mb-2 text-xs text-gray-500">請選擇 .md 或 .txt 報告檔案</label>
+            <input type="file" id="fileInput" accept=".md,.txt" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer"/>
+            <div id="fileStatus" class="text-xs text-green-600 mt-2 font-bold hidden">已讀取並解析完畢！</div>
+        </div>
+
+        <!-- 2. 比對設定 -->
+        <div class="border rounded p-4 bg-gray-50 flex-grow flex flex-col">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
+                <h2 class="font-bold text-gray-700">比對設定</h2>
+            </div>
+
+            <label class="block text-sm font-medium text-blue-700 mb-1">基準資料庫 (Base)</label>
+            <select id="baseDbSelect" class="w-full border border-blue-300 rounded p-2 text-sm mb-4 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="">(等待檔案上傳)</option>
+            </select>
+
+            <label class="block text-sm font-medium text-green-700 mb-1">對照資料庫 (Compare)</label>
+            <select id="compareDbSelect" class="w-full border border-green-300 rounded p-2 text-sm mb-4 bg-white focus:ring-2 focus:ring-green-500 outline-none">
+                <option value="">(等待檔案上傳)</option>
+            </select>
+
+            <!-- Filters -->
+            <div class="space-y-4 mt-2 border-t pt-4 flex-grow">
+                <h3 class="text-xs font-bold text-gray-500 uppercase">過濾條件</h3>
+                
+                <div>
+                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Min Query Len</span>
+                        <span id="val-len" class="font-mono">0</span>
+                    </div>
+                    <input type="range" id="filterLen" min="0" max="2000" step="50" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="document.getElementById('val-len').innerText = this.value">
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Min Identity (%)</span>
+                        <span id="val-ident" class="font-mono">0</span>
+                    </div>
+                    <input type="range" id="filterIdent" min="0" max="100" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="document.getElementById('val-ident').innerText = this.value">
+                </div>
+                <div>
+                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Min Qcov (%)</span>
+                        <span id="val-qcov" class="font-mono">0</span>
+                    </div>
+                    <input type="range" id="filterQcov" min="0" max="100" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="document.getElementById('val-qcov').innerText = this.value">
+                </div>
+                
+                <div class="pt-2 space-y-2">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hideAnnotation" class="w-4 h-4 text-red-600 rounded focus:ring-red-500 cursor-pointer">
+                        <label for="hideAnnotation" class="text-xs text-gray-700 cursor-pointer select-none">隱藏含有 Annotation 的項目</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hideRetro" class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500 cursor-pointer">
+                        <label for="hideRetro" class="text-xs text-gray-700 cursor-pointer select-none">隱藏含有 "retro" 的項目</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="hideEndo" class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500 cursor-pointer">
+                        <label for="hideEndo" class="text-xs text-gray-700 cursor-pointer select-none">隱藏含有 "Endogenous" 的項目</label>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="runAnalysis()" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded shadow-md transition">開始比對分析</button>
+        </div>
+    </aside>
+
+    <!-- 右側結果顯示 -->
+    <main class="main-content flex-grow bg-white p-6 relative">
+        <div id="resultHeader" class="flex justify-between items-center mb-4 hidden">
+            <div class="text-sm text-gray-500">顯示 <span id="countDisplay" class="font-bold text-blue-600 text-lg">0</span> 筆 / 基準總計: <span id="totalDisplay">0</span></div>
+            <div class="flex gap-4 text-xs">
+                <div class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-100 border border-emerald-300 inline-block"></span> Accession 一致</div>
+                <div class="flex items-center gap-1"><span class="w-3 h-3 bg-orange-100 border border-orange-300 inline-block"></span> 非病毒 (Non-viral)</div>
+                <div class="flex items-center gap-1"><span class="w-3 h-3 bg-red-100 border border-red-300 inline-block"></span> 含有 Annotation (Tooltip)</div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto border rounded-lg shadow-sm bg-white min-h-[200px]">
+            <table class="w-full text-left border-collapse hidden" id="resultTable">
+                <thead>
+                    <tr class="bg-gray-50 text-gray-600 uppercase text-xs leading-normal sticky top-0 z-20 shadow-sm">
+                        <th class="py-3 px-4 border-b border-r w-24 bg-gray-50">Node ID</th>
+                        
+                        <!-- Base DB Header -->
+                        <th class="py-3 px-4 border-b border-r bg-blue-50 text-blue-800 text-center" colspan="4" id="headerBase">Base DB</th>
+                        
+                        <!-- Compare DB Header -->
+                        <th class="py-3 px-4 border-b bg-green-50 text-green-800 text-center" colspan="4" id="headerCompare">Compare DB</th>
+                    </tr>
+                    <tr class="bg-gray-100 text-gray-600 text-xs font-semibold sticky top-[40px] z-20">
+                        <th class="py-2 px-4 border-b border-r bg-gray-100"></th>
+                        
+                        <!-- Base Sub-headers -->
+                        <th class="py-2 px-2 border-b bg-gray-100">Accession / Description</th>
+                        <th class="py-2 px-2 border-b w-16 text-center bg-gray-100">Ident(%)</th>
+                        <th class="py-2 px-2 border-b w-16 text-center bg-gray-100">Q-Len</th>
+                        <th class="py-2 px-2 border-b border-r w-16 text-center bg-gray-100">QCov(%)</th>
+                        
+                        <!-- Compare Sub-headers -->
+                        <th class="py-2 px-2 border-b bg-gray-100">Accession / Description</th>
+                        <th class="py-2 px-2 border-b w-16 text-center bg-gray-100">Ident(%)</th>
+                        <th class="py-2 px-2 border-b w-16 text-center bg-gray-100">Q-Len</th>
+                        <th class="py-2 px-2 border-b w-16 text-center bg-gray-100">QCov(%)</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="text-gray-700 text-sm">
+                    <!-- Data Rows will go here -->
+                </tbody>
+            </table>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="flex flex-col items-center justify-center h-64 text-gray-400">
+                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p>請上傳報告檔案以開始分析</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let parsedData = {}; 
+        let rawFileContent = "";
+
+        // 1. 監聽檔案上傳並自動解析
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                rawFileContent = e.target.result;
+                parseFile(); 
+            };
+            reader.readAsText(file);
+        });
+
+        // 2. 解析 Markdown
+        function parseFile() {
+            if (!rawFileContent) return;
+
+            parsedData = {};
+            const lines = rawFileContent.split('\n');
+            let currentDb = null;
+            let isReadingTable = false;
+            let headers = [];
+
+            const dbHeaderRegex = /^### BLAST database:\s*(.+)/;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+
+                const dbMatch = line.match(dbHeaderRegex);
+                if (dbMatch) {
+                    currentDb = dbMatch[1].trim();
+                    parsedData[currentDb] = {};
+                    isReadingTable = false;
+                    continue;
+                }
+
+                if (currentDb && line.startsWith('|')) {
+                    const cleanLine = line.replace(/\|/g, '').replace(/\s/g, '');
+                    if (/^[:\-]+$/.test(cleanLine)) continue;
+
+                    const cols = line.split('|').map(c => c.trim());
+                    if (cols[0] === '') cols.shift();
+                    if (cols[cols.length-1] === '') cols.pop();
+                    
+                    if (cols[0] === 'Contig ID') {
+                        headers = cols;
+                        isReadingTable = true;
+                        continue;
+                    }
+
+                    if (isReadingTable && cols.length > 0) {
+                        const rowData = {};
+                        headers.forEach((h, idx) => {
+                            rowData[h] = cols[idx] || "";
+                        });
+
+                        const contigId = rowData['Contig ID'];
+                        if (contigId) {
+                            parsedData[currentDb][contigId] = rowData;
+                        }
+                    }
+                } else if (line === "" && isReadingTable) {
+                    isReadingTable = false;
+                }
+            }
+
+            updateSelectOptions();
+            
+            const statusDiv = document.getElementById('fileStatus');
+            statusDiv.innerText = `已解析 ${Object.keys(parsedData).length} 個資料庫`;
+            statusDiv.classList.remove('hidden');
+        }
+
+        // 3. 更新下拉選單
+        function updateSelectOptions() {
+            const baseSelect = document.getElementById('baseDbSelect');
+            const compareSelect = document.getElementById('compareDbSelect');
+            
+            baseSelect.innerHTML = '<option value="">請選擇</option>';
+            compareSelect.innerHTML = '<option value="">請選擇</option>';
+
+            const dbNames = Object.keys(parsedData);
+            
+            if (dbNames.length === 0) {
+                alert("未偵測到有效資料表，請確認檔案格式。");
+                return;
+            }
+
+            dbNames.forEach(db => {
+                baseSelect.innerHTML += `<option value="${db}">${db}</option>`;
+                compareSelect.innerHTML += `<option value="${db}">${db}</option>`;
+            });
+
+            if (dbNames.length > 0) baseSelect.value = dbNames[0];
+            if (dbNames.length > 1) compareSelect.value = dbNames[1];
+            else if (dbNames.length > 0) compareSelect.value = dbNames[0];
+        }
+
+        function getBaseAcc(acc) {
+            if (!acc) return "";
+            return acc.split('.')[0];
+        }
+
+        // 4. 執行比對分析
+        function runAnalysis() {
+            const baseDbName = document.getElementById('baseDbSelect').value;
+            const compareDbName = document.getElementById('compareDbSelect').value;
+
+            if (!baseDbName || !compareDbName) {
+                alert("請選擇基準與對照資料庫");
+                return;
+            }
+
+            const baseData = parsedData[baseDbName];
+            const compareData = parsedData[compareDbName];
+
+            const minLen = parseInt(document.getElementById('filterLen').value) || 0;
+            const minIdent = parseFloat(document.getElementById('filterIdent').value) || 0;
+            const minQcov = parseFloat(document.getElementById('filterQcov').value) || 0;
+            
+            const hideAnnotation = document.getElementById('hideAnnotation').checked;
+            const hideRetro = document.getElementById('hideRetro').checked;
+            const hideEndo = document.getElementById('hideEndo').checked;
+
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = "";
+
+            document.getElementById('headerBase').innerText = baseDbName;
+            document.getElementById('headerCompare').innerText = compareDbName;
+
+            let count = 0;
+            let totalBase = Object.keys(baseData).length;
+
+            for (const contigId in baseData) {
+                const baseRow = baseData[contigId];
+                
+                // 數值過濾
+                const qLen = parseInt(baseRow['Query len.(bp)']) || 0;
+                const ident = parseFloat(baseRow['Ident(%)']) || 0;
+                const qcov = parseFloat(baseRow['Qcov(%)']) || 0;
+
+                if (qLen < minLen) continue;
+                if (ident < minIdent) continue;
+                if (qcov < minQcov) continue;
+
+                const compareRow = compareData[contigId] || null;
+
+                // 取得資料
+                const baseAnnot = baseRow['Annotation'] || "";
+                const compAnnot = compareRow ? (compareRow['Annotation'] || "") : "";
+                const baseDesc = baseRow['Description'] || "";
+                const compDesc = compareRow ? (compareRow['Description'] || "") : "";
+
+                // 隱藏條件
+                const hasAnnotation = (baseAnnot !== "" || compAnnot !== "");
+                if (hideAnnotation && hasAnnotation) continue;
+
+                const isRetro = baseDesc.toLowerCase().includes('retro') || compDesc.toLowerCase().includes('retro') || baseDesc.toLowerCase().includes('endogenous') || compDesc.toLowerCase().includes('endogenous');
+                if (hideRetro && isRetro) continue;
+
+                const isEndo = baseDesc.toLowerCase().includes('endogenous') || compDesc.toLowerCase().includes('endogenous');
+                if (hideEndo && isEndo) continue;
+
+                // Accession Match 判斷
+                const baseAccClean = getBaseAcc(baseRow['Hit acc.']);
+                const compAccClean = compareRow ? getBaseAcc(compareRow['Hit acc.']) : null;
+                const isMatch = compareRow && (baseAccClean === compAccClean);
+
+                // --- 左右側獨立狀態判斷 ---
+                
+                // Base Side Status
+                let baseClass = "";
+                let baseTooltip = "";
+                const baseDescLower = baseDesc.toLowerCase();
+                const baseNonViral = baseDesc && !baseDescLower.includes('virus') && !baseDescLower.includes('viral');
+
+                if (baseAnnot) {
+                    baseClass = "cell-annot"; // 紅色
+                    baseTooltip = `data-annotation="[Base Annotation]:\n${baseAnnot}"`;
+                } else if (baseNonViral) {
+                    baseClass = "cell-non-viral"; // 橘色
+                }
+
+                // Compare Side Status
+                let compClass = "";
+                let compTooltip = "";
+                const compDescLower = compDesc.toLowerCase();
+                const compNonViral = compDesc && !compDescLower.includes('virus') && !compDescLower.includes('viral');
+
+                if (compAnnot) {
+                    compClass = "cell-annot"; // 紅色
+                    compTooltip = `data-annotation="[Compare Annotation]:\n${compAnnot}"`;
+                } else if (compNonViral) {
+                    compClass = "cell-non-viral"; // 橘色
+                }
+
+                // Row Class (綠色背景)
+                let rowClass = "border-b hover:bg-gray-50 transition group";
+                if (isMatch) {
+                    rowClass += " match-row";
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = rowClass;
+
+                // 輔助函式：產生超連結
+                const renderAccLink = (acc) => {
+                    if (!acc) return "";
+                    return `<a href="https://www.ncbi.nlm.nih.gov/nuccore/${acc}" target="_blank" class="acc-link" title="前往 NCBI: ${acc}">${acc}</a>`;
+                };
+
+                // 輔助函式：渲染描述欄位 (修正 Tooltip 結構)
+                const renderDescCell = (row, tooltipAttr) => {
+                    if (!row) return `<span class="text-gray-300">-</span>`;
+                    
+                    // 將 has-tooltip 放在外層 Wrapper，不設 overflow:hidden
+                    const wrapperClass = tooltipAttr ? "has-tooltip relative" : "";
+                    
+                    return `
+                        <div class="${wrapperClass}" ${tooltipAttr || ''}>
+                            <div class="font-bold text-xs mb-1">${renderAccLink(row['Hit acc.'])}</div>
+                            <!-- 內層 div 負責文字截斷 -->
+                            <div class="desc-text text-xs text-gray-600" title="${row['Description']}">${row['Description']}</div>
+                        </div>
+                    `;
+                };
+
+                const renderVal = (val, suffix='') => val ? `${val}${suffix}` : '-';
+
+                tr.innerHTML = `
+                    <td class="py-2 px-4 border-r font-mono font-bold text-xs text-gray-500 bg-white/50">${contigId}</td>
+                    
+                    <!-- Base Data (Left Side) -->
+                    <td class="py-2 px-2 ${baseClass}">${renderDescCell(baseRow, baseTooltip)}</td>
+                    <td class="py-2 px-2 text-center ${baseClass}">${renderVal(baseRow['Ident(%)'],'%')}</td>
+                    <td class="py-2 px-2 text-center ${baseClass}">${renderVal(baseRow['Query len.(bp)'])}</td>
+                    <td class="py-2 px-2 border-r text-center ${baseClass}">${renderVal(baseRow['Qcov(%)'],'%')}</td>
+
+                    <!-- Compare Data (Right Side) -->
+                    <td class="py-2 px-2 ${compClass}">${renderDescCell(compareRow, compTooltip)}</td>
+                    <td class="py-2 px-2 text-center ${compClass}">${compareRow ? renderVal(compareRow['Ident(%)'],'%') : '-'}</td>
+                    <td class="py-2 px-2 text-center ${compClass}">${compareRow ? renderVal(compareRow['Query len.(bp)']) : '-'}</td>
+                    <td class="py-2 px-2 text-center ${compClass}">${compareRow ? renderVal(compareRow['Qcov(%)'],'%') : '-'}</td>
+                `;
+
+                tbody.appendChild(tr);
+                count++;
+            }
+
+            // 更新 UI
+            document.getElementById('countDisplay').innerText = count;
+            document.getElementById('totalDisplay').innerText = totalBase;
+            document.getElementById('resultTable').classList.remove('hidden');
+            document.getElementById('resultHeader').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
