@@ -51,6 +51,12 @@ echo "💾 匯出 Image 至 ${OUTPUT_FILE} ..."
 sudo docker save -o "$OUTPUT_FILE" "$FULL_IMAGE"
 sudo chown "$(id -u):$(id -g)" "$OUTPUT_FILE"
 
+# 複製 Wrapper Script
+WRAPPER_FILE="${OUTPUT_DIR}/viva"
+echo "📄 複製 Wrapper Script 至 ${WRAPPER_FILE} ..."
+cp "$SCRIPT_DIR/viva" "$WRAPPER_FILE"
+chmod +x "$WRAPPER_FILE"
+
 echo ""
 echo "========================================"
 echo "✅ 全部完成！"

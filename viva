@@ -1,0 +1,45 @@
+#!/bin/bash
+set -eo pipefail
+
+# ============================================================
+# VIVA Docker Wrapper Script
+# 此腳本會自動掛載目錄並使用當前使用者的權限執行，避免產生 root 檔案。
+# ============================================================
+
+# 取得目前使用者 UID 與 GID
+USER_ID=$(id -u)
+GROUP_ID=$(id -g)
+
+# 找出本機最新的 viva image tag
+# 如果有設定環境變數 VIVA_IMAGE 則優先使用
+if [ -z "${VIVA_IMAGE:-}" ]; then
+    VIVA_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep '^viva:' | sort -V | tail -n 1)
+fi
+
+if [ -z "$VIVA_IMAGE" ]; then
+    echo "❌ 錯誤：找不到任何 viva Docker image。請先建置或載入映像檔。" >&2
+    exit 1
+fi
+
+# 預先建立掛載的資料夾，避免 Docker Daemon 自動建立導致變成 root 擁有
+mkdir -p "$(pwd)/tasks" "$(pwd)/genomes" "$(pwd)/blastdb"
+
+# 檢查資料庫檔案權限 (如果檔案已存在)
+DB_FILE="$(pwd)/tasks/viva_results.db"
+if [ -f "$DB_FILE" ] && [ ! -w "$DB_FILE" ]; then
+    echo "⚠️  警告：資料庫檔案 $DB_FILE 目前為唯讀狀態（可能由 root 擁有）。" >&2
+    echo "這會導致分析結果無法寫入資料庫。請執行以下指令修正權限：" >&2
+    echo "    sudo chown $USER:$USER \"$DB_FILE\"" >&2
+    echo "----------------------------------------------------------------" >&2
+fi
+
+# 執行 Docker container
+# --user 確保產生的檔案權限為當前使用者
+# 自動掛載目錄
+exec docker run -i --rm \
+  --user "${USER_ID}:${GROUP_ID}" \
+  -v "$(pwd)/tasks:/app/tasks" \
+  -v "$(pwd)/genomes:/app/genomes" \
+  -v "$(pwd)/blastdb:/app/blastdb" \
+  -v "$HOME:$HOME" \
+  "$VIVA_IMAGE" "$@"
