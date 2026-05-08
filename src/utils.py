@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import subprocess
+import sys
 import textwrap
 import time
 from decimal import Decimal
@@ -220,12 +221,12 @@ def conda_deps_check(dep_list):
 def conda_pkg_versions(pkg_list):
     verions_dict = {}
     if sys_deps_check(['conda']) != -1:
-        all_pkg_list = subprocess.run(['conda', 'list'], capture_output=True).stdout.decode(
+        all_pkg_list = subprocess.run(['conda', 'list', '-p', sys.prefix], capture_output=True).stdout.decode(
             encoding='utf-8').split('\n')
         for pkg_string in all_pkg_list:
             # print(pkg_string)
             if not pkg_string.startswith('#'):
-                if len(pkg_string.split()) == 4:
+                if len(pkg_string.split()) >= 3:
                     name = pkg_string.split()[0].strip()
                     version = pkg_string.split()[1].strip()
                     if name in pkg_list:

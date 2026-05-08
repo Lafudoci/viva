@@ -137,7 +137,10 @@ class VIVADatabase:
             ''', (task_id, task_name, start_date, preset_id, task_note, product, lot, seq_date))
             conn.commit()
         except sqlite3.Error as e:
-            logger.error(f"DB Error (create_task): {e}")
+            if "readonly" in str(e).lower():
+                logger.error(f"DB Error (create_task): {e}. 請檢查 {self.db_path} 的檔案權限，確認擁有者是否為當前使用者。")
+            else:
+                logger.error(f"DB Error (create_task): {e}")
         finally:
             if conn: conn.close()
 
@@ -164,7 +167,10 @@ class VIVADatabase:
                 ''', (status, str(error_log) if error_log else None, task_id))
             conn.commit()
         except sqlite3.Error as e:
-            logger.error(f"DB Error (update_task_status): {e}")
+            if "readonly" in str(e).lower():
+                logger.error(f"DB Error (update_task_status): {e}. 請檢查 {self.db_path} 的檔案權限，確認擁有者是否為當前使用者。")
+            else:
+                logger.error(f"DB Error (update_task_status): {e}")
         finally:
             if conn: conn.close()
             
@@ -308,6 +314,9 @@ class VIVADatabase:
 
             conn.commit()
         except sqlite3.Error as e:
-            logger.error(f"DB Error (save_final_summary): {e}")
+            if "readonly" in str(e).lower():
+                logger.error(f"DB Error (save_final_summary): {e}. 請檢查 {self.db_path} 的檔案權限，確認擁有者是否為當前使用者。")
+            else:
+                logger.error(f"DB Error (save_final_summary): {e}")
         finally:
              if conn: conn.close()

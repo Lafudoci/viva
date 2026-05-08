@@ -128,7 +128,7 @@ def main(input_args):
 
     task = Task()
     task.conda_pkgs = [
-        'conda', 'python', 'perl',
+        'python', 'perl',
         'fastp', 'samtools', 'bcftools', 'htslib',
         'bowtie2', 'bwa',
         'varscan', 'lofreq',
