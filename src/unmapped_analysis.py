@@ -51,6 +51,7 @@ def run_de_novo(task):
         '-m', task.spades_mem,
         '--' + task.unmapped_spades_mode,
         '--phred-offset', '33',
+        '--only-assembler',
         '-1', r1,
         '-2', r2,
         '-o', output_folder_name
