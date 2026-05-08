@@ -52,13 +52,8 @@ sudo docker build -t viva:v1.11.1 .
 # 切換到您的分析工作目錄 (包含任務輸出與相關參考檔案的目錄)
 cd /path/to/viva
 
-# 以 Docker Container 啟動分析任務
-sudo docker run -i --rm \
-  -v $(pwd)/tasks:/app/tasks \
-  -v $(pwd)/genomes:/app/genomes \
-  -v $(pwd)/blastdb:/app/blastdb \
-  -v /home:/home \
-  viva:v1.11.1 \
+# 以 viva 包裝腳本啟動分析任務 (自動處理目錄掛載與避免產生 root 權限檔案)
+./viva \
   --single_task \
   --prefix TFDA-MPXV-20250918 \
   --ref "$HOME/ref-fasta/MPXV/OR030941.1.fasta" \
@@ -188,18 +183,12 @@ ex_r2 = $HOME/NGS-reads/20250918-RSV-MPXV/Sample_001_R2_001.fastq.gz
 
 ### 執行批次分析指令
 
-當設定檔皆部署完畢後，在**工作目錄**下同樣地透過 Docker 執行，但使用 `--task_sheet` 取代 `--single_task` 參數：
+當設定檔皆部署完畢後，在**工作目錄**下執行 `viva` 腳本，但使用 `--task_sheet` 取代 `--single_task` 參數：
 
 ```bash
 cd /path/to/viva
 
-sudo docker run -i --rm \
-  -v $(pwd)/tasks:/app/tasks \
-  -v $(pwd)/genomes:/app/genomes \
-  -v $(pwd)/blastdb:/app/blastdb \
-  -v /home:/home \
-  viva:v1.11.1 \
-  --task_sheet $HOME/viva/batches/batch_tasks.ini
+./viva --task_sheet $HOME/viva/batches/batch_tasks.ini
 ```
 
 批次運行時，系統將會建立一個具有 `batch_task_YYYYMMDDHHMM` 命名的序列清單狀態檔案記錄任務排程，並循序依每個樣本自動載入 `preset_path` 的參數，完成所有樣本的比對工作以及最終的匯總 CSV 報告產生 (`batch_task_report.py`)。
