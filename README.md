@@ -138,6 +138,8 @@ sudo docker run -i --rm \
 | `--sample_product_lot` | 樣本批號註記，僅供報告註解用途。 |- |
 | `--sample_sequencing_date` | 樣本定序日期註記，僅供報告註解用途。 |- |
 | `--sample_note` | 樣本專屬注意事項備註，僅供報告註解用途。 |- |
+| `--total_reads` | E2E 模式下模擬生成的總讀序數 (預設 `100,000`)。 | `--total_reads 200000` |
+| `--e2e_scenario` | E2E 測試場景選擇 (`targeted`, `non-targeted`, `comparison`, `lod`)。 | `--e2e_scenario non-targeted` |
 
 ---
 
@@ -233,6 +235,13 @@ sudo docker run -i --rm \
 - **包含宿主**：若指定 `--remove_host`，則自動配置 50% 目標序列、40% 宿主序列、10% 隨機序列。
 - **包含不純物**：若指定 `--remove_impurities`，則會加入額外 10% 的不純物序列。
 
+### 測試場景 (E2E Scenarios)
+透過 `--e2e_scenario` 參數，您可以針對同一組序列測試不同的分析方法學：
+- **`targeted`** (預設)：混入 `remove_impurities` 序列並在執行時進行過濾。驗證項為「雜質過濾率」。
+- **`non-targeted`**：混入 `remove_impurities` 序列但執行時**不進行過濾**。驗證項為「BLAST 發現成功 (Discovery)」。
+- **`comparison`**：自動依序執行上述兩種場景，產出兩份任務結果與驗證報告，便於對照方法學差異。
+- **`lod`**：執行 LOD (Limit of Detection) 敏感度掃描，將污染序列比例從 10^-3 逐步降低至 10^-7，並確認偵測極限。
+
 ### 測試產出與驗證項
 1. **驗證報告 (`verification_report.md`)**：存放在任務目錄下，總結各項指標是否通過。
 2. **一致性檢查 (Consistency Check)**：
@@ -250,6 +259,7 @@ sudo docker run -i --rm \
 - `--preset_path`：(選擇性) 載入指定的 `.ini` 設定檔。在 E2E 模式下，系統會從設定檔中讀取參考序列、宿主及不純物路徑作為模擬來源。
 - `--auto_cleanup`：預設為 `True`。在 E2E 模式下，系統會確保在驗證完成並產出 `verification_report.md` 後，才根據此參數決定是否執行清理動作。
 - `--task_id`：手動指定測試任務 ID。
+- `--e2e_scenario`：指定測試場景 (`targeted`, `non-targeted`, `comparison`, `lod`)。
 
 ---
 

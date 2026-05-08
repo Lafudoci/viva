@@ -6,12 +6,13 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 class E2EVerifier:
-    def __init__(self, task_id, task_path, expected_results_path=None):
+    def __init__(self, task_id, task_path, expected_results_path=None, scenario='targeted'):
         self.task_id = task_id
         self.task_path = Path(task_path)
         self.summary_path = self.task_path.joinpath(task_id, f"{task_id}_summary.json")
         self.report_md_path = self.task_path.joinpath(task_id, f"{task_id}_report.md")
         self.expected_results_path = expected_results_path
+        self.scenario = scenario
         self.results = {
             'completeness': [],
             'consistency': [],
@@ -168,25 +169,48 @@ class E2EVerifier:
                 "detail": f"Removed: {removed_reads}/{host_reads} ({efficiency:.2f}%)"
             })
 
-        # 3. Non-targeted Discovery (BLAST)
+        # 3. Contaminant Handling (Targeted vs Non-targeted)
         contaminants = [s for s in gt["sources"] if s.startswith("contaminant_")]
         if contaminants:
-            unmapped_hits = current.get('unmapped_analysis', {})
-            # 只要有找到任何一個模擬的污染物關鍵字在 BLAST 結果中
-            found_count = 0
-            for c_name in contaminants:
-                clean_name = c_name.replace("contaminant_", "")
-                for contig in unmapped_hits:
-                    if clean_name.lower() in str(unmapped_hits[contig]).lower():
-                        found_count += 1
-                        break
-            
-            passed = found_count > 0
-            self.results['consistency'].append({
-                "item": "Non-targeted Discovery",
-                "status": "PASS" if passed else "FAIL",
-                "detail": f"Found {found_count}/{len(contaminants)} simulated contaminants"
-            })
+            if self.scenario == 'targeted':
+                # 在 targeted 模式下，應該驗證雜質是否被過濾
+                imp_results = current.get('impurit_filter_results', {})
+                # 這裡假設 impurities_remove.json 的結構
+                # 我們只要檢查是否有任何 mapped reads 被移除
+                total_removed = 0
+                for ref_id in imp_results:
+                    for method in imp_results[ref_id]:
+                        total_removed += int(imp_results[ref_id][method].get('mapped_reads', 0))
+                
+                passed = total_removed > 0
+                self.results['consistency'].append({
+                    "item": "Targeted Impurity Removal",
+                    "status": "PASS" if passed else "FAIL",
+                    "detail": f"Successfully removed {total_removed} reads from impurities"
+                })
+            else:
+                # 在 non-targeted 模式下，驗證 BLAST 是否發現了污染物
+                unmapped_hits = current.get('unmapped_analysis', {})
+                found_count = 0
+                for c_name in contaminants:
+                    clean_name = c_name.replace("contaminant_", "")
+                    found_this = False
+                    for dbname in unmapped_hits:
+                        hits = unmapped_hits[dbname].get('highly_matched_result', [])
+                        for hit in hits:
+                            # 檢查 qseqid 或 sseqid 是否包含污染物名稱
+                            if clean_name.lower() in str(hit).lower():
+                                found_this = True
+                                break
+                        if found_this: break
+                    if found_this: found_count += 1
+                
+                passed = found_count > 0
+                self.results['consistency'].append({
+                    "item": "Non-targeted Discovery",
+                    "status": "PASS" if passed else "FAIL",
+                    "detail": f"Found {found_count}/{len(contaminants)} simulated contaminants in BLAST"
+                })
 
     def get_markdown_summary(self):
         lines = [f"### Test Results for {self.task_id}"]
@@ -207,8 +231,8 @@ class E2EVerifier:
             
         return "\n".join(lines)
 
-def run_verification(task_id, task_path, expected_results_path=None):
-    verifier = E2EVerifier(task_id, task_path, expected_results_path)
+def run_verification(task_id, task_path, expected_results_path=None, scenario='targeted'):
+    verifier = E2EVerifier(task_id, task_path, expected_results_path, scenario)
     report = verifier.verify()
     md = verifier.get_markdown_summary()
     return report, md

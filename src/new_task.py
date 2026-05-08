@@ -111,7 +111,7 @@ def get_parser():
     parser.add_argument(
         '--unmapped_len_filter', help="Min. length (bp) filter to hit in unmapped reads assemble BLAST.", default='500')
     parser.add_argument(
-        '--unmapped_ident_filter', help="Min. identity (%) filter to hit in unmapped reads assemble BLAST.", default='95')
+        '--unmapped_ident_filter', help="Min. identity (%%) filter to hit in unmapped reads assemble BLAST.", default='95')
     parser.add_argument(
         '--preset_path', help="Load VIVA analysis setting from given preset file path.", default=None)
     parser.add_argument(
@@ -130,6 +130,8 @@ def get_parser():
         '--total_reads', help="Total reads for E2E in silico test simulation.", default=100000)
     parser.add_argument(
         '--task_id', help="Manually specify task ID.", default=None)
+    parser.add_argument(
+        "--e2e_scenario", help="E2E test scenario (targeted, non-targeted, lod).", default="targeted")
     return parser
 
 
@@ -216,20 +218,13 @@ def fix_permissions(path):
 
 
 def run_e2e_tests(input_args, task_path):
-    """執行新一代 In Silico 端到端測試"""
+    """執行新一代 In Silico 端到端測試，支援多種場景與 LOD 掃描"""
     import e2e_test_runner
     logger.info("===== Starting New In Silico E2E Test =====")
     
     parser = get_parser()
     args, _ = parser.parse_known_args(input_args)
-    
-    # 建立任務 ID 與目錄
-    task_name = args.prefix if args.prefix != 'newtask' else 'e2e_test'
-    task_id = "%s_%s" % (task_name, time.strftime("%Y%m%d%H%M%S", time.localtime()))
-    task_dir = task_path / task_id
-    task_dir.mkdir(parents=True, exist_ok=True)
-    
-    logger.info(f"E2E mode: Generating mock reads in {task_dir}")
+    scenario = getattr(args, 'e2e_scenario', 'targeted')
     
     # 優先從命令列讀取，若無則嘗試從 preset 讀取，最後才使用預設值
     p_ref = args.ref
@@ -249,58 +244,97 @@ def run_e2e_tests(input_args, task_path):
         "host": p_host,
         "impurities": p_imp
     }
-    
-    # 建構綜合場景
-    gen = MockDataGenerator(task_dir)
-    s_config = {"target": {"path": preset_info["ref"], "ratio": 0.5}}
-    if preset_info["host"]:
+
+    if scenario == 'lod':
+        target_cfg = {"path": preset_info["ref"]}
+        contaminant_cfg = {"path": preset_info["impurities"] or preset_info["ref"], "name": "LOD_Virus"}
         host_path = e2e_test_runner.get_host_path(preset_info["host"])
-        if host_path:
-            s_config["host"] = {"path": host_path, "ratio": 0.4}
-            s_config["target"]["ratio"] = 0.5
-    if preset_info["impurities"]:
-        s_config["contaminants"] = [{"path": preset_info["impurities"], "ratio": 0.1, "name": "Impurity"}]
-    
-    r1, r2 = gen.generate_scenario(s_config, total_reads=int(args.total_reads))
-    
-    # 準備執行參數，覆蓋原本的 reads 路徑
-    new_args = input_args.copy()
-    # 移除 --test e2e 避免遞迴，直接進入正常執行模式
-    if '--test' in new_args:
-        idx = new_args.index('--test')
-        new_args.pop(idx)
-        new_args.pop(idx)
+        host_cfg = {"path": host_path} if host_path else None
         
-    new_args.extend([
-        "--prefix", task_name,
-        "--task_id", task_id,
-        "--ex_r1", str(r1),
-        "--ex_r2", str(r2),
-        "--ref", preset_info["ref"],
-        "--auto_cleanup", "False"
-    ])
+        output_dir = task_path / f"lod_sweep_{time.strftime('%Y%m%d%H%M%S')}"
+        e2e_test_runner.run_lod_sweep(target_cfg, contaminant_cfg, host_cfg, int(args.total_reads), output_dir, args.preset_path)
+        return
+
+    scenarios_to_run = ['targeted', 'non-targeted'] if scenario == 'comparison' else [scenario]
     
-    # 執行主流程
-    actual_task_id = main(new_args)
-    
-    # 驗證
-    if actual_task_id:
-        try:
-            expected_gt = task_dir / "ground_truth.json"
-            report, md = e2e_verifier.run_verification(actual_task_id, task_path, str(expected_gt))
-            with open(task_path.joinpath(actual_task_id, 'verification_report.md'), 'w') as f:
-                f.write(md)
-            logger.info(f"E2E Verification finished for {actual_task_id}")
-        finally:
-            # 確保 E2E 驗證完後，根據原始設定執行清理與權限修復
-            if str(args.auto_cleanup).lower() == 'true':
-                import cleanup
-                logger.info("E2E post-verification cleanup starting...")
-                cleanup.cleanup_task(task_path / actual_task_id, force=True)
+    for current_scenario in scenarios_to_run:
+        logger.info(f"--- Running E2E Scenario: {current_scenario} ---")
+        
+        # 建立任務 ID 與目錄
+        suffix = f"_{current_scenario}" if scenario == 'comparison' else ""
+        task_name = args.prefix if args.prefix != 'newtask' else 'e2e_test'
+        task_id = "%s%s_%s" % (task_name, suffix, time.strftime("%Y%m%d%H%M%S", time.localtime()))
+        task_dir = task_path / task_id
+        task_dir.mkdir(parents=True, exist_ok=True)
+        
+        logger.info(f"E2E mode: Generating mock reads in {task_dir}")
+        
+        # 建構綜合場景
+        gen = MockDataGenerator(task_dir)
+        s_config = {"target": {"path": preset_info["ref"], "ratio": 0.5}}
+        if preset_info["host"]:
+            host_path = e2e_test_runner.get_host_path(preset_info["host"])
+            if host_path:
+                s_config["host"] = {"path": host_path, "ratio": 0.4}
+                s_config["target"]["ratio"] = 0.5
+        
+        if preset_info["impurities"]:
+            # 不論是否為 non-targeted，都在 mock 中混入雜質
+            s_config["contaminants"] = [{"path": preset_info["impurities"], "ratio": 0.1, "name": "Impurity"}]
+        
+        r1, r2 = gen.generate_scenario(s_config, total_reads=int(args.total_reads))
+        
+        # 準備執行參數
+        new_args = input_args.copy()
+        # 移除 --test e2e 避免遞迴
+        if '--test' in new_args:
+            idx = new_args.index('--test')
+            new_args.pop(idx)
+            new_args.pop(idx)
             
-            fix_permissions(task_path / actual_task_id)
+        # 移除可能衝突的參數並注入新參數
+        params_to_remove = ['--prefix', '--task_id', '--ex_r1', '--ex_r2', '--ref', '--auto_cleanup', '--e2e_scenario']
+        for p in params_to_remove:
+            if p in new_args:
+                idx = new_args.index(p)
+                new_args.pop(idx)
+                new_args.pop(idx)
+        
+        if current_scenario == 'non-targeted':
+            if '--remove_impurities' in new_args:
+                idx = new_args.index('--remove_impurities')
+                new_args.pop(idx)
+                new_args.pop(idx)
+        
+        new_args.extend([
+            "--prefix", task_name,
+            "--task_id", task_id,
+            "--ex_r1", str(r1),
+            "--ex_r2", str(r2),
+            "--ref", preset_info["ref"],
+            "--auto_cleanup", "False"
+        ])
+        
+        # 執行主流程
+        actual_task_id = main(new_args)
+        
+        # 驗證
+        if actual_task_id:
+            try:
+                expected_gt = task_dir / "ground_truth.json"
+                report, md = e2e_verifier.run_verification(actual_task_id, task_path, str(expected_gt), current_scenario)
+                with open(task_path.joinpath(actual_task_id, 'verification_report.md'), 'w') as f:
+                    f.write(md)
+                logger.info(f"E2E Verification finished for {actual_task_id}")
+            finally:
+                if str(args.auto_cleanup).lower() == 'true':
+                    import cleanup
+                    logger.info("E2E post-verification cleanup starting...")
+                    cleanup.cleanup_task(task_path / actual_task_id, force=True)
+                
+                fix_permissions(task_path / actual_task_id)
     
-    return actual_task_id
+    return
 
 
 def main(input_args):
