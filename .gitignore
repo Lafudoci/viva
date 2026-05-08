@@ -9,3 +9,5 @@ __pycache__
 *.ini
 # *.txt
 /venv
+/genomes_arch
+/blastdb_arch
