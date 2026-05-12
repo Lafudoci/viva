@@ -109,24 +109,9 @@ def remove_host(task):
     host_remove_cwd = task.path.joinpath(task.id, 'reads')
     Path.mkdir(host_remove_cwd, parents=True, exist_ok=True)
 
-    if task.remove_host == 'dog':
-        dehost_meta['genome'] = 'Dog (Dog10K_Boxer_Tasha, GCF_000002285.5)'
-        genome_path = '/app/genomes/' + 'dog10k'
-    elif task.remove_host == 'human':
-        dehost_meta['genome'] = 'Human (GRCh38.p14, GCF_000001405.40)'
-        genome_path = '/app/genomes/' + 'GRCh38.p14'
-    elif task.remove_host == 'vero':
-        dehost_meta['genome'] = 'Vero (Vero_WHO_p1.0, GCF_015252025.1)'
-        genome_path = '/app/genomes/' +  'vero'
-    elif task.remove_host == 'chicken':
-        dehost_meta['genome'] = 'Chicken (GRCg6a, GCF_000002315.6)'
-        genome_path = '/app/genomes/' + 'grcg6a'
-    elif task.remove_host == 'rhesus_monkey':
-        dehost_meta['genome'] = 'Rhesus monkey (Mmul_10, GCF_003339765.1)'
-        genome_path = '/app/genomes/' + 'mmul_10'
-    else:
-        dehost_meta['genome'] = 'Custom sequence file (%s)'%task.remove_host
-        genome_path = '/app/genomes/' + task.remove_host
+    # 統一使用 /app/genomes/ 下的檔名作為索引前綴
+    dehost_meta['genome'] = 'Host genome: %s' % task.remove_host
+    genome_path = '/app/genomes/' + task.remove_host
 
     mapped_reads_out = 'host_mapped.sam'
     align_cmd = [

@@ -57,7 +57,8 @@ cd /path/to/viva
   --single_task \
   --prefix TFDA-MPXV-20250918 \
   --ref "$HOME/ref-fasta/MPXV/OR030941.1.fasta" \
-  --remove_host GCA_023783515.1_ASM2378351v1.1 \
+  --remove_host GCA_023783515.1_ASM2378351v1.1_genomic.fna.gz \
+  --genome_path $HOME/ref-fasta/host_genomes \
   --blastdb_path $HOME/bioapp/blastdb \
   --rvdb_anno_path $HOME/bioapp/blastdb/RVDBv30_AnnotationList_Jun2025.tab \
   --unmapped_blastdb "U-RVDBv30.0.fasta" \
@@ -89,7 +90,8 @@ cd /path/to/viva
 | 參數 | 說明 | 舉例 |
 | --- | --- | --- |
 | `--ref` | 分析欲比對之參考序列 (Reference FASTA file) 路徑。若無提供則自動切換為 De novo 分析模式。 | `--ref $HOME/ref/RSV.fasta` |
-| `--remove_host` | 指定並移除特定的宿主序列以提升分析效能。可使用內建字詞 (`human`, `dog`, `vero`, `chicken`, `rhesus_monkey`)，或提供位於 `/app/genomes/` 下的自訂基因體名稱。 | `--remove_host human`<br>`--remove_host GCA_023783515.1` |
+| `--remove_host` | 指定並移除特定的宿主序列以提升分析效能。請提供具體的基因體檔案名稱 (e.g. `human.fna.gz`)，系統會自動在 `viva/genomes/` 下建立並快取索引。 | `--remove_host GCF_000001405.40.fna.gz` |
+| `--genome_path` | 指定宿主基因體原始檔案 (`.fna.gz`) 所在的目錄路徑。 | `--genome_path $HOME/ref/host/` |
 | `--remove_impurities` | 進階雜訊去除功能；提供不純物序列之參考 FASTA 檔，用來過濾對應的讀序。 | `--remove_impurities /data/noise.fasta` |
 | `--alns` | 若有提供參考序列，可選擇讀序定位軟體，多重選擇時以逗號隔開 (預設為 `bowtie2,bwa`)。 | `--alns bwa` |
 

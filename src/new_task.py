@@ -75,7 +75,9 @@ def main(input_args):
     parser.add_argument(
         '--global_trimming', help="Global trimming bases for reads.", default=0)
     parser.add_argument(
-        '--remove_host', help="Remove specific host genome (human, dog, vero, chicken, rhesus_monkey).", default=None)
+        '--remove_host', help="Remove specific host genome file (e.g. GCF_000001405.40_GRCh38.p14_genomic.fna.gz).", default=None)
+    parser.add_argument(
+        '--genome_path', help="The path to the host genome source files.", default=None)
     parser.add_argument(
         '--remove_impurities', help="Remove specific impurity sequences FASTA file path.", default=None)
     parser.add_argument(
@@ -156,6 +158,7 @@ def main(input_args):
         task.threads = str(args.threads)
         task.global_trimming = str(args.global_trimming)
         task.remove_host = args.remove_host
+        task.genome_path = args.genome_path
         task.remove_impurities = args.remove_impurities
         task.spades_mem = str(args.spades_mem)
         task.spades_mode = args.spades_mode
@@ -181,6 +184,7 @@ def main(input_args):
         task.threads = str(config['PRESET']['threads'])
         task.global_trimming = str(config['PRESET']['global_trimming'])
         task.remove_host = config['PRESET']['remove_host']
+        task.genome_path = config['PRESET'].get('genome_path', None)
         task.remove_impurities = config['PRESET']['remove_impurities']
         task.spades_mem = str(config['PRESET']['spades_mem'])
         task.spades_mode = config['PRESET']['spades_mode']
@@ -213,9 +217,6 @@ def main(input_args):
             task.remove_impurities = Path.cwd().joinpath('test_data', 'impure_test.fasta')
         elif args.test == 'multi_ref':
             task.ref = Path.cwd().joinpath('test_data', 'adv_multi_ref.fasta')
-        elif args.test == 'denovo':
-            task.remove_host = 'human'
-            task.ref = None
         elif args.test == 'rvdb':
             task.ref = Path.cwd().joinpath('test_data', 'AC_000008.1.fasta')
             home_dir = os.path.expanduser('~')
@@ -258,8 +259,8 @@ def main(input_args):
             sys.exit()
 
     if task.remove_host != None:
-        if utils.setup_genomes(task.remove_host) == -1:
-            logger.error('Host genome not found. Exiting pipeline.')
+        if utils.setup_genomes(task.remove_host, task.genome_path) == -1:
+            logger.error('Host genome setup failed. Exiting pipeline.')
             sys.exit()
     
     if task.remove_impurities != None:

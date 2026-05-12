@@ -320,8 +320,6 @@ def setup_blastdb(blastdb_path, blastdb_name):
     except subprocess.CalledProcessError as e:
         logger.error('blastdb setup error: %s.' % str(e))
         return -1
-
-
 def download_rvdb(blastdb_name):
     logger.info('Preparing RVDB')
     rvdb_fasta = blastdb_name
@@ -360,131 +358,74 @@ def decompress_rvdb(blastdb_name):
         return -1
 
 
-def setup_genomes(host_name):
-    genome_id = 'GRCh38.p14'
-    genome_source_table = {
-        'human': {
-            'bt2_gname': genome_id,
-            'arch_name': 'GCF_000001405.40_GRCh38.p14_genomic.fna.gz',
-            'file_name': 'GCF_000001405.40_GRCh38.p14_genomic.fna',
-            'source_url': 'https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.fna.gz',
-            'md5': 'c30471567037b2b2389d43c908c653e1'
-        }
-    }
-    # TEMP return 0 for custom genome input
-    
-    if sys_deps_check(['wget', 'gzip', 'bowtie2-inspect', 'bowtie2-build']) == -1:
-        return -1
 
-    # Custom genome input
-    if genome_source_table.get(host_name) == None:
-        try:
-            # Check if index exists
-            if subprocess.run(['bowtie2-inspect', '--summary', host_name], cwd='/app/genomes', stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
-                return 0
-            
-            # Check if archive exists
-            # We assume user provides filename like 'genome.fna.gz' and puts it in /app/genomes_arch/
-            arch_path = Path("/app/genomes_arch").joinpath(host_name)
-            if not arch_path.is_file():
-                # Provide a more specific error message if it looks like a file but is missing
-                logger.error('Custom genome index not found and archive %s not found in /app/genomes_arch/.' % host_name)
-                return -1
+def setup_genomes(host_file_name, genome_source_dir):
+    try:
+        if sys_deps_check(['bowtie2-inspect', 'bowtie2-build']) == -1:
+            return -1
 
-            logger.info('Preparing custom genome index for %s' % host_name)
-            Path.mkdir(Path("/app/genomes"), parents=True, exist_ok=True)
-            
-            # Decompress
-            temp_fasta_name = host_name
-            if host_name.endswith('.gz'):
-                temp_fasta_name = host_name[:-3]
-            
-            temp_fasta_path = Path("/app/genomes").joinpath(temp_fasta_name)
-            
-            logger.info('Decompressing genome file')
-            with open(temp_fasta_path, "w") as f:
-                subprocess.run(
-                    ['gunzip', '-c', host_name],
-                    check=True,
-                    cwd='/app/genomes_arch',
-                    stdout=f
-                )
-            
-            # Build Index
-            logger.info('Indexing genome file')
-            subprocess.run(
-                [
-                    'bowtie2-build',
-                    '--threads',
-                    '6',
-                    str(temp_fasta_path),
-                    host_name
-                ],
-                check=True,
-                cwd='/app/genomes'
-            )
-            
-            # Clean up temp fasta
-            if temp_fasta_path.exists():
-                os.remove(temp_fasta_path)
-                
+        # 索引路徑與前綴（直接使用檔名作為前綴）
+        genome_index_prefix = Path("/app/genomes").joinpath(host_file_name)
+        
+        # 1. 檢查索引是否已存在 (使用 bowtie2-inspect 驗證完整性)
+        inspect_cmd = ['bowtie2-inspect', '--summary', str(genome_index_prefix)]
+        if subprocess.run(inspect_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+            logger.info('Host genome index for %s already exists and is valid.' % host_file_name)
             return 0
 
-        except subprocess.CalledProcessError as e:
-            logger.error('Custom genome setup error: %s.' % str(e))
+        # 2. 若索引不存在，則需要從來源建立
+        if genome_source_dir is None:
+            logger.error('Genome index not found and genome_path is not provided.')
             return -1
-        except Exception as e:
-            logger.error('Custom genome setup unexpected error: %s.' % str(e))
+            
+        source_path = Path(genome_source_dir).joinpath(host_file_name)
+        if not source_path.is_file():
+            logger.error('Host genome source file %s not found in %s.' % (host_file_name, genome_source_dir))
             return -1
 
-    try:
-        if subprocess.run(['bowtie2-inspect', '--summary', genome_source_table[host_name]['bt2_gname']], cwd='/app/genomes').returncode == 0:
-            return
-    except Exception:
-        pass
-    try:
-        logger.info('Preparing host genome file')
+        logger.info('Preparing genome index for %s from %s' % (host_file_name, source_path))
         Path.mkdir(Path("/app/genomes"), parents=True, exist_ok=True)
-        if Path("/app/genomes_arch/"+genome_source_table[host_name]['arch_name']).exists() != True:
-            logger.info('Downloading genome file')
-            subprocess.run(
-                [
-                    'wget',
-                    genome_source_table[host_name]['source_url'],
-                    '-P', '/app/genomes_arch'
-                ],
-                check=True)
+        
+        # 處理是否需要解壓縮 (建立暫存檔)
+        temp_fasta_path = Path("/app/genomes").joinpath(host_file_name + ".temp.fna")
+        is_gz = host_file_name.endswith('.gz')
+        
+        if is_gz:
+            logger.info('Decompressing genome file to temporary FASTA')
+            with open(temp_fasta_path, "w") as f:
+                subprocess.run(
+                    ['gunzip', '-c', str(source_path)],
+                    check=True,
+                    stdout=f
+                )
+            build_in_file = str(temp_fasta_path)
         else:
-            logger.info('Genome archive exists.')
-        # check md5 hash
-        logger.info('Checking md5 hash of genome file')
-        if md5_check(Path("/app/genomes_arch/%s" % genome_source_table[host_name]['arch_name']),
-                        genome_source_table[host_name]['md5']) == -1:
-            return -1
-        logger.info('Decompressing genome file')
-        with open('/app/genomes/'+genome_source_table[host_name]['file_name'], "w") as f:
-            subprocess.run(
-                [
-                    'gunzip',
-                    '-c',
-                    genome_source_table[host_name]['arch_name'],
-                ],
-                check=True,
-                cwd='/app/genomes_arch',
-                stdout=f)
-        logger.info('Indexing genome file')
+            build_in_file = str(source_path)
+        
+        # 建立 Bowtie2 索引
+        logger.info('Indexing genome file (this may take a while)...')
         subprocess.run(
             [
                 'bowtie2-build',
-                '--threads',
-                '6',
-                genome_source_table[host_name]['file_name'],
-                genome_id
+                '--threads', '6',
+                build_in_file,
+                str(genome_index_prefix)
             ],
             check=True,
-            cwd='/app/genomes')
+            cwd='/app/genomes'
+        )
+        
+        # 清除暫存檔
+        if is_gz and temp_fasta_path.exists():
+            os.remove(temp_fasta_path)
+            
+        return 0
+
     except subprocess.CalledProcessError as e:
-        logger.error('RVDB setup error: %s.' % str(e))
+        logger.error('Genome setup error (subprocess): %s.' % str(e))
+        return -1
+    except Exception as e:
+        logger.error('Genome setup unexpected error: %s.' % str(e))
         return -1
 
 
