@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # VIVA Docker Image 自動建置腳本
-# 自動抓取最新 Git Tag 作為版號，建置 Docker Image 並匯出
+# 根據當前 Git 狀態（Tag 或 Commit）建置 Docker Image 並匯出
 # ============================================================
 
 set -euo pipefail
@@ -14,21 +14,19 @@ OUTPUT_DIR="$HOME/docker-images"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# --- 取得最新 Git Tag ---
-LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null)
-if [ -z "$LATEST_TAG" ]; then
-    echo "❌ 錯誤：找不到任何 Git Tag，請先建立 Tag 後再執行。"
-    exit 1
-fi
+# --- 取得當前 Git 版本描述 ---
+# 若當前 commit 正好是 tag，則為 tag 名稱
+# 若不是，則會呈現 v1.19.1-1-g487d2d9 這種格式
+VERSION=$(git describe --tags --always 2>/dev/null || echo "latest")
 
-FULL_IMAGE="${IMAGE_NAME}:${LATEST_TAG}"
-OUTPUT_FILE="${OUTPUT_DIR}/${IMAGE_NAME}-${LATEST_TAG}.tar"
+FULL_IMAGE="${IMAGE_NAME}:${VERSION}"
+OUTPUT_FILE="${OUTPUT_DIR}/${IMAGE_NAME}-${VERSION}.tar"
 
 echo "========================================"
 echo "  VIVA Docker Image 自動建置"
 echo "========================================"
 echo "  專案目錄：${SCRIPT_DIR}"
-echo "  最新 Tag：${LATEST_TAG}"
+echo "  建置版本：${VERSION}"
 echo "  Image 名稱：${FULL_IMAGE}"
 echo "  匯出路徑：${OUTPUT_FILE}"
 echo "========================================"
