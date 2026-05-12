@@ -29,7 +29,7 @@ ENV CONDA_PREFIX="/opt/conda/envs/viva"
 ENV CONDA_DEFAULT_ENV="viva"
 
 COPY ./src /app
-COPY ./.git /app
+COPY ./.git /app/.git
 WORKDIR /app
 
 # 確保 /app 對所有使用者開放讀取與執行權限
