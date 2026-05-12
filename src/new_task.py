@@ -259,9 +259,15 @@ def main(input_args):
             sys.exit()
 
     if task.remove_host != None:
-        if utils.setup_genomes(task.remove_host, task.genome_path) == -1:
-            logger.error('Host genome setup failed. Exiting pipeline.')
-            sys.exit()
+        for host in task.remove_host.split():
+            if utils.check_genome_availability(host.strip(), task.genome_path) == -1:
+                logger.error(f'Host genome check failed for {host.strip()}. Exiting pipeline.')
+                sys.exit()
+                
+        for host in task.remove_host.split():
+            if utils.setup_genomes(host.strip(), task.genome_path) == -1:
+                logger.error(f'Host genome setup failed for {host.strip()}. Exiting pipeline.')
+                sys.exit()
     
     if task.remove_impurities != None:
         if not Path(task.remove_impurities).is_file():

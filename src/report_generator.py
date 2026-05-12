@@ -97,8 +97,16 @@ def build_md_report(task):
     
 
     dehost_t = '## Host Genome Removal'
-    dehost_i_g = 'Remove genome: %s'%(s['remove_genome']['genome'])
-    dehost_i_p = '\nPercentage of removed reads: %s (%s)'%(s['remove_genome']['remove_percentage'],s['remove_genome']['mapped_reads'])
+    dehost_c = ''
+    if s['remove_genome'] != {}:
+        for host_order in sorted(s['remove_genome'].keys(), key=lambda x: int(x)):
+            dehost_c += '\n'.join([
+                '\n#### Host Removal #%s' % host_order,
+                '%s' % s['remove_genome'][host_order]['genome'],
+                'Percentage of removed reads: %s (%s)' % (s['remove_genome'][host_order]['remove_percentage'], s['remove_genome'][host_order]['mapped_reads'])
+            ]) + '\n'
+    else:
+        dehost_c = 'No host genome removal was set\n'
 
     impurit_t = '## Impurities Pre-filter'
     impurit_m_c = ''
@@ -249,8 +257,7 @@ def build_md_report(task):
         fastp_d_t,
         fastp_d_c,
         dehost_t,
-        dehost_i_g,
-        dehost_i_p,
+        dehost_c,
         impurit_t,
         impurit_m_c,
         aln_t,

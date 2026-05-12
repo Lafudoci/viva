@@ -105,65 +105,94 @@ def reads_hash_md5(task):
 
 def remove_host(task):
     logger.info('Removing host genome.')
-    dehost_meta = {'genome': '', 'remove_percentage': ''}
+    host_list = [h.strip() for h in task.remove_host.split()]
+    host_remove_meta = {}
     host_remove_cwd = task.path.joinpath(task.id, 'reads')
     Path.mkdir(host_remove_cwd, parents=True, exist_ok=True)
 
-    # 統一使用 /app/genomes/ 下的檔名作為索引前綴
-    dehost_meta['genome'] = 'Host genome: %s' % task.remove_host
-    genome_path = '/app/genomes/' + task.remove_host
+    for host_order, host in enumerate(host_list, start=1):
+        logger.info('Removing host genome #%d: %s' % (host_order, host))
+        host_remove_meta[host_order] = {
+            'genome': 'Host genome: %s' % host,
+            'mapped_reads': '',
+            'remove_percentage': ''
+        }
 
-    mapped_reads_out = 'host_mapped.sam'
-    align_cmd = [
-        'bowtie2',
-        '-p', str(task.threads),
-        '-x', str(genome_path),
-        '-1', str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz')),
-        '-2', str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz')),
-        '-S', str(mapped_reads_out),
-        '--very-sensitive-local'
-    ]
-    logger.info('CMD: '+' '.join(align_cmd))
-    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(align_cmd))
-    cmd_run = subprocess.run(align_cmd, cwd=host_remove_cwd, capture_output=True)
-    # print(cmd_run.stdout.decode(encoding='utf-8'))
-    print(cmd_run.stderr.decode(encoding='utf-8'))
+        genome_path = '/app/genomes/' + host
+        mapped_reads_out = 'host_%d_mapped.sam' % host_order
 
-    # build meta
-    logger.info('Analysis BAM file from host mapped reads')
-    # sorting
-    sorting_cmd = ['samtools', 'sort', '-@', task.threads, 'host_mapped.sam', '-o', 'host_mapped.sorted.bam']
-    logger.info('CMD: '+' '.join(sorting_cmd))
-    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(sorting_cmd))
-    sorting_run = subprocess.run(sorting_cmd, cwd=host_remove_cwd, capture_output=True)
-    print(sorting_run.stdout.decode(encoding='utf-8'))
-    print(sorting_run.stderr.decode(encoding='utf-8'))
-    # extract unmapped
-    unmapped_fastq_r1 = task.id + '_host_removed_R1.fastq.gz'
-    unmapped_fastq_r2 = task.id + '_host_removed_R2.fastq.gz'
-    samtools_option_cmd = ['samtools', 'fastq', '-f 13']
-    samtools_fastq_cmd = ['-1', unmapped_fastq_r1, '-2', unmapped_fastq_r2]
-    samtools_run_cmd = samtools_option_cmd + samtools_fastq_cmd + ['host_mapped.sorted.bam']
-    subprocess.run(samtools_run_cmd, cwd=host_remove_cwd, check=True)
-    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(samtools_run_cmd))
-    # flagstat
-    flagstat_cmd = ['samtools', 'flagstat', '-@', task.threads, 'host_mapped.sorted.bam']
-    logger.info('CMD: '+' '.join(flagstat_cmd))
-    utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
-    flagstat_run = subprocess.run(flagstat_cmd, cwd=host_remove_cwd, capture_output=True)
-    stats_text = flagstat_run.stdout.decode(encoding='utf-8')
-    flagstat_file_path = task.path.joinpath(host_remove_cwd, 'flagstat.txt')
-    utils.build_text_file(flagstat_file_path, stats_text)
-    total_reads = task.total_reads_after_fastp
-    primary_mapped_reads = utils.primary_mapped_from_flagstat(flagstat_file_path)
-    mapped_rate = Decimal(primary_mapped_reads)/Decimal(total_reads)
-    dehost_meta['mapped_reads'] = primary_mapped_reads
-    dehost_meta['remove_percentage'] = "%f%%" % (mapped_rate*Decimal('100'))
-    utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), dehost_meta)
-    # remove sam file to release disk space
-    os.remove(task.path.joinpath(host_remove_cwd, mapped_reads_out))
-    # remove host bam file to release disk space
-    os.remove(task.path.joinpath(host_remove_cwd, 'host_mapped.sorted.bam'))
+        if host_order == 1:
+            filterd_R1 = str(task.path.joinpath(task.id, 'reads', task.id + '_R1.fastq.gz'))
+            filterd_R2 = str(task.path.joinpath(task.id, 'reads', task.id + '_R2.fastq.gz'))
+        else:
+            filterd_R1 = str(task.path.joinpath(task.id, 'reads', '%s_%d_host_removed_R1.fastq.gz' % (task.id, host_order-1)))
+            filterd_R2 = str(task.path.joinpath(task.id, 'reads', '%s_%d_host_removed_R2.fastq.gz' % (task.id, host_order-1)))
+
+        align_cmd = [
+            'bowtie2',
+            '-p', str(task.threads),
+            '-x', str(genome_path),
+            '-1', filterd_R1,
+            '-2', filterd_R2,
+            '-S', str(mapped_reads_out),
+            '--very-sensitive-local'
+        ]
+        
+        logger.info('CMD: '+' '.join(align_cmd))
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(align_cmd))
+        cmd_run = subprocess.run(align_cmd, cwd=host_remove_cwd, capture_output=True)
+        print(cmd_run.stderr.decode(encoding='utf-8'))
+
+        # build meta
+        logger.info('Analysis BAM file from host mapped reads')
+        # sorting
+        sorted_bam = 'host_%d_mapped.sorted.bam' % host_order
+        sorting_cmd = ['samtools', 'sort', '-@', task.threads, mapped_reads_out, '-o', sorted_bam]
+        logger.info('CMD: '+' '.join(sorting_cmd))
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(sorting_cmd))
+        sorting_run = subprocess.run(sorting_cmd, cwd=host_remove_cwd, capture_output=True)
+        print(sorting_run.stdout.decode(encoding='utf-8'))
+        print(sorting_run.stderr.decode(encoding='utf-8'))
+        
+        # extract unmapped
+        if host_order == len(host_list):
+            unmapped_fastq_r1 = task.id + '_host_removed_R1.fastq.gz'
+            unmapped_fastq_r2 = task.id + '_host_removed_R2.fastq.gz'
+        else:
+            unmapped_fastq_r1 = '%s_%d_host_removed_R1.fastq.gz' % (task.id, host_order)
+            unmapped_fastq_r2 = '%s_%d_host_removed_R2.fastq.gz' % (task.id, host_order)
+
+        samtools_option_cmd = ['samtools', 'fastq', '-f 13']
+        samtools_fastq_cmd = ['-1', unmapped_fastq_r1, '-2', unmapped_fastq_r2]
+        samtools_run_cmd = samtools_option_cmd + samtools_fastq_cmd + [sorted_bam]
+        subprocess.run(samtools_run_cmd, cwd=host_remove_cwd, check=True)
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(samtools_run_cmd))
+        
+        # flagstat
+        flagstat_cmd = ['samtools', 'flagstat', '-@', task.threads, sorted_bam]
+        logger.info('CMD: '+' '.join(flagstat_cmd))
+        utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
+        flagstat_run = subprocess.run(flagstat_cmd, cwd=host_remove_cwd, capture_output=True)
+        stats_text = flagstat_run.stdout.decode(encoding='utf-8')
+        flagstat_file_path = task.path.joinpath(host_remove_cwd, 'flagstat_host_%d.txt' % host_order)
+        utils.build_text_file(flagstat_file_path, stats_text)
+        
+        total_reads = task.total_reads_after_fastp
+        primary_mapped_reads = utils.primary_mapped_from_flagstat(flagstat_file_path)
+        mapped_rate = Decimal(primary_mapped_reads)/Decimal(total_reads)
+        host_remove_meta[host_order]['mapped_reads'] = primary_mapped_reads
+        host_remove_meta[host_order]['remove_percentage'] = "%f%%" % (mapped_rate*Decimal('100'))
+        
+        # remove sam file to release disk space
+        os.remove(task.path.joinpath(host_remove_cwd, mapped_reads_out))
+        # remove host bam file to release disk space
+        os.remove(task.path.joinpath(host_remove_cwd, sorted_bam))
+        # remove intermediate fastq files
+        if host_order > 1:
+            os.remove(filterd_R1)
+            os.remove(filterd_R2)
+
+    utils.build_json_file(task.path.joinpath(host_remove_cwd, 'dehost_meta.json'), host_remove_meta)
 
 def run(task):
     logger.info('Importing reads.')

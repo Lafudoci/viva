@@ -359,6 +359,29 @@ def decompress_rvdb(blastdb_name):
 
 
 
+def check_genome_availability(host_file_name, genome_source_dir):
+    try:
+        if sys_deps_check(['bowtie2-inspect']) == -1:
+            return -1
+        genome_index_prefix = Path("/app/genomes").joinpath(host_file_name)
+        inspect_cmd = ['bowtie2-inspect', '--summary', str(genome_index_prefix)]
+        if subprocess.run(inspect_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
+            return 0
+        
+        if genome_source_dir is None:
+            logger.error('Genome index not found and genome_path is not provided.')
+            return -1
+            
+        source_path = Path(genome_source_dir).joinpath(host_file_name)
+        if not source_path.is_file():
+            logger.error('Host genome source file %s not found in %s.' % (host_file_name, genome_source_dir))
+            return -1
+        return 0
+    except Exception as e:
+        logger.error('Genome check error: %s.' % str(e))
+        return -1
+
+
 def setup_genomes(host_file_name, genome_source_dir):
     try:
         if sys_deps_check(['bowtie2-inspect', 'bowtie2-build']) == -1:
