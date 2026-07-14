@@ -139,10 +139,10 @@ def build_md_report(task):
     for ref_order in range(1, task.ref_num+1):
         aln_c_c += '\n'.join([
             '\n#### Reference #%d :%s'%(ref_order, s['ref_meta_dict']['seq_meta'][str(ref_order)]['fasta_header_escape']),
-            '| Aligner | Start base | End base | Covered base | Mean depth |',
-            '| ------- | ---------- | -------- | ------------ | ---------- |',
-            '| Bowtie2 | %s | %s | %s %% | %s x |'%(s['cov']['bowtie2'][str(ref_order)]['startpos'], s['cov']['bowtie2'][str(ref_order)]['endpos'], s['cov']['bowtie2'][str(ref_order)]['coverage'], s['cov']['bowtie2'][str(ref_order)]['meandepth']),
-            '| BWA MEM | %s | %s | %s %% | %s x |'%(s['cov']['bwa'][str(ref_order)]['startpos'], s['cov']['bwa'][str(ref_order)]['endpos'], s['cov']['bwa'][str(ref_order)]['coverage'], s['cov']['bwa'][str(ref_order)]['meandepth'])])
+            '| Aligner | Start base | End base | Covered base | Mean depth | Depth CV | Zero-cov base | Zero runs | Max zero run |',
+            '| ------- | ---------- | -------- | ------------ | ---------- | -------- | ------------- | --------- | ------------ |',
+            '| Bowtie2 | %s | %s | %s %% | %s x | %s | %s %% | %s | %s |'%(s['cov']['bowtie2'][str(ref_order)]['startpos'], s['cov']['bowtie2'][str(ref_order)]['endpos'], s['cov']['bowtie2'][str(ref_order)]['coverage'], s['cov']['bowtie2'][str(ref_order)]['meandepth'], s['cov']['bowtie2'][str(ref_order)].get('cv', 'N/A'), s['cov']['bowtie2'][str(ref_order)].get('zero_cov_percentage', 'N/A'), s['cov']['bowtie2'][str(ref_order)].get('zero_run_count', 'N/A'), s['cov']['bowtie2'][str(ref_order)].get('max_zero_run', 'N/A')),
+            '| BWA MEM | %s | %s | %s %% | %s x | %s | %s %% | %s | %s |'%(s['cov']['bwa'][str(ref_order)]['startpos'], s['cov']['bwa'][str(ref_order)]['endpos'], s['cov']['bwa'][str(ref_order)]['coverage'], s['cov']['bwa'][str(ref_order)]['meandepth'], s['cov']['bwa'][str(ref_order)].get('cv', 'N/A'), s['cov']['bwa'][str(ref_order)].get('zero_cov_percentage', 'N/A'), s['cov']['bwa'][str(ref_order)].get('zero_run_count', 'N/A'), s['cov']['bwa'][str(ref_order)].get('max_zero_run', 'N/A'))])
     vc_t = '## Variant Calling'
     vc_c = ''
     for ref_order in range(1, task.ref_num+1):

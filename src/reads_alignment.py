@@ -133,6 +133,60 @@ def align_flagstat(task, aligners):
     utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'flagstat.json'), stats_dict)
 
 
+def depth_evenness_metrics(depth_text):
+    # depth_text is the stdout of `samtools depth -a` (ref\tpos\tdepth per line,
+    # one line per reference position because of -a). These metrics complement
+    # breadth-of-coverage, which saturates at high depth and therefore cannot
+    # discriminate an incomplete genome (localized zero-coverage gaps) from a
+    # degraded one (uneven depth). See README/report notes.
+    depths = []
+    for line in depth_text.splitlines():
+        if not line:
+            continue
+        cols = line.split('\t')
+        if len(cols) < 3:
+            continue
+        depths.append(int(cols[2]))
+    total_bases = len(depths)
+    if total_bases == 0:
+        return {'total_bases': 0, 'zero_cov_bases': 0, 'zero_cov_percentage': 'N/A',
+                'zero_run_count': 0, 'max_zero_run': 0, 'mean_depth': 'N/A', 'cv': 'N/A'}
+    mean_depth = sum(depths) / total_bases
+    # coefficient of variation of per-base depth; std divided by mean makes it
+    # depth-normalized (independent of overall sequencing depth). Higher CV =
+    # more uneven coverage = degradation signal even when breadth is ~100%.
+    variance = sum((d - mean_depth) ** 2 for d in depths) / total_bases
+    std_depth = variance ** 0.5
+    cv = std_depth / mean_depth if mean_depth > 0 else 0
+    # zero-coverage run-length stats: few long runs => incomplete genome;
+    # many short dips / no true zeros => degradation.
+    zero_cov_bases = 0
+    zero_run_count = 0
+    max_zero_run = 0
+    cur_run = 0
+    for d in depths:
+        if d == 0:
+            zero_cov_bases += 1
+            cur_run += 1
+            if cur_run > max_zero_run:
+                max_zero_run = cur_run
+        else:
+            if cur_run > 0:
+                zero_run_count += 1
+            cur_run = 0
+    if cur_run > 0:
+        zero_run_count += 1
+    return {
+        'total_bases': total_bases,
+        'zero_cov_bases': zero_cov_bases,
+        'zero_cov_percentage': '%.2f' % (zero_cov_bases / total_bases * 100),
+        'zero_run_count': zero_run_count,
+        'max_zero_run': max_zero_run,
+        'mean_depth': '%.2f' % mean_depth,
+        'cv': '%.3f' % cv,
+    }
+
+
 def align_coverage_stat(task, aligners):
     cov_dict = {}
     for aligner in aligners:
@@ -141,7 +195,8 @@ def align_coverage_stat(task, aligners):
         aligner_cwd = task.path.joinpath(task.id, 'alignment', aligner)
         for ref_order in range(1, task.ref_num+1):
             cov_dict[aligner][ref_order] = {}
-            flagstat_cmd = ['samtools', 'coverage', '%s_ref_%d.sorted.bam'%(task.id, ref_order)]
+            bam_file = '%s_ref_%d.sorted.bam'%(task.id, ref_order)
+            flagstat_cmd = ['samtools', 'coverage', bam_file]
             logger.info('CMD: '+' '.join(flagstat_cmd))
             utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(flagstat_cmd))
             flagstat_run = subprocess.run(flagstat_cmd, cwd=aligner_cwd, capture_output=True)
@@ -150,6 +205,13 @@ def align_coverage_stat(task, aligners):
             stats = stats_text.split('\n')[1].split('\t')
             for i in range(len(titles)):
                 cov_dict[aligner][ref_order][titles[i]] = stats[i]
+            # per-base depth for evenness (CV) and zero-coverage run-length stats
+            depth_cmd = ['samtools', 'depth', '-a', bam_file]
+            logger.info('CMD: '+' '.join(depth_cmd))
+            utils.write_log_file(task.path.joinpath(task.id), 'CMD: '+' '.join(depth_cmd))
+            depth_run = subprocess.run(depth_cmd, cwd=aligner_cwd, capture_output=True)
+            depth_text = depth_run.stdout.decode(encoding='utf-8')
+            cov_dict[aligner][ref_order].update(depth_evenness_metrics(depth_text))
     utils.build_json_file(task.path.joinpath(task.id, 'alignment', 'coverage_stat.json'), cov_dict)
 
 
