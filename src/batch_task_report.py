@@ -11,6 +11,14 @@ def generate_summary_csv(batch_task_id, taks_id_list):
     for task_id in taks_id_list:
         with open('/app/tasks/%s/%s_summary.json'%(task_id, task_id), 'r') as f:
             j = json.load(f)
+            remove_genome = j['remove_genome']
+            if remove_genome:
+                host_orders = sorted(remove_genome.keys(), key=lambda x: int(x))
+                remove_genome_name = '; '.join(remove_genome[o]['genome'] for o in host_orders)
+                remove_genome_percent = '; '.join(str(remove_genome[o]['remove_percentage']) for o in host_orders)
+            else:
+                remove_genome_name = ''
+                remove_genome_percent = ''
             summaries_dict[task_id] = {
                 'task ID': task_id,
                 'task date': j['start_date'],
@@ -21,15 +29,15 @@ def generate_summary_csv(batch_task_id, taks_id_list):
                 'fastp post Q30': j['fastp_abs']['after_total_q30'],
                 'fastp post reads': j['fastp_abs']['after_total_reads'],
                 'fastp duplication': j['fastp_abs']['duplication_rate'],
-                'remove genome name': j['remove_genome']['genome'],
-                'remove genome precent': j['remove_genome']['remove_percentage'],
+                'remove genome name': remove_genome_name,
+                'remove genome precent': remove_genome_percent,
                 'aln rate bt2 of 1st impurity': j['impurit_filter_results']['1']['bt2']['remove_percentage'],
                 'aln rate bwa of 1st impurity': j['impurit_filter_results']['1']['bwa']['remove_percentage'],
                 'aln rate bt2 of 1st ref': j['aln']['mapped_rate']['bowtie2']['1'],
                 'aln rate bwa of 1st ref': j['aln']['mapped_rate']['bwa']['1'],
                 'cov bt2 of 1st ref': j['cov']['bowtie2']['1']['coverage'],
                 'cov bwa of 1st ref': j['cov']['bwa']['1']['coverage'],
-                'depth bt2 of 1st ref': j['cov']['bwa']['1']['meandepth'],
+                'depth bt2 of 1st ref': j['cov']['bowtie2']['1']['meandepth'],
                 'depth bwa of 1st ref': j['cov']['bwa']['1']['meandepth'],
                 'vc lofreq counts of 1st ref': len(j['vc']['lofreq']['1']),
                 'vc varscan counts of 1st ref': len(j['vc']['varscan']['1']),
